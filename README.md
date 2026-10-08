@@ -18,7 +18,7 @@ A lightweight, pip-installable testbed for **long-horizon multi-agent LLM collab
 - **Metrics**: success rate, partial success rate, **CCE / per-agent contribution (PAC)** with two judges (the paper's backward-tracing LLM judge, plus a deterministic rule-based judge for free runs and judge-agreement checks), and the paper's 6-way **communication failure taxonomy**.
 - **Blueprint-first task generator** (AutoGym-style, adapted to multi-agent play): sample generation parameters, build the solution DAG (who gathers, crafts and hands what to whom), materialize a task, certify it by running the reference solution, repair failures, set the round budget. No LLM calls; **~93% yield**.
 - **Model backends**: Claude (Anthropic API) and **Ollama** (free local models, or Ollama cloud models such as `gemma4:cloud`).
-- **87 tests**, none of which call an API.
+- **88 tests**, none of which call an API.
 
 ## Quick start (no API key)
 
