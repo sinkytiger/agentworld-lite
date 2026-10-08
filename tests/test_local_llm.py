@@ -120,6 +120,33 @@ def test_local_model_falls_back_when_format_reply_is_not_json():
     assert "format" in client.requests[0][1] and "format" not in client.requests[1][1]
 
 
+def test_rate_limit_is_retried_with_backoff(monkeypatch):
+    import agentworld_lite.local_llm as ll
+    monkeypatch.setattr(ll.time, "sleep", lambda s: None)
+    calls = []
+
+    class Flaky(OllamaClient):
+        def _send(self, path, payload=None):
+            calls.append(path)
+            if len(calls) < 3:
+                err = OllamaError("HTTP 429")
+                err.status = 429
+                raise err
+            return {"message": {"role": "assistant", "content": "{}"}, "prompt_eval_count": 1, "eval_count": 1}
+
+    resp, _ = Flaky("gemma4:cloud").chat([{"role": "user", "content": "hi"}])
+    assert len(calls) == 3 and resp["message"]["content"] == "{}"
+
+    class Denied(OllamaClient):
+        def _send(self, path, payload=None):
+            err = OllamaError("HTTP 401")
+            err.status = 401
+            raise err
+
+    with pytest.raises(OllamaError):
+        Denied("gemma4:cloud").chat([{"role": "user", "content": "hi"}])
+
+
 def test_check_reports_missing_model_and_unreachable_server():
     with pytest.raises(OllamaError, match="ollama pull qwen3:8b"):
         FakeOllama(lambda p: {}, models=("llama3.2:3b",)).check()

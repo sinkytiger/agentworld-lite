@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import json
 import re
+import time
 import urllib.error
 import urllib.request
 from types import SimpleNamespace
@@ -48,8 +49,26 @@ class OllamaClient:
         self.num_predict = num_predict
         self.usage = UsageMeter()
 
-    # -- transport (overridden in tests)
+    RETRY_STATUS = (429, 500, 502, 503, 504)
+    MAX_RETRIES = 6
+
     def _request(self, path: str, payload: dict | None = None) -> dict:
+        """POST/GET with retries and exponential backoff on rate limits, server errors and timeouts
+        (cloud models on the free plan can return 429 under load)."""
+        delay = 5.0
+        for attempt in range(self.MAX_RETRIES + 1):
+            try:
+                return self._send(path, payload)
+            except OllamaError as exc:
+                retryable = getattr(exc, "status", None) in self.RETRY_STATUS or getattr(exc, "timeout", False)
+                if not retryable or attempt == self.MAX_RETRIES:
+                    raise
+                time.sleep(delay)
+                delay = min(delay * 2, 120.0)
+        raise AssertionError("unreachable")
+
+    # -- transport (overridden in tests)
+    def _send(self, path: str, payload: dict | None = None) -> dict:
         data = None if payload is None else json.dumps(payload).encode("utf-8")
         req = urllib.request.Request(self.host + path, data=data, method="POST" if payload is not None else "GET",
                                      headers={"Content-Type": "application/json"})
@@ -58,7 +77,13 @@ class OllamaClient:
                 return json.loads(resp.read().decode("utf-8"))
         except urllib.error.HTTPError as exc:
             body = exc.read().decode("utf-8", "replace")[:300]
-            raise OllamaError(f"Ollama returned HTTP {exc.code}: {body}") from exc
+            err = OllamaError(f"Ollama returned HTTP {exc.code}: {body}")
+            err.status = exc.code
+            raise err from exc
+        except TimeoutError as exc:
+            err = OllamaError(f"Ollama request timed out after {self.timeout}s")
+            err.timeout = True
+            raise err from exc
         except urllib.error.URLError as exc:
             raise OllamaError(f"Cannot reach Ollama at {self.host} ({exc.reason}). Is the Ollama app running?") from exc
 
