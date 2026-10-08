@@ -2,12 +2,12 @@
 
 English · [한국어](README.ko.md)
 
-A lightweight, pip-installable testbed for **long-horizon multi-agent LLM collaboration**, built from two September 2026 papers:
+A lightweight, pip-installable testbed for **long-horizon multi-agent LLM collaboration**, based on two September 2026 papers:
 
 - **[AgentWorld](https://arxiv.org/abs/2609.31590)** (Shu et al.) — how to *measure* collaboration: agents with asymmetric roles cooperate through chat only, and the **Causal Collaboration Effectiveness (CCE)** metric counts how much of a team's effort causally led to success.
-- **[AutoGym](https://arxiv.org/abs/2609.22592)** (Noronha et al.) — how to *generate* verifiable tasks: fix the solution blueprint first, then build the environment and verifiers around it.
+- **[AutoGym](https://arxiv.org/abs/2609.22592)** (Noronha et al.) — how to *generate* verifiable tasks: fix the solution blueprint first, then build the environment and verifiers around it. This project borrows that idea for its task generator.
 
-> **Unofficial.** Not affiliated with the authors of either paper. The original benchmark runs on the Kaetram MMORPG; this project uses its own small grid simulator that follows the same protocol. Numbers are **not comparable** with the papers; use it for relative comparisons between models and for failure analysis.
+> **Unofficial.** Not affiliated with the authors of either paper. The official AgentWorld benchmark (game engine, 100 + 200 tasks, reference harness and evaluation tools) is at **[openagents-org/agentworld](https://github.com/openagents-org/agentworld)** and needs its own game server. This project is a separate, much smaller grid simulator that follows the same protocol and runs with `pip` alone, for quick experiments on task design and communication. Numbers are **not comparable** with the paper; use it for relative comparisons between models and for failure analysis.
 
 ## What's inside
 
@@ -16,7 +16,7 @@ A lightweight, pip-installable testbed for **long-horizon multi-agent LLM collab
 - **Protocol**: turn-based round-robin, one tool call per agent per round, black-box agents with chat as the only shared channel. Ablations: `no_comm`, `no_docs`, `whitebox` (oracle-communication proxy), `random_spawn`.
 - **9 hand-built tasks** covering all 8 AgentWorld categories (combat, crafting, gathering, trading, exploration, survival, construction, coordination), 3–6 agents each. Every task ships a reference solution that the test suite replays.
 - **Metrics**: success rate, partial success rate, **CCE / per-agent contribution (PAC)** with two judges (the paper's backward-tracing LLM judge, plus a deterministic rule-based judge for free runs and judge-agreement checks), and the paper's 6-way **communication failure taxonomy**.
-- **Blueprint-first task generator** (AutoGym-style, adapted to multi-agent play): sample generation parameters, build the solution DAG (who gathers, crafts and hands what to whom), materialize a task, certify it by running the reference solution, repair failures, set the round budget. No LLM calls; **~93% yield**.
+- **Blueprint-first task generator** (idea borrowed from AutoGym, adapted to multi-agent play): sample generation parameters, build the solution DAG (who gathers, crafts and hands what to whom), materialize a task, certify it by running the reference solution, repair failures, set the round budget. No LLM calls; **~93% yield**.
 - **Model backends**: Claude (Anthropic API) and **Ollama** (free local models, or Ollama cloud models such as `gemma4:cloud`).
 - **91 tests**, none of which call an API.
 
@@ -90,42 +90,42 @@ Generation parameters: recipe depth of the target (1–3), team structure (`chai
 
 ## Results
 
-Seeds 7, 8 and 9 (three replicates on the same map), run on 2026-10-08 at zero API cost: `gemma4:cloud` through Ollama's free cloud plan, `llama3.2:3b` locally on a laptop RTX 2060 (6 GB). For consistency every CCE below comes from the rule-based judge. Full tables, LLM-judge CCE and causal graphs: [docs/results.md](docs/results.md) (hand-built tasks) and [docs/results_generated.md](docs/results_generated.md) (generated tasks).
+Run on 2026-10-08 at zero API cost: `gemma4:cloud` through Ollama's free cloud plan, `llama3.2:3b` locally on a laptop RTX 2060 (6 GB). Model and random runs use seeds 7, 8 and 9, which are three replicates of the same tasks on the same map, so 27 episodes are 9 tasks × 3 runs, not 27 different tasks. The oracle is deterministic and ran once. The `gemma4:cloud` seed-7 episodes were run before sampling seeds were pinned. Every CCE below comes from the rule-based judge. Full tables, LLM-judge CCE and causal graphs: [docs/results.md](docs/results.md) and [docs/results_generated.md](docs/results_generated.md).
 
-### Hand-built tasks (9)
+### Hand-built tasks (9 tasks × 3 seeds)
 
 | System | Setting | Episodes | Success | Range over seeds | Partial success | CCE | CCE \| success | Chats / episode | Repeated chats | Failed actions |
 |---|---|---|---|---|---|---|---|---|---|---|
-| Reference solutions (oracle) | full | 9 | 100.0% | – | 100.0% | 0.642 | 0.642 | 0.6 | 0.0% | 13.1% |
-| gemma4:cloud (Ollama, free plan) | full | 27 | 96.3% | 89–100% | 99.1% | 0.536 | 0.557 | 3.2 | 0.0% | 0.7% |
-| gemma4:cloud (Ollama, free plan) | no_comm | 27 | 74.1% | 67–78% | 74.1% | 0.369 | 0.498 | 0.0 | – | 6.1% |
-| llama3.2:3b (local) | full | 27 | 0.0% | 0–0% | 6.2% | 0.000 | – | 47.3 | 82.5% | 18.8% |
-| llama3.2:3b (local) | no_comm | 27 | 0.0% | 0–0% | 3.7% | 0.000 | – | 0.0 | – | 35.9% |
-| Random actions | full | 27 | 0.0% | 0–0% | 4.9% | 0.000 | – | 7.3 | 56.1%* | 52.0% |
-| Random actions | no_comm | 27 | 0.0% | 0–0% | 3.1% | 0.000 | – | 0.0 | – | 56.7% |
+| Reference solutions (oracle) | full | 9 | 100.0% (9/9) | – | 100.0% | 0.642 | 0.642 | 0.6 | 0.0% | 13.1% |
+| gemma4:cloud (Ollama, free plan) | full | 27 | 96.3% (26/27) | 89–100% | 99.1% | 0.536 | 0.557 | 3.2 | 0.0% | 0.7% |
+| gemma4:cloud (Ollama, free plan) | no_comm | 27 | 74.1% (20/27) | 67–78% | 74.1% | 0.369 | 0.498 | 0.0 | – | 6.1% |
+| llama3.2:3b (local) | full | 27 | 0.0% (0/27) | 0–0% | 6.2% | 0.000 | – | 47.3 | 82.5% | 18.8% |
+| llama3.2:3b (local) | no_comm | 27 | 0.0% (0/27) | 0–0% | 3.7% | 0.000 | – | 0.0 | – | 35.9% |
+| Random actions | full | 27 | 0.0% (0/27) | 0–0% | 4.9% | 0.000 | – | 7.3 | 56.1%* | 52.0% |
+| Random actions | no_comm | 27 | 0.0% (0/27) | 0–0% | 3.1% | 0.000 | – | 0.0 | – | 56.7% |
 
 \* The random agent picks from four canned messages, so repeats are expected.
 
-### Generated tasks (17, blueprint-first, sampled across obfuscation levels; 51 + 51 episodes)
+### Generated tasks (17 tasks × 3 seeds, sampled across obfuscation levels)
 
 | Obfuscation | Tasks | Success with chat | Success without chat | Gap | Chats / episode (with chat) |
 |---|---|---|---|---|---|
-| low | 5 | 100.0% | 100.0% | 0.0 pp | 0.0 |
-| mid | 5 | 100.0% | 80.0% | 20.0 pp | 1.9 |
-| high | 5 | 100.0% | 80.0% | 20.0 pp | 2.5 |
-| max | 2 | 66.7% | 0.0% | 66.7 pp | 9.3 |
-| all | 17 | 96.1% | 76.5% | 19.6 pp | 2.4 |
+| low | 5 | 100.0% (15/15) | 100.0% (15/15) | 0.0 pp | 0.0 |
+| mid | 5 | 100.0% (15/15) | 80.0% (12/15) | 20.0 pp | 1.9 |
+| high | 5 | 100.0% (15/15) | 80.0% (12/15) | 20.0 pp | 2.5 |
+| max | 2 | 66.7% (4/6) | 0.0% (0/6) | 66.7 pp | 9.3 |
+| all | 17 | 96.1% (49/51) | 76.5% (39/51) | 19.6 pp | 2.4 |
 
-Model: `gemma4:cloud`. By recipe depth (with / without chat): depth 1 100% / 100% (7 tasks), depth 2 100% / 62.5% (8 tasks), depth 3 66.7% / 50% (2 tasks). Only 2–5 tasks per level, so read the trend rather than the exact numbers.
+Model: `gemma4:cloud`. By recipe depth (with / without chat): depth 1 100% / 100% (7 tasks), depth 2 100% / 62.5% (8 tasks), depth 3 66.7% / 50% (2 tasks). Each level has only 2–5 distinct tasks, so treat this as an early result about task design rather than a general finding.
 
 ### What we learned
 
-- **The hand-built tasks are close to saturated for a capable model.** `gemma4:cloud` solves 96.3% of episodes with chat and 74.1% without. Blocking chat hurts in only three tasks: the crystal plates (0/3 without chat), the stick hand-off in the staff task (1/3) and the coin pooling in the market task (1/3). Elsewhere the shared documents spell out the plan, so agents follow it without talking. The AgentWorld paper reports a larger drop without communication (54% → 23%).
-- **Communication still buys efficiency.** With chat, successful episodes are leaner (CCE 0.557 vs 0.498), finish faster (11.4 vs 14.6 rounds) and fail fewer actions (0.7% vs 6.1%).
-- **The generator's obfuscation knob controls how much communication matters.** In low-obfuscation generated tasks the model never sent a message and still solved everything. As information moves from the shared document into private briefs, the model talks more on its own (0.0 → 9.3 messages per episode) and losing chat costs more (gap 0 → 66.7 points).
-- **A 3B local model never starts collaborating.** Over 2,658 actions with chat, `llama3.2:3b` handed 0 items to teammates and solved nothing. 48% of its actions were chat messages and 82.5% of those repeated an earlier message, the paper's most common failure mode. In one staff-task episode, two agents sent 28 messages asking for an axe while the only agent holding one never cut a tree.
-- **The two CCE judges agree about as well as the paper's human check.** Over the 46 successful `gemma4:cloud` episodes, the rule-based judge and the LLM judge (`gemma4:cloud`, paper procedure) agree on 81.7% of actions (Cohen's κ 0.63). The paper reports 82% and κ 0.64 between humans and its GPT-4.1 judge; that is a different comparison, but it suggests the free rule judge is a usable stand-in. The LLM judge is far more generous on the survival task (0.86–1.00 vs 0.50–0.60), as expected from its inclusive labelling policy.
-- **Failure taxonomy (gemma4:cloud, with chat):** 26 of 86 messages were flagged: 11 stale/redundant, 10 factual errors (for example, a carpenter reporting the wrong tile), 4 misidentifications and 1 logical inconsistency.
+- **On the hand-built tasks, chat rarely changed the outcome.** `gemma4:cloud` solved 26/27 episodes with chat and 20/27 without. Blocking chat hurt in three tasks: the crystal plates (0/3 without chat), the stick hand-off in the staff task (1/3) and the coin pooling in the market task (1/3). Every task also gives the team a shared document that lays out the plan, so the `no_comm` setting measures what chat adds on top of that document. The AgentWorld paper also reports a large drop without communication, but scores from the two environments are not comparable.
+- **Information placement decides how much chat matters.** In the generated tasks with low obfuscation the model never sent a message and solved everything (15/15 with and 15/15 without chat). As information moves from the shared document into private briefs, the model sends more messages on its own (0.0 → 9.3 per episode) and losing chat costs more (max: 4/6 vs 0/6, from only 2 tasks).
+- **When both settings succeed, chat made the team leaner.** On the 20 task–seed pairs solved in both settings, CCE was higher with chat in 18 (0.580 vs 0.498 on average), with fewer rounds (10.2 vs 11.2) and fewer failed actions (0.5% vs 3.7%). Comparing only matched pairs avoids mixing in which episodes happened to succeed.
+- **The 3B local model did not reach collaborative behavior in this setup.** `llama3.2:3b` solved 0/27 and handed 0 items to teammates in 2,658 actions. It harvested successfully 33 times but never crafted anything (0/23), so it is not yet clear whether the bottleneck is collaboration or basic task execution. 48% of its actions were chat, and 82.5% of those messages were exact duplicates of an earlier message. That is an exact-repeat rate, not the paper's stale/redundant classification. In one staff-task episode, two agents sent 28 messages asking for an axe while the only agent holding one never cut a tree.
+- **The rule-based CCE judge is a promising cheap proxy, not a validated substitute.** Pooled over 1,853 actions from 46 successful `gemma4:cloud` episodes, the rule judge and the LLM judge (`gemma4:cloud`, paper procedure) agree on 80.9% of actions (Cohen's κ 0.62). The LLM judge labels more actions as contributing (216 LLM-only vs 138 rule-only disagreements) and is far more generous on the survival task (CCE 0.86–1.00 vs 0.50–0.60). The paper's figures (human vs GPT-4.1: 82%, κ 0.64 on 84 actions; two LLM judges: κ 0.66) come from different judges, samples and aggregation, so a human-labelled sample is needed before relying on the rule judge.
+- **Failure taxonomy (gemma4:cloud, with chat):** 26 of 86 messages were flagged by the LLM judge: 11 stale/redundant, 10 factual errors (for example, a carpenter reporting the wrong tile), 4 misidentifications and 1 logical inconsistency.
 
 ## Tasks
 
@@ -182,12 +182,13 @@ docs/             paper analysis and AutoGym integration design (Korean)
 
 ## Differences from the papers
 
+- This is not the official AgentWorld code ([openagents-org/agentworld](https://github.com/openagents-org/agentworld)). Use the official benchmark for numbers comparable with the paper.
 - Much smaller world (64×48 tiles and ~40 items instead of 1056×768 and 380+), no leveling.
-- The paper does not list all 13 tools; this tool set is a reconstruction that covers every task category.
-- 9 hand-built tasks instead of 100 + 100; more can be generated with `gen` or `augment`.
+- The 13 tools are an independent reconstruction from the paper's description and are not identical to the official tool set.
+- 9 hand-built tasks instead of 100 + 200; more can be generated with `gen` or `augment`.
 - The oracle-communication ablation is approximated by `whitebox`; single-agent and shared-plan ablations are not implemented.
 - The CCE LLM judge runs on Claude or an Ollama model instead of GPT-4.1, and a rule-based judge is added.
-- The task generator builds blueprints programmatically from the known recipe graph instead of with an LLM, so solvability holds by construction. Distractors, the four-signal verifier, difficulty bands and the curriculum loop are designed but not yet implemented.
+- The task generator borrows AutoGym's blueprint-first idea but is much narrower: it builds one reference solution path programmatically from the known recipe graph (AutoGym defines a broader space of valid solutions with an LLM), so solvability holds by construction. Distractors, the four-signal verifier, difficulty bands and performance-driven updates of the generation distribution are designed but not yet implemented.
 
 ## Citing
 
