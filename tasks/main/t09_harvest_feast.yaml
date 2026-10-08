@@ -1,0 +1,92 @@
+id: t09_harvest_feast
+name: Harvest Feast
+category: coordination
+description: >
+  The village is hosting a harvest feast. Two fishers, a berry picker and an herbalist must feed raw
+  ingredients to the cook at the village stove, and the cook must deliver the dishes to the host.
+  Six agents, one supply chain.
+objectives:
+  primary: The host (t09_host) must hold at least 3 fish_stew and 2 herbal_tonic.
+  secondary:
+    - No ingredient should be wasted.
+max_rounds: 30
+agents:
+  - username: t09_host
+    role: feast host
+    spawn: [29, 24]
+    skills: {health: 15}
+    inventory: {apple: 2}
+    restricted_tools: [harvest_resource, craft_item]
+  - username: t09_cook
+    role: cook
+    spawn: [35, 21]
+    skills: {cooking: 15, health: 15}
+    inventory: {apple: 2}
+    restricted_tools: [harvest_resource]
+  - username: t09_fisher_west
+    role: fisher
+    spawn: [25, 33]
+    skills: {fishing: 10, health: 15}
+    equipment: [fishing_rod]
+  - username: t09_fisher_east
+    role: fisher
+    spawn: [33, 33]
+    skills: {fishing: 10, health: 15}
+    equipment: [fishing_rod]
+  - username: t09_berry_picker
+    role: berry picker
+    spawn: [26, 15]
+    skills: {foraging: 10, health: 15}
+  - username: t09_herbalist
+    role: herbalist
+    spawn: [10, 37]
+    skills: {foraging: 15, health: 15}
+relevant_game_context: |
+  Recipes (cooking requires standing within 2 tiles of the village stove at (36,19)):
+    cooked_shrimp: craft_item skill=cooking item_key=cooked_shrimp (cooking lvl 1) | 1x shrimp -> 1x cooked_shrimp
+    fish_stew: craft_item skill=cooking item_key=fish_stew (cooking lvl 10) | 2x cooked_shrimp + 1x berries -> 1x fish_stew
+    herbal_tonic: craft_item skill=cooking item_key=herbal_tonic (cooking lvl 5) | 2x herb -> 1x herbal_tonic
+  Total raw ingredients needed: 6 shrimp, 3 berries, 4 herbs.
+  Fishing spots (shrimp; fishing_rod) line the north shore of the lake at y=34 (x=24,28,32,36,40,43).
+  Berry bushes in the northern plains: (25,14), (29,11), (29,15). Herb patches (foraging 10) in the
+  south-western forest: (6,34), (13,34), (9,40), (5,38).
+verifier:
+  success: all
+  checkpoints:
+    - {name: "Fish stew", type: has_item, agent: t09_host, item: fish_stew, count: 3}
+    - {name: "Herbal tonic", type: has_item, agent: t09_host, item: herbal_tonic, count: 2}
+reference_solution:
+  t09_host:
+    - [wait, {reason: waiting for dishes}]
+  t09_cook:
+    - [craft_item, {skill: cooking, item_key: cooked_shrimp, count: 6}, {retries: 25}]
+    - [craft_item, {skill: cooking, item_key: fish_stew, count: 3}, {retries: 25}]
+    - [craft_item, {skill: cooking, item_key: herbal_tonic, count: 2}, {retries: 25}]
+    - [transfer_items, {to_agent: t09_host, item: fish_stew, count: 3}]
+    - [transfer_items, {to_agent: t09_host, item: herbal_tonic, count: 2}]
+  t09_fisher_west:
+    - [harvest_resource, {target: fishing_spot}]
+    - [harvest_resource, {target: fishing_spot}]
+    - [harvest_resource, {target: fishing_spot}]
+    - [move_to, {x: 30, y: 24}]
+    - [transfer_items, {to_agent: t09_cook, item: shrimp, count: 3}]
+  t09_fisher_east:
+    - [harvest_resource, {target: fishing_spot}]
+    - [harvest_resource, {target: fishing_spot}]
+    - [harvest_resource, {target: fishing_spot}]
+    - [move_to, {x: 34, y: 23}]
+    - [transfer_items, {to_agent: t09_cook, item: shrimp, count: 3}]
+  t09_berry_picker:
+    - [harvest_resource, {target: berry_bush}]
+    - [harvest_resource, {target: berry_bush}]
+    - [harvest_resource, {target: berry_bush}]
+    - [move_to, {x: 34, y: 20}]
+    - [transfer_items, {to_agent: t09_cook, item: berries, count: 3}]
+  t09_herbalist:
+    - [harvest_resource, {target: herb_patch}]
+    - [harvest_resource, {target: herb_patch}]
+    - [harvest_resource, {target: herb_patch}]
+    - [harvest_resource, {target: herb_patch}]
+    - [move_to, {x: 20, y: 30}]
+    - [move_to, {x: 30, y: 24}]
+    - [transfer_items, {to_agent: t09_cook, item: herb, count: 4}]

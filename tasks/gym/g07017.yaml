@@ -1,0 +1,273 @@
+id: g07017
+name: 'Generated: palisade wall (hub, depth 3)'
+category: construction
+description: A generated hub supply chain of depth 3. Raw materials must be gathered,
+  processed by the right specialists and handed along until the goal is met.
+objectives:
+  primary: Build a palisade_wall within 4 tiles of (22, 22).
+  secondary:
+  - Avoid wasted materials and redundant messages.
+max_rounds: 33
+agents:
+- username: g07017_artisan
+  role: artisan
+  spawn:
+  - 33
+  - 20
+  skills:
+    smithing: 7
+    crafting: 6
+    health: 15
+  inventory:
+    apple: 3
+  equipment: []
+  restricted_tools:
+  - harvest_resource
+  role_brief: 'Your role cannot use: harvest_resource.'
+- username: g07017_builder
+  role: builder
+  spawn:
+  - 22
+  - 22
+  skills:
+    crafting: 15
+    health: 15
+  inventory:
+    apple: 3
+  equipment: []
+  restricted_tools:
+  - harvest_resource
+  role_brief: 'Your role cannot use: harvest_resource.'
+- username: g07017_miner
+  role: miner
+  spawn:
+  - 50
+  - 8
+  skills:
+    mining: 11
+    health: 15
+  inventory:
+    apple: 3
+  equipment:
+  - pickaxe
+- username: g07017_lumberjack
+  role: lumberjack
+  spawn:
+  - 1
+  - 15
+  skills:
+    lumberjacking: 8
+    health: 15
+  inventory:
+    apple: 3
+  equipment:
+  - axe
+extra_entities: []
+relevant_game_context: "Recipes:\n  bronze_bar: craft_item skill=smithing (lvl 1,\
+  \ near anvil) | 1x copper_ore + 1x tin_ore -> 1x bronze_bar\n  plank: craft_item\
+  \ skill=crafting (lvl 5) | 2x logs -> 1x plank\n  nails: craft_item skill=smithing\
+  \ (lvl 5, near anvil) | 1x bronze_bar -> 10x nails\n  palisade_wall: build_structure\
+  \ (crafting lvl 10) | 3x plank + 10x nails\nTeam:\n  g07017_artisan (artisan; crafting\
+  \ 6, smithing 7) crafts/builds bronze_bar, plank, nails\n  g07017_builder (builder;\
+  \ crafting 15) crafts/builds palisade_wall\n  g07017_miner (miner; mining 11) gathers\
+  \ copper_ore, tin_ore\n  g07017_lumberjack (lumberjack; lumberjacking 8) gathers\
+  \ logs\nPlan:\n  g07017_artisan hands 10 nails to g07017_builder (at (22, 22)).\n\
+  \  g07017_artisan hands 3 plank to g07017_builder (at (22, 22)).\n  g07017_lumberjack\
+  \ hands 6 logs to g07017_artisan (at (33, 20)).\n  g07017_miner hands 1 copper_ore\
+  \ to g07017_artisan (at (33, 20)).\n  g07017_miner hands 1 tin_ore to g07017_artisan\
+  \ (at (33, 20)).\nLocations:\n  the anvil is at (33, 19); g07017_artisan starts\
+  \ next to it.\n  copper_rock nodes (copper_ore) are close to g07017_miner's start\
+  \ at (50, 8).\n  tin_rock nodes (tin_ore) are close to g07017_miner's start at (50,\
+  \ 8).\n  tree nodes (logs) are close to g07017_lumberjack's start at (1, 15)."
+verifier:
+  success: all
+  checkpoints:
+  - name: palisade_wall
+    type: structure
+    structure: palisade_wall
+    count: 1
+    near:
+    - 22
+    - 22
+    radius: 4
+reference_solution:
+  g07017_artisan:
+  - - craft_item
+    - skill: smithing
+      item_key: bronze_bar
+      count: 1
+    - until_have:
+        bronze_bar: 1
+      retries: 80
+  - - craft_item
+    - skill: crafting
+      item_key: plank
+      count: 3
+    - until_have:
+        plank: 3
+      retries: 80
+  - - craft_item
+    - skill: smithing
+      item_key: nails
+      count: 1
+    - until_have:
+        nails: 10
+      retries: 80
+  - - move_to
+    - x: 22
+      y: 22
+    - until_near:
+      - 22
+      - 22
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07017_builder
+      item: nails
+      count: 10
+    - retries: 80
+  - - transfer_items
+    - to_agent: g07017_builder
+      item: plank
+      count: 3
+    - retries: 80
+  g07017_builder:
+  - - build_structure
+    - structure: palisade_wall
+    - retries: 80
+  g07017_miner:
+  - - harvest_resource
+    - target: copper_rock
+    - until_have:
+        copper_ore: 1
+      retries: 80
+  - - harvest_resource
+    - target: tin_rock
+    - until_have:
+        tin_ore: 1
+      retries: 80
+  - - move_to
+    - x: 33
+      y: 20
+    - until_near:
+      - 33
+      - 20
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07017_artisan
+      item: copper_ore
+      count: 1
+    - retries: 80
+  - - transfer_items
+    - to_agent: g07017_artisan
+      item: tin_ore
+      count: 1
+    - retries: 80
+  g07017_lumberjack:
+  - - harvest_resource
+    - target: tree
+    - until_have:
+        logs: 6
+      retries: 80
+  - - move_to
+    - x: 33
+      y: 20
+    - until_near:
+      - 33
+      - 20
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07017_artisan
+      item: logs
+      count: 6
+    - retries: 80
+world_guide: true
+generation:
+  params:
+    depth: 3
+    topology: hub
+    obfuscation: 0.2
+    quantity: 2
+    extra_agents: 0
+    seed: 913288
+  obfuscation_bucket: low
+  blueprint:
+    target: palisade_wall
+    goal: structure
+    goal_qty: 1
+    roles:
+      artisan:
+        kind: craft
+        skills:
+          smithing: 7
+          crafting: 6
+        gathers: {}
+        crafts:
+        - - bronze_bar
+          - 1
+        - - plank
+          - 3
+        - - nails
+          - 1
+      builder:
+        kind: craft
+        skills:
+          crafting: 15
+        gathers: {}
+        crafts:
+        - - palisade_wall
+          - 1
+      miner:
+        kind: gather
+        skills:
+          mining: 11
+        gathers:
+          copper_ore: 1
+          tin_ore: 1
+        crafts: []
+      lumberjack:
+        kind: gather
+        skills:
+          lumberjacking: 8
+        gathers:
+          logs: 6
+        crafts: []
+    deliveries:
+    - - artisan
+      - builder
+      - nails
+      - 10
+    - - artisan
+      - builder
+      - plank
+      - 3
+    - - lumberjack
+      - artisan
+      - logs
+      - 6
+    - - miner
+      - artisan
+      - copper_ore
+      - 1
+    - - miner
+      - artisan
+      - tin_ore
+      - 1
+  ground_truth:
+    rounds: 15
+    actions: 58
+    useful_actions: 23
+    cce_rule: 0.397
+  repairs: []
+  axes:
+    handoffs: 5
+    max_handoff_distance: 32
+    rendezvous_travel: true
+    info_asymmetry: false
+    permission_asymmetry: true
+    station_constraint: true
+    team_size: 4
+    recipe_depth: 3
+    goal_quantity: 1

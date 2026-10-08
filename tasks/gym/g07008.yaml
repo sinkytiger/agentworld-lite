@@ -1,0 +1,302 @@
+id: g07008
+name: 'Generated: palisade wall (chain, depth 3)'
+category: construction
+description: A generated chain supply chain of depth 3. Raw materials must be gathered,
+  processed by the right specialists and handed along until the goal is met.
+objectives:
+  primary: Build a palisade_wall within 4 tiles of (40, 11).
+  secondary:
+  - Avoid wasted materials and redundant messages.
+max_rounds: 25
+agents:
+- username: g07008_smith
+  role: smith
+  spawn:
+  - 33
+  - 20
+  skills:
+    smithing: 5
+    health: 15
+  inventory:
+    apple: 3
+  equipment: []
+  restricted_tools:
+  - harvest_resource
+  role_brief: 'the anvil is at (33, 19); g07008_smith starts next to it. Your role
+    cannot use: harvest_resource.'
+- username: g07008_crafter
+  role: crafter
+  spawn:
+  - 40
+  - 11
+  skills:
+    crafting: 13
+    health: 15
+  inventory:
+    apple: 3
+  equipment: []
+  restricted_tools:
+  - harvest_resource
+  role_brief: 'Your role cannot use: harvest_resource.'
+- username: g07008_miner
+  role: miner
+  spawn:
+  - 50
+  - 3
+  skills:
+    mining: 9
+    health: 15
+  inventory:
+    apple: 3
+  equipment:
+  - pickaxe
+  role_brief: copper_rock nodes (copper_ore) are close to g07008_miner's start at
+    (50, 3). tin_rock nodes (tin_ore) are close to g07008_miner's start at (50, 3).
+- username: g07008_lumberjack
+  role: lumberjack
+  spawn:
+  - 7
+  - 31
+  skills:
+    lumberjacking: 5
+    health: 15
+  inventory:
+    apple: 3
+  equipment:
+  - axe
+  role_brief: tree nodes (logs) are close to g07008_lumberjack's start at (7, 31).
+- username: g07008_lumberjack2
+  role: lumberjack2
+  spawn:
+  - 12
+  - 35
+  skills:
+    lumberjacking: 5
+    health: 15
+  inventory:
+    apple: 3
+  equipment:
+  - axe
+  role_brief: tree nodes (logs) are close to g07008_lumberjack2's start at (12, 35).
+extra_entities: []
+relevant_game_context: "Recipes:\n  bronze_bar: craft_item skill=smithing (lvl 1,\
+  \ near anvil) | 1x copper_ore + 1x tin_ore -> 1x bronze_bar\n  plank: craft_item\
+  \ skill=crafting (lvl 5) | 2x logs -> 1x plank\n  nails: craft_item skill=smithing\
+  \ (lvl 5, near anvil) | 1x bronze_bar -> 10x nails\n  palisade_wall: build_structure\
+  \ (crafting lvl 10) | 3x plank + 10x nails\nTeam:\n  g07008_smith (smith; smithing\
+  \ 5) crafts/builds bronze_bar, nails\n  g07008_crafter (crafter; crafting 13) crafts/builds\
+  \ plank, palisade_wall\n  g07008_miner (miner; mining 9) gathers copper_ore, tin_ore\n\
+  \  g07008_lumberjack (lumberjack; lumberjacking 5) gathers logs\n  g07008_lumberjack2\
+  \ (lumberjack2; lumberjacking 5) gathers logs"
+verifier:
+  success: all
+  checkpoints:
+  - name: palisade_wall
+    type: structure
+    structure: palisade_wall
+    count: 1
+    near:
+    - 40
+    - 11
+    radius: 4
+reference_solution:
+  g07008_smith:
+  - - craft_item
+    - skill: smithing
+      item_key: bronze_bar
+      count: 1
+    - until_have:
+        bronze_bar: 1
+      retries: 80
+  - - craft_item
+    - skill: smithing
+      item_key: nails
+      count: 1
+    - until_have:
+        nails: 10
+      retries: 80
+  - - move_to
+    - x: 40
+      y: 11
+    - until_near:
+      - 40
+      - 11
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07008_crafter
+      item: nails
+      count: 10
+    - retries: 80
+  g07008_crafter:
+  - - craft_item
+    - skill: crafting
+      item_key: plank
+      count: 3
+    - until_have:
+        plank: 3
+      retries: 80
+  - - build_structure
+    - structure: palisade_wall
+    - retries: 80
+  g07008_miner:
+  - - harvest_resource
+    - target: copper_rock
+    - until_have:
+        copper_ore: 1
+      retries: 80
+  - - harvest_resource
+    - target: tin_rock
+    - until_have:
+        tin_ore: 1
+      retries: 80
+  - - move_to
+    - x: 33
+      y: 20
+    - until_near:
+      - 33
+      - 20
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07008_smith
+      item: copper_ore
+      count: 1
+    - retries: 80
+  - - transfer_items
+    - to_agent: g07008_smith
+      item: tin_ore
+      count: 1
+    - retries: 80
+  g07008_lumberjack:
+  - - harvest_resource
+    - target: tree
+    - until_have:
+        logs: 3
+      retries: 80
+  - - move_to
+    - x: 40
+      y: 11
+    - until_near:
+      - 40
+      - 11
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07008_crafter
+      item: logs
+      count: 3
+    - retries: 80
+  g07008_lumberjack2:
+  - - harvest_resource
+    - target: tree
+    - until_have:
+        logs: 3
+      retries: 80
+  - - move_to
+    - x: 40
+      y: 11
+    - until_near:
+      - 40
+      - 11
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07008_crafter
+      item: logs
+      count: 3
+    - retries: 80
+world_guide: true
+generation:
+  params:
+    depth: 3
+    topology: chain
+    obfuscation: 0.5
+    quantity: 1
+    extra_agents: 1
+    seed: 801710
+  obfuscation_bucket: mid
+  blueprint:
+    target: palisade_wall
+    goal: structure
+    goal_qty: 1
+    roles:
+      smith:
+        kind: craft
+        skills:
+          smithing: 5
+        gathers: {}
+        crafts:
+        - - bronze_bar
+          - 1
+        - - nails
+          - 1
+      crafter:
+        kind: craft
+        skills:
+          crafting: 13
+        gathers: {}
+        crafts:
+        - - plank
+          - 3
+        - - palisade_wall
+          - 1
+      miner:
+        kind: gather
+        skills:
+          mining: 9
+        gathers:
+          copper_ore: 1
+          tin_ore: 1
+        crafts: []
+      lumberjack:
+        kind: gather
+        skills:
+          lumberjacking: 5
+        gathers:
+          logs: 3
+        crafts: []
+      lumberjack2:
+        kind: gather
+        skills:
+          lumberjacking: 5
+        gathers:
+          logs: 3
+        crafts: []
+    deliveries:
+    - - lumberjack
+      - crafter
+      - logs
+      - 3
+    - - lumberjack2
+      - crafter
+      - logs
+      - 3
+    - - miner
+      - smith
+      - copper_ore
+      - 1
+    - - miner
+      - smith
+      - tin_ore
+      - 1
+    - - smith
+      - crafter
+      - nails
+      - 10
+  ground_truth:
+    rounds: 10
+    actions: 47
+    useful_actions: 26
+    cce_rule: 0.553
+  repairs: []
+  axes:
+    handoffs: 5
+    max_handoff_distance: 33
+    rendezvous_travel: true
+    info_asymmetry: true
+    permission_asymmetry: true
+    station_constraint: true
+    team_size: 5
+    recipe_depth: 3
+    goal_quantity: 1

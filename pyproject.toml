@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agentworld-lite"
+version = "0.1.0"
+description = "Unofficial lightweight testbed for multi-agent LLM collaboration: AgentWorld's CCE metric plus AutoGym-style blueprint-first task generation"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+dependencies = ["pyyaml>=6.0"]
+keywords = ["llm", "multi-agent", "benchmark", "agents", "evaluation"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+[project.optional-dependencies]
+claude = ["anthropic>=1.12"]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+agentworld-lite = "agentworld_lite.__main__:main"
+
+[tool.setuptools]
+packages = ["agentworld_lite"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

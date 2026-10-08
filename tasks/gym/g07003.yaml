@@ -1,0 +1,175 @@
+id: g07003
+name: 'Generated: cooked shrimp (chain, depth 1)'
+category: crafting
+description: A generated chain supply chain of depth 1. Raw materials must be gathered,
+  processed by the right specialists and handed along until the goal is met.
+objectives:
+  primary: g07003_client must hold at least 1 cooked_shrimp.
+  secondary:
+  - Avoid wasted materials and redundant messages.
+max_rounds: 20
+agents:
+- username: g07003_cook
+  role: cook
+  spawn:
+  - 36
+  - 20
+  skills:
+    cooking: 1
+    health: 15
+  inventory:
+    apple: 3
+  equipment: []
+  restricted_tools:
+  - harvest_resource
+  role_brief: 'Your role cannot use: harvest_resource.'
+- username: g07003_fisher
+  role: fisher
+  spawn:
+  - 44
+  - 34
+  skills:
+    fishing: 2
+    health: 15
+  inventory:
+    apple: 3
+  equipment:
+  - fishing_rod
+  restricted_tools:
+  - craft_item
+  role_brief: 'Your role cannot use: craft_item.'
+- username: g07003_client
+  role: client
+  spawn:
+  - 26
+  - 22
+  skills:
+    health: 15
+  inventory:
+    apple: 3
+  equipment: []
+  restricted_tools:
+  - harvest_resource
+  - craft_item
+  role_brief: 'Your role cannot use: harvest_resource, craft_item.'
+extra_entities: []
+relevant_game_context: "Recipes:\n  cooked_shrimp: craft_item skill=cooking (lvl 1,\
+  \ near fire) | 1x shrimp -> 1x cooked_shrimp\nTeam:\n  g07003_cook (cook; cooking\
+  \ 1) crafts/builds cooked_shrimp\n  g07003_fisher (fisher; fishing 2) gathers shrimp\n\
+  \  g07003_client (client; no special skills) is the person the result is for\nPlan:\n\
+  \  g07003_cook hands 1 cooked_shrimp to g07003_client (at (26, 22)).\n  g07003_fisher\
+  \ hands 1 shrimp to g07003_cook (at (36, 20)).\nLocations:\n  the stove is at (36,\
+  \ 19); g07003_cook starts next to it.\n  fishing_spot nodes (shrimp) are close to\
+  \ g07003_fisher's start at (44, 34)."
+verifier:
+  success: all
+  checkpoints:
+  - name: cooked_shrimp
+    type: has_item
+    agent: g07003_client
+    item: cooked_shrimp
+    count: 1
+reference_solution:
+  g07003_cook:
+  - - craft_item
+    - skill: cooking
+      item_key: cooked_shrimp
+      count: 1
+    - until_have:
+        cooked_shrimp: 1
+      retries: 80
+  - - move_to
+    - x: 26
+      y: 22
+    - until_near:
+      - 26
+      - 22
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07003_client
+      item: cooked_shrimp
+      count: 1
+    - retries: 80
+  g07003_fisher:
+  - - harvest_resource
+    - target: fishing_spot
+    - until_have:
+        shrimp: 1
+      retries: 80
+  - - move_to
+    - x: 36
+      y: 20
+    - until_near:
+      - 36
+      - 20
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07003_cook
+      item: shrimp
+      count: 1
+    - retries: 80
+  g07003_client: []
+world_guide: true
+generation:
+  params:
+    depth: 1
+    topology: chain
+    obfuscation: 0.04
+    quantity: 1
+    extra_agents: 1
+    seed: 598646
+  obfuscation_bucket: low
+  blueprint:
+    target: cooked_shrimp
+    goal: deliver
+    goal_qty: 1
+    roles:
+      cook:
+        kind: craft
+        skills:
+          cooking: 1
+        gathers: {}
+        crafts:
+        - - cooked_shrimp
+          - 1
+      fisher:
+        kind: gather
+        skills:
+          fishing: 2
+        gathers:
+          shrimp: 1
+        crafts: []
+      client:
+        kind: client
+        skills: {}
+        gathers: {}
+        crafts: []
+    deliveries:
+    - - cook
+      - client
+      - cooked_shrimp
+      - 1
+    - - fisher
+      - cook
+      - shrimp
+      - 1
+  ground_truth:
+    rounds: 6
+    actions: 16
+    useful_actions: 6
+    cce_rule: 0.375
+  repairs:
+  - permission_tightening:
+    - g07003_fisher
+  axes:
+    handoffs: 2
+    max_handoff_distance: 14
+    rendezvous_travel: true
+    info_asymmetry: false
+    permission_asymmetry: true
+    station_constraint: true
+    team_size: 3
+    recipe_depth: 1
+    goal_quantity: 1

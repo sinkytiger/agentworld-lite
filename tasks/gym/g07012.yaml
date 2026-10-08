@@ -1,0 +1,298 @@
+id: g07012
+name: 'Generated: iron sword (chain, depth 2)'
+category: coordination
+description: A generated chain supply chain of depth 2. Raw materials must be gathered,
+  processed by the right specialists and handed along until the goal is met.
+objectives:
+  primary: g07012_client (knight) must have a iron_sword equipped.
+  secondary:
+  - Avoid wasted materials and redundant messages.
+max_rounds: 20
+agents:
+- username: g07012_smith
+  role: smith
+  spawn:
+  - 33
+  - 20
+  skills:
+    smithing: 20
+    health: 15
+  inventory:
+    apple: 3
+  equipment: []
+  restricted_tools:
+  - harvest_resource
+  role_brief: 'Your role cannot use: harvest_resource.'
+- username: g07012_crafter
+  role: crafter
+  spawn:
+  - 29
+  - 27
+  skills:
+    crafting: 11
+    health: 15
+  inventory:
+    apple: 3
+  equipment: []
+  restricted_tools:
+  - harvest_resource
+  role_brief: 'Your role cannot use: harvest_resource.'
+- username: g07012_miner
+  role: miner
+  spawn:
+  - 57
+  - 6
+  skills:
+    mining: 21
+    health: 15
+  inventory:
+    apple: 3
+  equipment:
+  - pickaxe
+- username: g07012_client
+  role: client
+  spawn:
+  - 27
+  - 26
+  skills:
+    strength: 20
+    health: 15
+  inventory:
+    apple: 3
+    hide: 1
+  equipment: []
+  restricted_tools:
+  - harvest_resource
+  - craft_item
+  role_brief: 'You carry hides from an earlier hunt (1 hide); someone on the team
+    will need it. Your role cannot use: harvest_resource, craft_item.'
+- username: g07012_miner2
+  role: miner2
+  spawn:
+  - 53
+  - 15
+  skills:
+    mining: 21
+    health: 15
+  inventory:
+    apple: 3
+  equipment:
+  - pickaxe
+extra_entities: []
+relevant_game_context: "Recipes:\n  iron_bar: craft_item skill=smithing (lvl 15, near\
+  \ anvil) | 1x iron_ore + 1x coal -> 1x iron_bar\n  leather: craft_item skill=crafting\
+  \ (lvl 5) | 1x hide -> 1x leather\n  iron_sword: craft_item skill=smithing (lvl\
+  \ 20, near anvil) | 2x iron_bar + 1x leather -> 1x iron_sword\nTeam:\n  g07012_smith\
+  \ (smith; smithing 20) crafts/builds iron_bar, iron_sword\n  g07012_crafter (crafter;\
+  \ crafting 11) crafts/builds leather\n  g07012_miner (miner; mining 21) gathers\
+  \ coal\n  g07012_client (client; strength 20) is the person the result is for\n\
+  \  g07012_miner2 (miner2; mining 21) gathers iron_ore\nPlan:\n  g07012_client hands\
+  \ 1 hide to g07012_crafter (at (29, 27)).\n  g07012_crafter hands 1 leather to g07012_smith\
+  \ (at (33, 20)).\n  g07012_miner hands 2 coal to g07012_smith (at (33, 20)).\n \
+  \ g07012_miner2 hands 2 iron_ore to g07012_smith (at (33, 20)).\n  g07012_smith\
+  \ hands 1 iron_sword to g07012_client (at (27, 26)).\nLocations:\n  the anvil is\
+  \ at (33, 19); g07012_smith starts next to it.\n  coal_rock nodes (coal) are close\
+  \ to g07012_miner's start at (57, 6).\n  iron_rock nodes (iron_ore) are close to\
+  \ g07012_miner2's start at (53, 15)."
+verifier:
+  success: all
+  checkpoints:
+  - name: iron_sword equipped
+    type: equipped
+    agent: g07012_client
+    item: iron_sword
+reference_solution:
+  g07012_smith:
+  - - craft_item
+    - skill: smithing
+      item_key: iron_bar
+      count: 2
+    - until_have:
+        iron_bar: 2
+      retries: 80
+  - - craft_item
+    - skill: smithing
+      item_key: iron_sword
+      count: 1
+    - until_have:
+        iron_sword: 1
+      retries: 80
+  - - move_to
+    - x: 27
+      y: 26
+    - until_near:
+      - 27
+      - 26
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07012_client
+      item: iron_sword
+      count: 1
+    - retries: 80
+  g07012_crafter:
+  - - craft_item
+    - skill: crafting
+      item_key: leather
+      count: 1
+    - until_have:
+        leather: 1
+      retries: 80
+  - - move_to
+    - x: 33
+      y: 20
+    - until_near:
+      - 33
+      - 20
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07012_smith
+      item: leather
+      count: 1
+    - retries: 80
+  g07012_miner:
+  - - harvest_resource
+    - target: coal_rock
+    - until_have:
+        coal: 2
+      retries: 80
+  - - move_to
+    - x: 33
+      y: 20
+    - until_near:
+      - 33
+      - 20
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07012_smith
+      item: coal
+      count: 2
+    - retries: 80
+  g07012_client:
+  - - move_to
+    - x: 29
+      y: 27
+    - until_near:
+      - 29
+      - 27
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07012_crafter
+      item: hide
+      count: 1
+    - retries: 80
+  - - equip_item
+    - item: iron_sword
+    - retries: 80
+  g07012_miner2:
+  - - harvest_resource
+    - target: iron_rock
+    - until_have:
+        iron_ore: 2
+      retries: 80
+  - - move_to
+    - x: 33
+      y: 20
+    - until_near:
+      - 33
+      - 20
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07012_smith
+      item: iron_ore
+      count: 2
+    - retries: 80
+world_guide: true
+generation:
+  params:
+    depth: 2
+    topology: chain
+    obfuscation: 0.04
+    quantity: 1
+    extra_agents: 1
+    seed: 135623
+  obfuscation_bucket: low
+  blueprint:
+    target: iron_sword
+    goal: equip
+    goal_qty: 1
+    roles:
+      smith:
+        kind: craft
+        skills:
+          smithing: 20
+        gathers: {}
+        crafts:
+        - - iron_bar
+          - 2
+        - - iron_sword
+          - 1
+      crafter:
+        kind: craft
+        skills:
+          crafting: 11
+        gathers: {}
+        crafts:
+        - - leather
+          - 1
+      miner:
+        kind: gather
+        skills:
+          mining: 21
+        gathers:
+          coal: 2
+        crafts: []
+      client:
+        kind: client
+        skills:
+          strength: 20
+        gathers: {}
+        crafts: []
+      miner2:
+        kind: gather
+        skills:
+          mining: 21
+        gathers:
+          iron_ore: 2
+        crafts: []
+    deliveries:
+    - - client
+      - crafter
+      - hide
+      - 1
+    - - crafter
+      - smith
+      - leather
+      - 1
+    - - miner
+      - smith
+      - coal
+      - 2
+    - - miner2
+      - smith
+      - iron_ore
+      - 2
+    - - smith
+      - client
+      - iron_sword
+      - 1
+  ground_truth:
+    rounds: 9
+    actions: 44
+    useful_actions: 19
+    cce_rule: 0.432
+  repairs: []
+  axes:
+    handoffs: 5
+    max_handoff_distance: 24
+    rendezvous_travel: true
+    info_asymmetry: false
+    permission_asymmetry: true
+    station_constraint: true
+    team_size: 5
+    recipe_depth: 2
+    goal_quantity: 1

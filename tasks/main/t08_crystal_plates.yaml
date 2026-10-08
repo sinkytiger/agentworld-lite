@@ -1,0 +1,69 @@
+id: t08_crystal_plates
+name: Four Crystal Plates
+category: coordination
+description: >
+  Four colored pressure plates surround the village. The seal opens only when every plate is occupied,
+  at the same time, by someone carrying the crystal of that plate's color. Each party member holds one
+  crystal and knows the location of exactly one plate - and it is never the plate for their own crystal.
+objectives:
+  primary: All four plates (red, blue, green, yellow) occupied simultaneously, each by an agent carrying the matching crystal.
+  secondary:
+    - Share information early and avoid unnecessary walking.
+max_rounds: 20
+agents:
+  - username: t08_ranger
+    role: ranger
+    spawn: [12, 11]
+    skills: {health: 15}
+    inventory: {blue_crystal: 1, apple: 2}
+    role_brief: You know that the RED plate is at (10,10). You carry the BLUE crystal.
+  - username: t08_miner
+    role: miner
+    spawn: [40, 21]
+    skills: {health: 15}
+    inventory: {green_crystal: 1, apple: 2}
+    role_brief: You know that the BLUE plate is at (42,22). You carry the GREEN crystal.
+  - username: t08_fisher
+    role: fisher
+    spawn: [27, 31]
+    skills: {health: 15}
+    inventory: {yellow_crystal: 1, apple: 2}
+    role_brief: You know that the GREEN plate is at (26,32). You carry the YELLOW crystal.
+  - username: t08_farmer
+    role: farmer
+    spawn: [31, 13]
+    skills: {health: 15}
+    inventory: {red_crystal: 1, apple: 2}
+    role_brief: You know that the YELLOW plate is at (30,12). You carry the RED crystal.
+extra_entities:
+  - {kind: plate, type: plate, id: red_plate, pos: [10, 10], color: red}
+  - {kind: plate, type: plate, id: blue_plate, pos: [42, 22], color: blue}
+  - {kind: plate, type: plate, id: green_plate, pos: [26, 32], color: green}
+  - {kind: plate, type: plate, id: yellow_plate, pos: [30, 12], color: yellow}
+relevant_game_context: |
+  A plate counts as occupied when an agent stands exactly on its tile while carrying the crystal of the
+  same color (in inventory). Crystals can be handed over with transfer_items like any item.
+  Plates are only visible within your view radius, so share coordinates in chat.
+  The seal checks continuously: the moment all four plates are correctly occupied, the task is complete.
+verifier:
+  success: all
+  checkpoints:
+    - {name: "Plates", type: plates}
+reference_solution:
+  t08_ranger:
+    - [send_chat, {to: all, message: "Red plate is at (10,10). I carry BLUE."}]
+    - [move_to, {x: 42, y: 22}, {retries: 0}]
+    - [move_to, {x: 42, y: 22}, {retries: 0}]
+    - [move_to, {x: 42, y: 22}, {retries: 0}]
+  t08_miner:
+    - [send_chat, {to: all, message: "Blue plate is at (42,22). I carry GREEN."}]
+    - [move_to, {x: 26, y: 32}, {retries: 0}]
+    - [move_to, {x: 26, y: 32}, {retries: 0}]
+  t08_fisher:
+    - [send_chat, {to: all, message: "Green plate is at (26,32). I carry YELLOW."}]
+    - [move_to, {x: 30, y: 12}, {retries: 0}]
+    - [move_to, {x: 30, y: 12}, {retries: 0}]
+  t08_farmer:
+    - [send_chat, {to: all, message: "Yellow plate is at (30,12). I carry RED."}]
+    - [move_to, {x: 10, y: 10}, {retries: 0}]
+    - [move_to, {x: 10, y: 10}, {retries: 0}]

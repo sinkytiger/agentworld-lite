@@ -1,0 +1,195 @@
+id: g07006
+name: 'Generated: nails (chain, depth 2)'
+category: crafting
+description: A generated chain supply chain of depth 2. Raw materials must be gathered,
+  processed by the right specialists and handed along until the goal is met.
+objectives:
+  primary: g07006_client must hold at least 20 nails.
+  secondary:
+  - Avoid wasted materials and redundant messages.
+max_rounds: 31
+agents:
+- username: g07006_smith
+  role: smith
+  spawn:
+  - 33
+  - 20
+  skills:
+    smithing: 10
+    health: 15
+  inventory:
+    apple: 3
+  equipment: []
+  restricted_tools:
+  - harvest_resource
+  role_brief: 'the anvil is at (33, 19); g07006_smith starts next to it. Your role
+    cannot use: harvest_resource.'
+- username: g07006_miner
+  role: miner
+  spawn:
+  - 49
+  - 6
+  skills:
+    mining: 9
+    health: 15
+  inventory:
+    apple: 3
+  equipment:
+  - pickaxe
+  role_brief: copper_rock nodes (copper_ore) are close to g07006_miner's start at
+    (49, 6). tin_rock nodes (tin_ore) are close to g07006_miner's start at (49, 6).
+- username: g07006_client
+  role: client
+  spawn:
+  - 31
+  - 27
+  skills:
+    health: 15
+  inventory:
+    apple: 3
+  equipment: []
+  restricted_tools:
+  - harvest_resource
+  - craft_item
+  role_brief: 'Your role cannot use: harvest_resource, craft_item.'
+extra_entities: []
+relevant_game_context: "Recipes:\n  bronze_bar: craft_item skill=smithing (lvl 1,\
+  \ near anvil) | 1x copper_ore + 1x tin_ore -> 1x bronze_bar\n  nails: craft_item\
+  \ skill=smithing (lvl 5, near anvil) | 1x bronze_bar -> 10x nails\nTeam:\n  g07006_smith\
+  \ (smith; smithing 10) crafts/builds bronze_bar, nails\n  g07006_miner (miner; mining\
+  \ 9) gathers copper_ore, tin_ore\n  g07006_client (client; no special skills) is\
+  \ the person the result is for"
+verifier:
+  success: all
+  checkpoints:
+  - name: nails
+    type: has_item
+    agent: g07006_client
+    item: nails
+    count: 20
+reference_solution:
+  g07006_smith:
+  - - craft_item
+    - skill: smithing
+      item_key: bronze_bar
+      count: 2
+    - until_have:
+        bronze_bar: 2
+      retries: 80
+  - - craft_item
+    - skill: smithing
+      item_key: nails
+      count: 2
+    - until_have:
+        nails: 20
+      retries: 80
+  - - move_to
+    - x: 31
+      y: 27
+    - until_near:
+      - 31
+      - 27
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07006_client
+      item: nails
+      count: 20
+    - retries: 80
+  g07006_miner:
+  - - harvest_resource
+    - target: copper_rock
+    - until_have:
+        copper_ore: 2
+      retries: 80
+  - - harvest_resource
+    - target: tin_rock
+    - until_have:
+        tin_ore: 2
+      retries: 80
+  - - move_to
+    - x: 33
+      y: 20
+    - until_near:
+      - 33
+      - 20
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07006_smith
+      item: copper_ore
+      count: 2
+    - retries: 80
+  - - transfer_items
+    - to_agent: g07006_smith
+      item: tin_ore
+      count: 2
+    - retries: 80
+  g07006_client: []
+world_guide: true
+generation:
+  params:
+    depth: 2
+    topology: chain
+    obfuscation: 0.56
+    quantity: 2
+    extra_agents: 0
+    seed: 602326
+  obfuscation_bucket: mid
+  blueprint:
+    target: nails
+    goal: deliver
+    goal_qty: 20
+    roles:
+      smith:
+        kind: craft
+        skills:
+          smithing: 10
+        gathers: {}
+        crafts:
+        - - bronze_bar
+          - 2
+        - - nails
+          - 2
+      miner:
+        kind: gather
+        skills:
+          mining: 9
+        gathers:
+          copper_ore: 2
+          tin_ore: 2
+        crafts: []
+      client:
+        kind: client
+        skills: {}
+        gathers: {}
+        crafts: []
+    deliveries:
+    - - miner
+      - smith
+      - copper_ore
+      - 2
+    - - miner
+      - smith
+      - tin_ore
+      - 2
+    - - smith
+      - client
+      - nails
+      - 20
+  ground_truth:
+    rounds: 12
+    actions: 34
+    useful_actions: 12
+    cce_rule: 0.353
+  repairs: []
+  axes:
+    handoffs: 3
+    max_handoff_distance: 16
+    rendezvous_travel: true
+    info_asymmetry: true
+    permission_asymmetry: true
+    station_constraint: true
+    team_size: 3
+    recipe_depth: 2
+    goal_quantity: 20

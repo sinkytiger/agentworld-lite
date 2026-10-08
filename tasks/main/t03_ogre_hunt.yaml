@@ -1,0 +1,69 @@
+id: t03_ogre_hunt
+name: Ogre Hunt
+category: combat
+description: >
+  An ogre camps just east of the village. It regenerates quickly, hits hard, and no single
+  hero can bring it down alone. Fighters must attack together while the cleric keeps them fed.
+objectives:
+  primary: Defeat the ogre (entity id ogre_boss).
+  secondary:
+    - Nobody gets knocked out.
+max_rounds: 25
+agents:
+  - username: t03_knight
+    role: knight (melee tank)
+    spawn: [37, 24]
+    skills: {strength: 30, health: 30}
+    inventory: {apple: 2}
+    equipment: [iron_sword, leatherarmor, leatherboots]
+  - username: t03_mage
+    role: mage (magic damage)
+    spawn: [36, 25]
+    skills: {magic: 30, strength: 9, health: 20}
+    inventory: {apple: 2}
+    equipment: [staff, leatherarmor]
+  - username: t03_ranger
+    role: ranger (ranged damage)
+    spawn: [37, 26]
+    skills: {fletching: 15, strength: 18, health: 20}
+    inventory: {apple: 2}
+    equipment: [bow, leatherboots]
+  - username: t03_cleric
+    role: cleric (healer / supplies)
+    spawn: [36, 23]
+    skills: {cooking: 15, health: 25}
+    inventory: {cooked_trout: 8, flask: 4}
+    role_brief: You carry the party's food. You are a poor fighter; hand food to teammates who are low on HP.
+extra_entities:
+  - {kind: mob, type: ogre, id: ogre_boss, pos: [42, 25], hp: 260, regen: 25, attack: 14}
+relevant_game_context: |
+  Ogre (ogre_boss) at (42,25): level 35, 260 HP, attack 14, defense 8. It regenerates 25 HP at the end of
+  every round, so damage must be concentrated in the same rounds. It does not attack unless attacked.
+  Combat: one attack_entity call = up to 4 hit exchanges. Your damage per hit = (1 + strength/3 + weapon attack
+  [+ magic/3 for a staff]) - target defense. Each exchange the ogre hits back for (14 - your defense).
+  attack_entity auto-disengages before a lethal hit, but attacking again at very low HP will get you knocked out.
+  Food: cooked_trout heals 35, flask heals 30, apple heals 10 (eat_food).
+verifier:
+  success: all
+  checkpoints:
+    - {name: "Ogre defeated", type: entity_defeated, entity: ogre_boss}
+reference_solution:
+  t03_knight:
+    - [attack_entity, {target: ogre_boss}]
+    - [attack_entity, {target: ogre_boss}]
+    - [attack_entity, {target: ogre_boss}]
+    - [attack_entity, {target: ogre_boss}]
+  t03_mage:
+    - [attack_entity, {target: ogre_boss}]
+    - [attack_entity, {target: ogre_boss}]
+    - [eat_food, {item: cooked_trout}]
+    - [attack_entity, {target: ogre_boss}]
+  t03_ranger:
+    - [attack_entity, {target: ogre_boss}]
+    - [attack_entity, {target: ogre_boss}]
+    - [eat_food, {item: cooked_trout}]
+    - [attack_entity, {target: ogre_boss}]
+  t03_cleric:
+    - [transfer_items, {to_agent: t03_mage, item: cooked_trout, count: 2}]
+    - [transfer_items, {to_agent: t03_ranger, item: cooked_trout, count: 2}]
+    - [transfer_items, {to_agent: t03_knight, item: cooked_trout, count: 2}]

@@ -1,0 +1,210 @@
+id: g07005
+name: 'Generated: leatherarmor (hub, depth 2)'
+category: crafting
+description: A generated hub supply chain of depth 2. Raw materials must be gathered,
+  processed by the right specialists and handed along until the goal is met.
+objectives:
+  primary: g07005_client (guard) must have a leatherarmor equipped.
+  secondary:
+  - Avoid wasted materials and redundant messages.
+max_rounds: 23
+agents:
+- username: g07005_artisan
+  role: artisan
+  spawn:
+  - 38
+  - 23
+  skills:
+    crafting: 15
+    health: 15
+  inventory:
+    apple: 3
+  equipment: []
+  restricted_tools:
+  - harvest_resource
+  role_brief: 'g07005_artisan (artisan; crafting 15) crafts/builds leather, string,
+    leatherarmor leather: craft_item skill=crafting (lvl 5) | 1x hide -> 1x leather
+    string: craft_item skill=crafting (lvl 1) | 2x flax -> 1x string leatherarmor:
+    craft_item skill=crafting (lvl 15) | 3x leather + 1x string -> 1x leatherarmor
+    Your role cannot use: harvest_resource.'
+- username: g07005_forager
+  role: forager
+  spawn:
+  - 25
+  - 2
+  skills:
+    foraging: 12
+    health: 15
+  inventory:
+    apple: 3
+  equipment: []
+  role_brief: g07005_forager (forager; foraging 12) gathers flax flax_patch nodes
+    (flax) are close to g07005_forager's start at (25, 2).
+- username: g07005_client
+  role: client
+  spawn:
+  - 36
+  - 25
+  skills:
+    strength: 15
+    health: 15
+  inventory:
+    apple: 3
+    hide: 3
+  equipment: []
+  restricted_tools:
+  - harvest_resource
+  - craft_item
+  role_brief: 'g07005_client (client; strength 15) is the person the result is for
+    You carry hides from an earlier hunt (3 hide); someone on the team will need it.
+    Your role cannot use: harvest_resource, craft_item.'
+extra_entities: []
+relevant_game_context: ''
+verifier:
+  success: all
+  checkpoints:
+  - name: leatherarmor equipped
+    type: equipped
+    agent: g07005_client
+    item: leatherarmor
+reference_solution:
+  g07005_artisan:
+  - - craft_item
+    - skill: crafting
+      item_key: leather
+      count: 3
+    - until_have:
+        leather: 3
+      retries: 80
+  - - craft_item
+    - skill: crafting
+      item_key: string
+      count: 1
+    - until_have:
+        string: 1
+      retries: 80
+  - - craft_item
+    - skill: crafting
+      item_key: leatherarmor
+      count: 1
+    - until_have:
+        leatherarmor: 1
+      retries: 80
+  - - move_to
+    - x: 36
+      y: 25
+    - until_near:
+      - 36
+      - 25
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07005_client
+      item: leatherarmor
+      count: 1
+    - retries: 80
+  g07005_forager:
+  - - harvest_resource
+    - target: flax_patch
+    - until_have:
+        flax: 2
+      retries: 80
+  - - move_to
+    - x: 38
+      y: 23
+    - until_near:
+      - 38
+      - 23
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07005_artisan
+      item: flax
+      count: 2
+    - retries: 80
+  g07005_client:
+  - - move_to
+    - x: 38
+      y: 23
+    - until_near:
+      - 38
+      - 23
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07005_artisan
+      item: hide
+      count: 3
+    - retries: 80
+  - - equip_item
+    - item: leatherarmor
+    - retries: 80
+world_guide: true
+generation:
+  params:
+    depth: 2
+    topology: hub
+    obfuscation: 0.8
+    quantity: 1
+    extra_agents: 1
+    seed: 488218
+  obfuscation_bucket: high
+  blueprint:
+    target: leatherarmor
+    goal: equip
+    goal_qty: 1
+    roles:
+      artisan:
+        kind: craft
+        skills:
+          crafting: 15
+        gathers: {}
+        crafts:
+        - - leather
+          - 3
+        - - string
+          - 1
+        - - leatherarmor
+          - 1
+      forager:
+        kind: gather
+        skills:
+          foraging: 12
+        gathers:
+          flax: 2
+        crafts: []
+      client:
+        kind: client
+        skills:
+          strength: 15
+        gathers: {}
+        crafts: []
+    deliveries:
+    - - artisan
+      - client
+      - leatherarmor
+      - 1
+    - - client
+      - artisan
+      - hide
+      - 3
+    - - forager
+      - artisan
+      - flax
+      - 2
+  ground_truth:
+    rounds: 8
+    actions: 24
+    useful_actions: 11
+    cce_rule: 0.458
+  repairs: []
+  axes:
+    handoffs: 3
+    max_handoff_distance: 21
+    rendezvous_travel: true
+    info_asymmetry: true
+    permission_asymmetry: true
+    station_constraint: false
+    team_size: 3
+    recipe_depth: 2
+    goal_quantity: 1

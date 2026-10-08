@@ -1,0 +1,172 @@
+id: g07002
+name: 'Generated: campfire (chain, depth 1)'
+category: construction
+description: A generated chain supply chain of depth 1. Raw materials must be gathered,
+  processed by the right specialists and handed along until the goal is met.
+objectives:
+  primary: Build a campfire within 4 tiles of (40, 11).
+  secondary:
+  - Avoid wasted materials and redundant messages.
+max_rounds: 20
+agents:
+- username: g07002_crafter
+  role: crafter
+  spawn:
+  - 40
+  - 11
+  skills:
+    crafting: 5
+    health: 15
+  inventory:
+    apple: 3
+  equipment: []
+  restricted_tools:
+  - harvest_resource
+  role_brief: 'g07002_crafter (crafter; crafting 5) crafts/builds campfire campfire:
+    build_structure (crafting lvl 1) | 3x logs Your role cannot use: harvest_resource.'
+- username: g07002_lumberjack
+  role: lumberjack
+  spawn:
+  - 8
+  - 36
+  skills:
+    lumberjacking: 11
+    health: 15
+  inventory:
+    apple: 3
+  equipment:
+  - axe
+  role_brief: g07002_lumberjack (lumberjack; lumberjacking 11) gathers logs tree nodes
+    (logs) are close to g07002_lumberjack's start at (8, 36).
+- username: g07002_lumberjack2
+  role: lumberjack2
+  spawn:
+  - 8
+  - 6
+  skills:
+    lumberjacking: 11
+    health: 15
+  inventory:
+    apple: 3
+  equipment:
+  - axe
+  role_brief: g07002_lumberjack2 (lumberjack2; lumberjacking 11) gathers logs tree
+    nodes (logs) are close to g07002_lumberjack2's start at (8, 6).
+extra_entities: []
+relevant_game_context: ''
+verifier:
+  success: all
+  checkpoints:
+  - name: campfire
+    type: structure
+    structure: campfire
+    count: 1
+    near:
+    - 40
+    - 11
+    radius: 4
+reference_solution:
+  g07002_crafter:
+  - - build_structure
+    - structure: campfire
+    - retries: 80
+  g07002_lumberjack:
+  - - harvest_resource
+    - target: tree
+    - until_have:
+        logs: 2
+      retries: 80
+  - - move_to
+    - x: 40
+      y: 11
+    - until_near:
+      - 40
+      - 11
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07002_crafter
+      item: logs
+      count: 2
+    - retries: 80
+  g07002_lumberjack2:
+  - - harvest_resource
+    - target: tree
+    - until_have:
+        logs: 1
+      retries: 80
+  - - move_to
+    - x: 40
+      y: 11
+    - until_near:
+      - 40
+      - 11
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07002_crafter
+      item: logs
+      count: 1
+    - retries: 80
+world_guide: true
+generation:
+  params:
+    depth: 1
+    topology: chain
+    obfuscation: 0.83
+    quantity: 3
+    extra_agents: 1
+    seed: 415949
+  obfuscation_bucket: high
+  blueprint:
+    target: campfire
+    goal: structure
+    goal_qty: 1
+    roles:
+      crafter:
+        kind: craft
+        skills:
+          crafting: 5
+        gathers: {}
+        crafts:
+        - - campfire
+          - 1
+      lumberjack:
+        kind: gather
+        skills:
+          lumberjacking: 11
+        gathers:
+          logs: 2
+        crafts: []
+      lumberjack2:
+        kind: gather
+        skills:
+          lumberjacking: 11
+        gathers:
+          logs: 1
+        crafts: []
+    deliveries:
+    - - lumberjack
+      - crafter
+      - logs
+      - 2
+    - - lumberjack2
+      - crafter
+      - logs
+      - 1
+  ground_truth:
+    rounds: 7
+    actions: 19
+    useful_actions: 12
+    cce_rule: 0.632
+  repairs: []
+  axes:
+    handoffs: 2
+    max_handoff_distance: 32
+    rendezvous_travel: true
+    info_asymmetry: true
+    permission_asymmetry: true
+    station_constraint: false
+    team_size: 3
+    recipe_depth: 1
+    goal_quantity: 1

@@ -1,0 +1,60 @@
+id: t05_lost_shrine
+name: The Lost Shrine
+category: exploration
+description: >
+  An ancient shrine is hidden in the southern half of the western forest. Only a trained tracker
+  can spot it. The whole party must find it and gather there to perform the ritual.
+objectives:
+  primary: All three party members must stand within 2 tiles of the ancient shrine at the same time.
+  secondary:
+    - Avoid the wolves on the way.
+max_rounds: 25
+agents:
+  - username: t05_scout
+    role: scout / tracker
+    spawn: [30, 26]
+    skills: {foraging: 25, health: 15}
+    view_radius: 10
+    inventory: {apple: 4}
+    role_brief: You are the only one who can see the shrine (it requires foraging 20+). Find it and tell the others its exact coordinates.
+  - username: t05_priest
+    role: priest
+    spawn: [31, 27]
+    skills: {magic: 15, health: 15}
+    inventory: {apple: 4}
+  - username: t05_guard
+    role: guard
+    spawn: [29, 27]
+    skills: {strength: 20, health: 25}
+    inventory: {apple: 4}
+    equipment: [bronze_sword, leatherarmor]
+extra_entities:
+  - {kind: landmark, type: ancient_shrine, id: ancient_shrine, pos: [4, 44], reveal: {foraging: 20}}
+relevant_game_context: |
+  Legends say the shrine is somewhere in the southern half of the western forest (x 0-20, y 30-47).
+  It is only visible to agents with foraging 20 or more. scan_area surveys twice your view radius.
+  The lake (x22-44, y35-46) blocks the direct route south-west; walk around its north-west corner.
+  Wolves (aggressive, radius 2) roam the eastern forest around (13-20, 10-28).
+verifier:
+  success: all
+  checkpoints:
+    - {name: "Party at shrine", type: near, agents: all, pos: [4, 44], radius: 2}
+reference_solution:
+  t05_scout:
+    - [move_to, {x: 20, y: 32}]
+    - [move_to, {x: 10, y: 40}]
+    - [scan_area, {}]
+    - [send_chat, {to: all, message: "Shrine found at (4,44). Everyone meet me there."}]
+    - [move_to, {x: 4, y: 43}]
+  t05_priest:
+    - [move_to, {x: 21, y: 33}]
+    - [move_to, {x: 11, y: 41}]
+    - [wait, {reason: waiting for the scout}]
+    - [wait, {reason: waiting for the scout}]
+    - [move_to, {x: 5, y: 44}]
+  t05_guard:
+    - [move_to, {x: 21, y: 32}]
+    - [move_to, {x: 11, y: 40}]
+    - [wait, {reason: waiting for the scout}]
+    - [wait, {reason: waiting for the scout}]
+    - [move_to, {x: 4, y: 45}]

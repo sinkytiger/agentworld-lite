@@ -1,0 +1,76 @@
+id: t06_wolf_siege
+name: Wolf Siege
+category: survival
+description: >
+  The party's forest camp is surrounded by a wolf pack. Hold the camp until dawn: light a
+  campfire, keep everyone fed, and fight off the wolves. Nobody may fall.
+objectives:
+  primary: Survive 10 full rounds with no one knocked out, with a campfire built at the camp and everyone within 4 tiles of the camp (12,20) at the end.
+  secondary:
+    - Kill wolves to reduce incoming damage.
+max_rounds: 14
+agents:
+  - username: t06_hunter
+    role: hunter (fighter)
+    spawn: [12, 19]
+    skills: {strength: 24, health: 20}
+    inventory: {apple: 1}
+    equipment: [bronze_sword, leatherarmor, leatherboots]
+  - username: t06_cook
+    role: cook
+    spawn: [11, 21]
+    skills: {cooking: 20, crafting: 5, health: 12}
+    inventory: {logs: 3, trout: 6}
+    role_brief: You carry logs for a campfire and raw trout. Trout must be cooked at a campfire (cooking 15) before it heals.
+  - username: t06_gatherer
+    role: gatherer
+    spawn: [13, 21]
+    skills: {foraging: 15, health: 12}
+    inventory: {apple: 1}
+extra_entities:
+  - {kind: mob, type: wolf, id: wolf_north, pos: [12, 17], aggro_radius: 3}
+  - {kind: mob, type: wolf, id: wolf_west, pos: [9, 20], aggro_radius: 3}
+  - {kind: mob, type: wolf, id: wolf_east, pos: [15, 21], aggro_radius: 3}
+relevant_game_context: |
+  Camp center: (12,20). Wolves (level 10, 50 HP, attack 7, defense 3) are aggressive: at the end of every
+  round each wolf bites the nearest party member within 3 tiles for (7 - defense) damage. Killed wolves
+  respawn after 10 rounds.
+  Recipes: campfire = build_structure (crafting 1) | 3x logs (provides a cooking fire).
+  cooked_trout: craft_item skill=cooking item_key=cooked_trout (cooking lvl 15, near a fire) | 1x trout -> 1x cooked_trout (heals 35).
+  Berry bushes (berries heal 5) grow nearby, e.g. (11,24), (13,23), (15,18).
+  The objective is checked continuously: once 10 rounds are completed with nobody knocked out, a campfire
+  within 4 tiles of (12,20), and everyone within 4 tiles of the camp, the task is complete.
+verifier:
+  success: all
+  checkpoints:
+    - {name: "Rounds survived", type: rounds_survived, rounds: 10}
+    - {name: "All alive", type: all_alive}
+    - {name: "Campfire", type: structure, structure: campfire, near: [12, 20], radius: 4}
+    - {name: "At camp", type: near, agents: all, pos: [12, 20], radius: 4}
+reference_solution:
+  t06_hunter:
+    - [attack_entity, {target: wolf_east}]
+    - [attack_entity, {target: wolf_east}]
+    - [attack_entity, {target: wolf_north}]
+    - [attack_entity, {target: wolf_north}]
+    - [eat_food, {item: cooked_trout}, {retries: 3}]
+    - [attack_entity, {target: wolf_west}]
+    - [attack_entity, {target: wolf_west}]
+    - [eat_food, {item: cooked_trout}, {retries: 3}]
+    - [move_to, {x: 12, y: 21}]
+  t06_cook:
+    - [build_structure, {structure: campfire}]
+    - [craft_item, {skill: cooking, item_key: cooked_trout, count: 6}]
+    - [transfer_items, {to_agent: t06_hunter, item: cooked_trout, count: 2}]
+    - [transfer_items, {to_agent: t06_gatherer, item: cooked_trout, count: 1}]
+    - [eat_food, {item: cooked_trout}]
+    - [eat_food, {item: cooked_trout}]
+    - [move_to, {x: 11, y: 21}]
+  t06_gatherer:
+    - [move_to, {x: 13, y: 23}]
+    - [harvest_resource, {target: berry_bush}]
+    - [eat_food, {item: berries}]
+    - [eat_food, {item: cooked_trout}, {retries: 3}]
+    - [harvest_resource, {target: berry_bush}]
+    - [eat_food, {item: berries}]
+    - [move_to, {x: 12, y: 22}]

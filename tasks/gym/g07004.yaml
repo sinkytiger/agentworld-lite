@@ -1,0 +1,310 @@
+id: g07004
+name: 'Generated: watchtower (chain, depth 3)'
+category: construction
+description: A generated chain supply chain of depth 3. Raw materials must be gathered,
+  processed by the right specialists and handed along until the goal is met.
+objectives:
+  primary: Build a watchtower within 4 tiles of (40, 11).
+  secondary:
+  - Avoid wasted materials and redundant messages.
+max_rounds: 46
+agents:
+- username: g07004_smith
+  role: smith
+  spawn:
+  - 33
+  - 20
+  skills:
+    smithing: 21
+    health: 15
+  inventory:
+    apple: 3
+  equipment: []
+  restricted_tools:
+  - harvest_resource
+  role_brief: 'the anvil is at (33, 19); g07004_smith starts next to it. Your role
+    cannot use: harvest_resource.'
+- username: g07004_crafter
+  role: crafter
+  spawn:
+  - 40
+  - 11
+  skills:
+    crafting: 20
+    health: 15
+  inventory:
+    apple: 3
+  equipment: []
+  restricted_tools:
+  - harvest_resource
+  role_brief: 'Your role cannot use: harvest_resource.'
+- username: g07004_miner
+  role: miner
+  spawn:
+  - 54
+  - 8
+  skills:
+    mining: 24
+    health: 15
+  inventory:
+    apple: 3
+  equipment:
+  - pickaxe
+  role_brief: coal_rock nodes (coal) are close to g07004_miner's start at (54, 8).
+    copper_rock nodes (copper_ore) are close to g07004_miner's start at (54, 8). iron_rock
+    nodes (iron_ore) are close to g07004_miner's start at (54, 8). tin_rock nodes
+    (tin_ore) are close to g07004_miner's start at (54, 8).
+- username: g07004_lumberjack
+  role: lumberjack
+  spawn:
+  - 19
+  - 8
+  skills:
+    lumberjacking: 5
+    health: 15
+  inventory:
+    apple: 3
+  equipment:
+  - axe
+  role_brief: tree nodes (logs) are close to g07004_lumberjack's start at (19, 8).
+extra_entities: []
+relevant_game_context: "Recipes:\n  bronze_bar: craft_item skill=smithing (lvl 1,\
+  \ near anvil) | 1x copper_ore + 1x tin_ore -> 1x bronze_bar\n  iron_bar: craft_item\
+  \ skill=smithing (lvl 15, near anvil) | 1x iron_ore + 1x coal -> 1x iron_bar\n \
+  \ plank: craft_item skill=crafting (lvl 5) | 2x logs -> 1x plank\n  nails: craft_item\
+  \ skill=smithing (lvl 5, near anvil) | 1x bronze_bar -> 10x nails\n  watchtower:\
+  \ build_structure (crafting lvl 20) | 6x plank + 20x nails + 2x iron_bar\nTeam:\n\
+  \  g07004_smith (smith; smithing 21) crafts/builds bronze_bar, iron_bar, nails\n\
+  \  g07004_crafter (crafter; crafting 20) crafts/builds plank, watchtower\n  g07004_miner\
+  \ (miner; mining 24) gathers coal, copper_ore, iron_ore, tin_ore\n  g07004_lumberjack\
+  \ (lumberjack; lumberjacking 5) gathers logs"
+verifier:
+  success: all
+  checkpoints:
+  - name: watchtower
+    type: structure
+    structure: watchtower
+    count: 1
+    near:
+    - 40
+    - 11
+    radius: 4
+reference_solution:
+  g07004_smith:
+  - - craft_item
+    - skill: smithing
+      item_key: bronze_bar
+      count: 2
+    - until_have:
+        bronze_bar: 2
+      retries: 80
+  - - craft_item
+    - skill: smithing
+      item_key: iron_bar
+      count: 2
+    - until_have:
+        iron_bar: 2
+      retries: 80
+  - - craft_item
+    - skill: smithing
+      item_key: nails
+      count: 2
+    - until_have:
+        nails: 20
+      retries: 80
+  - - move_to
+    - x: 40
+      y: 11
+    - until_near:
+      - 40
+      - 11
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07004_crafter
+      item: iron_bar
+      count: 2
+    - retries: 80
+  - - transfer_items
+    - to_agent: g07004_crafter
+      item: nails
+      count: 20
+    - retries: 80
+  g07004_crafter:
+  - - craft_item
+    - skill: crafting
+      item_key: plank
+      count: 6
+    - until_have:
+        plank: 6
+      retries: 80
+  - - build_structure
+    - structure: watchtower
+    - retries: 80
+  g07004_miner:
+  - - harvest_resource
+    - target: coal_rock
+    - until_have:
+        coal: 2
+      retries: 80
+  - - harvest_resource
+    - target: copper_rock
+    - until_have:
+        copper_ore: 2
+      retries: 80
+  - - harvest_resource
+    - target: iron_rock
+    - until_have:
+        iron_ore: 2
+      retries: 80
+  - - harvest_resource
+    - target: tin_rock
+    - until_have:
+        tin_ore: 2
+      retries: 80
+  - - move_to
+    - x: 33
+      y: 20
+    - until_near:
+      - 33
+      - 20
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07004_smith
+      item: coal
+      count: 2
+    - retries: 80
+  - - transfer_items
+    - to_agent: g07004_smith
+      item: copper_ore
+      count: 2
+    - retries: 80
+  - - transfer_items
+    - to_agent: g07004_smith
+      item: iron_ore
+      count: 2
+    - retries: 80
+  - - transfer_items
+    - to_agent: g07004_smith
+      item: tin_ore
+      count: 2
+    - retries: 80
+  g07004_lumberjack:
+  - - harvest_resource
+    - target: tree
+    - until_have:
+        logs: 12
+      retries: 80
+  - - move_to
+    - x: 40
+      y: 11
+    - until_near:
+      - 40
+      - 11
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07004_crafter
+      item: logs
+      count: 12
+    - retries: 80
+world_guide: true
+generation:
+  params:
+    depth: 3
+    topology: chain
+    obfuscation: 0.52
+    quantity: 2
+    extra_agents: 0
+    seed: 574351
+  obfuscation_bucket: mid
+  blueprint:
+    target: watchtower
+    goal: structure
+    goal_qty: 1
+    roles:
+      smith:
+        kind: craft
+        skills:
+          smithing: 21
+        gathers: {}
+        crafts:
+        - - bronze_bar
+          - 2
+        - - iron_bar
+          - 2
+        - - nails
+          - 2
+      crafter:
+        kind: craft
+        skills:
+          crafting: 20
+        gathers: {}
+        crafts:
+        - - plank
+          - 6
+        - - watchtower
+          - 1
+      miner:
+        kind: gather
+        skills:
+          mining: 24
+        gathers:
+          coal: 2
+          copper_ore: 2
+          iron_ore: 2
+          tin_ore: 2
+        crafts: []
+      lumberjack:
+        kind: gather
+        skills:
+          lumberjacking: 5
+        gathers:
+          logs: 12
+        crafts: []
+    deliveries:
+    - - lumberjack
+      - crafter
+      - logs
+      - 12
+    - - miner
+      - smith
+      - coal
+      - 2
+    - - miner
+      - smith
+      - copper_ore
+      - 2
+    - - miner
+      - smith
+      - iron_ore
+      - 2
+    - - miner
+      - smith
+      - tin_ore
+      - 2
+    - - smith
+      - crafter
+      - iron_bar
+      - 2
+    - - smith
+      - crafter
+      - nails
+      - 20
+  ground_truth:
+    rounds: 18
+    actions: 70
+    useful_actions: 35
+    cce_rule: 0.5
+  repairs: []
+  axes:
+    handoffs: 7
+    max_handoff_distance: 21
+    rendezvous_travel: true
+    info_asymmetry: true
+    permission_asymmetry: true
+    station_constraint: true
+    team_size: 4
+    recipe_depth: 3
+    goal_quantity: 1

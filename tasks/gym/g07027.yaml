@@ -1,0 +1,221 @@
+id: g07027
+name: 'Generated: bronze bar (chain, depth 1)'
+category: crafting
+description: A generated chain supply chain of depth 1. Raw materials must be gathered,
+  processed by the right specialists and handed along until the goal is met.
+objectives:
+  primary: g07027_client must hold at least 3 bronze_bar.
+  secondary:
+  - Avoid wasted materials and redundant messages.
+max_rounds: 26
+agents:
+- username: g07027_smith
+  role: smith
+  spawn:
+  - 33
+  - 20
+  skills:
+    smithing: 6
+    health: 15
+  inventory:
+    apple: 3
+  equipment: []
+  restricted_tools:
+  - harvest_resource
+  role_brief: 'g07027_smith (smith; smithing 6) crafts/builds bronze_bar bronze_bar:
+    craft_item skill=smithing (lvl 1, near anvil) | 1x copper_ore + 1x tin_ore ->
+    1x bronze_bar the anvil is at (33, 19); g07027_smith starts next to it. Your role
+    cannot use: harvest_resource.'
+- username: g07027_miner
+  role: miner
+  spawn:
+  - 47
+  - 6
+  skills:
+    mining: 8
+    health: 15
+  inventory:
+    apple: 3
+  equipment:
+  - pickaxe
+  restricted_tools:
+  - craft_item
+  role_brief: 'g07027_miner (miner; mining 8) gathers copper_ore copper_rock nodes
+    (copper_ore) are close to g07027_miner''s start at (47, 6). Your role cannot use:
+    craft_item.'
+- username: g07027_client
+  role: client
+  spawn:
+  - 28
+  - 23
+  skills:
+    health: 15
+  inventory:
+    apple: 3
+  equipment: []
+  restricted_tools:
+  - harvest_resource
+  - craft_item
+  role_brief: 'g07027_client (client; no special skills) is the person the result
+    is for Your role cannot use: harvest_resource, craft_item.'
+- username: g07027_miner2
+  role: miner2
+  spawn:
+  - 52
+  - 14
+  skills:
+    mining: 8
+    health: 15
+  inventory:
+    apple: 3
+  equipment:
+  - pickaxe
+  restricted_tools:
+  - craft_item
+  role_brief: 'g07027_miner2 (miner2; mining 8) gathers tin_ore tin_rock nodes (tin_ore)
+    are close to g07027_miner2''s start at (52, 14). Your role cannot use: craft_item.'
+extra_entities: []
+relevant_game_context: ''
+verifier:
+  success: all
+  checkpoints:
+  - name: bronze_bar
+    type: has_item
+    agent: g07027_client
+    item: bronze_bar
+    count: 3
+reference_solution:
+  g07027_smith:
+  - - craft_item
+    - skill: smithing
+      item_key: bronze_bar
+      count: 3
+    - until_have:
+        bronze_bar: 3
+      retries: 80
+  - - move_to
+    - x: 28
+      y: 23
+    - until_near:
+      - 28
+      - 23
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07027_client
+      item: bronze_bar
+      count: 3
+    - retries: 80
+  g07027_miner:
+  - - harvest_resource
+    - target: copper_rock
+    - until_have:
+        copper_ore: 3
+      retries: 80
+  - - move_to
+    - x: 33
+      y: 20
+    - until_near:
+      - 33
+      - 20
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07027_smith
+      item: copper_ore
+      count: 3
+    - retries: 80
+  g07027_client: []
+  g07027_miner2:
+  - - harvest_resource
+    - target: tin_rock
+    - until_have:
+        tin_ore: 3
+      retries: 80
+  - - move_to
+    - x: 33
+      y: 20
+    - until_near:
+      - 33
+      - 20
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07027_smith
+      item: tin_ore
+      count: 3
+    - retries: 80
+world_guide: true
+generation:
+  params:
+    depth: 1
+    topology: chain
+    obfuscation: 0.85
+    quantity: 3
+    extra_agents: 1
+    seed: 495179
+  obfuscation_bucket: high
+  blueprint:
+    target: bronze_bar
+    goal: deliver
+    goal_qty: 3
+    roles:
+      smith:
+        kind: craft
+        skills:
+          smithing: 6
+        gathers: {}
+        crafts:
+        - - bronze_bar
+          - 3
+      miner:
+        kind: gather
+        skills:
+          mining: 8
+        gathers:
+          copper_ore: 3
+        crafts: []
+      client:
+        kind: client
+        skills: {}
+        gathers: {}
+        crafts: []
+      miner2:
+        kind: gather
+        skills:
+          mining: 8
+        gathers:
+          tin_ore: 3
+        crafts: []
+    deliveries:
+    - - miner
+      - smith
+      - copper_ore
+      - 3
+    - - miner2
+      - smith
+      - tin_ore
+      - 3
+    - - smith
+      - client
+      - bronze_bar
+      - 3
+  ground_truth:
+    rounds: 9
+    actions: 33
+    useful_actions: 14
+    cce_rule: 0.424
+  repairs:
+  - permission_tightening:
+    - g07027_miner
+    - g07027_miner2
+  axes:
+    handoffs: 3
+    max_handoff_distance: 19
+    rendezvous_travel: true
+    info_asymmetry: true
+    permission_asymmetry: true
+    station_constraint: true
+    team_size: 4
+    recipe_depth: 1
+    goal_quantity: 3

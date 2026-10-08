@@ -1,0 +1,51 @@
+id: t01_magic_staff
+name: Cooperative Magic Staff Crafting
+category: crafting
+description: >
+  The party wizard needs a magic staff before the expedition. Logs must be chopped,
+  turned into sticks by a fletcher, and combined with the wizard's bead into a staff.
+objectives:
+  primary: The wizard (t01_wizard) must have a staff equipped.
+  secondary:
+    - Finish without wasting materials.
+max_rounds: 25
+agents:
+  - username: t01_lumberjack
+    role: lumberjack
+    spawn: [12, 22]
+    skills: {lumberjacking: 25, strength: 15, health: 20}
+    inventory: {apple: 5}
+    equipment: [axe, leatherboots]
+  - username: t01_woodworker
+    role: woodworker
+    spawn: [16, 24]
+    skills: {fletching: 15, crafting: 10, health: 15}
+    inventory: {apple: 5}
+    equipment: [leatherboots]
+  - username: t01_wizard
+    role: wizard
+    spawn: [20, 25]
+    skills: {crafting: 15, magic: 25, health: 25}
+    inventory: {flask: 3, bead: 1}
+    equipment: [leatherarmor, leatherboots]
+relevant_game_context: |
+  Crafting recipes:
+    stick: craft_item skill=fletching item_key=stick (fletching lvl 5) | 1x logs -> 4x stick
+    staff: craft_item skill=crafting item_key=staff (crafting lvl 10) | 5x stick + 1x bead -> 1x staff
+  Equipping a staff requires magic level 20.
+  Trees (need an axe + lumberjacking) grow throughout the western forest; several are close to your spawn.
+  A lumberjack with lumberjacking >= 21 gets 2 logs per harvest.
+verifier:
+  success: all
+  checkpoints:
+    - {name: "Staff equipped by wizard", type: equipped, agent: t01_wizard, item: staff}
+reference_solution:
+  t01_lumberjack:
+    - [harvest_resource, {target: tree}]
+    - [transfer_items, {to_agent: t01_woodworker, item: logs, count: 2}]
+  t01_woodworker:
+    - [craft_item, {skill: fletching, item_key: stick, count: 2}, {retries: 10}]
+    - [transfer_items, {to_agent: t01_wizard, item: stick, count: 5}]
+  t01_wizard:
+    - [craft_item, {skill: crafting, item_key: staff, count: 1}, {retries: 12}]
+    - [equip_item, {item: staff}]

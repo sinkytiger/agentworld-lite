@@ -1,0 +1,190 @@
+id: g07000
+name: 'Generated: bronze bar (hub, depth 1)'
+category: crafting
+description: A generated hub supply chain of depth 1. Raw materials must be gathered,
+  processed by the right specialists and handed along until the goal is met.
+objectives:
+  primary: g07000_client must hold at least 1 bronze_bar.
+  secondary:
+  - Avoid wasted materials and redundant messages.
+max_rounds: 22
+agents:
+- username: g07000_artisan
+  role: artisan
+  spawn:
+  - 33
+  - 20
+  skills:
+    smithing: 3
+    health: 15
+  inventory:
+    apple: 3
+  equipment: []
+  restricted_tools:
+  - harvest_resource
+  role_brief: 'the anvil is at (33, 19); g07000_artisan starts next to it. Your role
+    cannot use: harvest_resource.'
+- username: g07000_miner
+  role: miner
+  spawn:
+  - 53
+  - 6
+  skills:
+    mining: 12
+    health: 15
+  inventory:
+    apple: 3
+  equipment:
+  - pickaxe
+  restricted_tools:
+  - craft_item
+  role_brief: 'copper_rock nodes (copper_ore) are close to g07000_miner''s start at
+    (53, 6). tin_rock nodes (tin_ore) are close to g07000_miner''s start at (53, 6).
+    Your role cannot use: craft_item.'
+- username: g07000_client
+  role: client
+  spawn:
+  - 37
+  - 28
+  skills:
+    health: 15
+  inventory:
+    apple: 3
+  equipment: []
+  restricted_tools:
+  - harvest_resource
+  - craft_item
+  role_brief: 'Your role cannot use: harvest_resource, craft_item.'
+extra_entities: []
+relevant_game_context: "Recipes:\n  bronze_bar: craft_item skill=smithing (lvl 1,\
+  \ near anvil) | 1x copper_ore + 1x tin_ore -> 1x bronze_bar\nTeam:\n  g07000_artisan\
+  \ (artisan; smithing 3) crafts/builds bronze_bar\n  g07000_miner (miner; mining\
+  \ 12) gathers copper_ore, tin_ore\n  g07000_client (client; no special skills) is\
+  \ the person the result is for"
+verifier:
+  success: all
+  checkpoints:
+  - name: bronze_bar
+    type: has_item
+    agent: g07000_client
+    item: bronze_bar
+    count: 1
+reference_solution:
+  g07000_artisan:
+  - - craft_item
+    - skill: smithing
+      item_key: bronze_bar
+      count: 1
+    - until_have:
+        bronze_bar: 1
+      retries: 80
+  - - move_to
+    - x: 37
+      y: 28
+    - until_near:
+      - 37
+      - 28
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07000_client
+      item: bronze_bar
+      count: 1
+    - retries: 80
+  g07000_miner:
+  - - harvest_resource
+    - target: copper_rock
+    - until_have:
+        copper_ore: 1
+      retries: 80
+  - - harvest_resource
+    - target: tin_rock
+    - until_have:
+        tin_ore: 1
+      retries: 80
+  - - move_to
+    - x: 33
+      y: 20
+    - until_near:
+      - 33
+      - 20
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07000_artisan
+      item: copper_ore
+      count: 1
+    - retries: 80
+  - - transfer_items
+    - to_agent: g07000_artisan
+      item: tin_ore
+      count: 1
+    - retries: 80
+  g07000_client: []
+world_guide: true
+generation:
+  params:
+    depth: 1
+    topology: hub
+    obfuscation: 0.41
+    quantity: 1
+    extra_agents: 0
+    seed: 60816
+  obfuscation_bucket: mid
+  blueprint:
+    target: bronze_bar
+    goal: deliver
+    goal_qty: 1
+    roles:
+      artisan:
+        kind: craft
+        skills:
+          smithing: 3
+        gathers: {}
+        crafts:
+        - - bronze_bar
+          - 1
+      miner:
+        kind: gather
+        skills:
+          mining: 12
+        gathers:
+          copper_ore: 1
+          tin_ore: 1
+        crafts: []
+      client:
+        kind: client
+        skills: {}
+        gathers: {}
+        crafts: []
+    deliveries:
+    - - artisan
+      - client
+      - bronze_bar
+      - 1
+    - - miner
+      - artisan
+      - copper_ore
+      - 1
+    - - miner
+      - artisan
+      - tin_ore
+      - 1
+  ground_truth:
+    rounds: 9
+    actions: 25
+    useful_actions: 9
+    cce_rule: 0.36
+  repairs:
+  - permission_tightening:
+    - g07000_miner
+  axes:
+    handoffs: 3
+    max_handoff_distance: 20
+    rendezvous_travel: true
+    info_asymmetry: true
+    permission_asymmetry: true
+    station_constraint: true
+    team_size: 3
+    recipe_depth: 1
+    goal_quantity: 1

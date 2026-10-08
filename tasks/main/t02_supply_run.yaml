@@ -1,0 +1,72 @@
+id: t02_supply_run
+name: Village Supply Run
+category: gathering
+description: >
+  The village quartermaster is stocking up for winter. Gatherers in the forest and the
+  mines must collect raw materials and deliver them to the quartermaster in the village.
+objectives:
+  primary: The quartermaster (t02_quartermaster) must hold at least 8 logs, 4 copper_ore and 4 tin_ore.
+  secondary:
+    - Deliver in as few trips as possible.
+max_rounds: 30
+agents:
+  - username: t02_lumberjack
+    role: lumberjack
+    spawn: [13, 9]
+    skills: {lumberjacking: 10, strength: 10, health: 15}
+    inventory: {apple: 4}
+    equipment: [axe]
+  - username: t02_miner
+    role: miner
+    spawn: [47, 9]
+    skills: {mining: 10, strength: 10, health: 15}
+    inventory: {apple: 4}
+    equipment: [pickaxe]
+  - username: t02_quartermaster
+    role: quartermaster
+    spawn: [30, 24]
+    skills: {health: 15}
+    inventory: {apple: 2}
+    restricted_tools: [harvest_resource]
+    role_brief: You keep the ledger and cannot gather resources yourself. Receive deliveries from the gatherers.
+relevant_game_context: |
+  Harvesting yields 1 unit per call at these skill levels. Trees give logs (axe), copper_rock gives
+  copper_ore and tin_rock gives tin_ore (pickaxe). Each node can be harvested a few times, then it
+  respawns later; harvest_resource with a type name picks the nearest available node.
+  Trees grow in the north-western forest around (2-20, 6-16). Copper rocks are in the north-west of
+  the mines (42-52, 2-9); tin rocks just south of them (42-52, 10-17).
+  Items are handed over with transfer_items (both agents within 2 tiles).
+verifier:
+  success: all
+  checkpoints:
+    - {name: "Logs", type: has_item, agent: t02_quartermaster, item: logs, count: 8}
+    - {name: "Copper ore", type: has_item, agent: t02_quartermaster, item: copper_ore, count: 4}
+    - {name: "Tin ore", type: has_item, agent: t02_quartermaster, item: tin_ore, count: 4}
+reference_solution:
+  t02_lumberjack:
+    - [harvest_resource, {target: tree}]
+    - [harvest_resource, {target: tree}]
+    - [harvest_resource, {target: tree}]
+    - [harvest_resource, {target: tree}]
+    - [harvest_resource, {target: tree}]
+    - [harvest_resource, {target: tree}]
+    - [harvest_resource, {target: tree}]
+    - [harvest_resource, {target: tree}]
+    - [move_to, {x: 24, y: 17}]
+    - [move_to, {x: 28, y: 22}]
+    - [transfer_items, {to_agent: t02_quartermaster, item: logs, count: 8}]
+  t02_miner:
+    - [harvest_resource, {target: copper_rock}]
+    - [harvest_resource, {target: copper_rock}]
+    - [harvest_resource, {target: copper_rock}]
+    - [harvest_resource, {target: copper_rock}]
+    - [harvest_resource, {target: tin_rock}]
+    - [harvest_resource, {target: tin_rock}]
+    - [harvest_resource, {target: tin_rock}]
+    - [harvest_resource, {target: tin_rock}]
+    - [move_to, {x: 38, y: 20}]
+    - [move_to, {x: 31, y: 23}]
+    - [transfer_items, {to_agent: t02_quartermaster, item: copper_ore, count: 4}]
+    - [transfer_items, {to_agent: t02_quartermaster, item: tin_ore, count: 4}]
+  t02_quartermaster:
+    - [wait, {reason: waiting for deliveries}]

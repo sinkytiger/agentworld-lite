@@ -1,0 +1,58 @@
+id: t04_market_day
+name: Market Day
+category: trading
+description: >
+  The knight needs an iron sword from the blacksmith (90 coins), but the party's coins are split
+  across three people and only the merchant is licensed to trade with NPC shops.
+objectives:
+  primary: The knight (t04_knight) must have an iron_sword equipped.
+  secondary:
+    - Keep any leftover coins with the merchant.
+max_rounds: 30
+agents:
+  - username: t04_merchant
+    role: merchant (the only one who may trade with shops)
+    spawn: [29, 22]
+    skills: {health: 15}
+    inventory: {coins: 30, apple: 2}
+  - username: t04_knight
+    role: knight
+    spawn: [35, 27]
+    skills: {strength: 20, health: 25}
+    inventory: {coins: 30, apple: 2}
+    equipment: [bronze_sword, leatherarmor]
+    restricted_tools: [buy_item, sell_item]
+  - username: t04_miner
+    role: miner
+    spawn: [56, 11]
+    skills: {mining: 20, strength: 10, health: 15}
+    inventory: {coins: 10, apple: 2}
+    equipment: [pickaxe]
+    restricted_tools: [buy_item, sell_item]
+    role_brief: Iron ore sells for 8 coins at the blacksmith. Iron rocks are right next to you (east mines).
+relevant_game_context: |
+  Shops (village): blacksmith (31,19) sells iron_sword for 90 coins and buys iron_ore for 8, copper_ore for 3,
+  tin_ore for 3, coal for 5. general_store (27,19) buys logs 1, shrimp 2, hide 5, bone 3.
+  Only the merchant is allowed to buy or sell; everyone else must hand coins and goods to the merchant.
+  Coins are an item called "coins" and can be transferred like any other item (transfer_items).
+  iron_rock needs mining 15 and a pickaxe. iron_sword requires strength 15 to equip.
+verifier:
+  success: all
+  checkpoints:
+    - {name: "Knight wields iron sword", type: equipped, agent: t04_knight, item: iron_sword}
+reference_solution:
+  t04_merchant:
+    - [sell_item, {npc: blacksmith, item: iron_ore, count: 3}, {retries: 15}]
+    - [buy_item, {npc: blacksmith, item: iron_sword, count: 1}]
+    - [transfer_items, {to_agent: t04_knight, item: iron_sword, count: 1}, {retries: 10}]
+  t04_knight:
+    - [transfer_items, {to_agent: t04_merchant, item: coins, count: 30}]
+    - [equip_item, {item: iron_sword}, {retries: 20}]
+  t04_miner:
+    - [harvest_resource, {target: iron_rock}]
+    - [harvest_resource, {target: iron_rock}]
+    - [harvest_resource, {target: iron_rock}]
+    - [move_to, {x: 44, y: 16}]
+    - [move_to, {x: 33, y: 20}]
+    - [transfer_items, {to_agent: t04_merchant, item: iron_ore, count: 3}]
+    - [transfer_items, {to_agent: t04_merchant, item: coins, count: 10}]

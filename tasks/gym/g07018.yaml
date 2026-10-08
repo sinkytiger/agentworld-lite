@@ -1,0 +1,270 @@
+id: g07018
+name: 'Generated: palisade wall (hub, depth 3)'
+category: construction
+description: A generated hub supply chain of depth 3. Raw materials must be gathered,
+  processed by the right specialists and handed along until the goal is met.
+objectives:
+  primary: Build a palisade_wall within 4 tiles of (41, 25).
+  secondary:
+  - Avoid wasted materials and redundant messages.
+max_rounds: 39
+agents:
+- username: g07018_artisan
+  role: artisan
+  spawn:
+  - 33
+  - 20
+  skills:
+    smithing: 6
+    crafting: 5
+    health: 15
+  inventory:
+    apple: 3
+  equipment: []
+  restricted_tools:
+  - harvest_resource
+  role_brief: 'g07018_artisan (artisan; crafting 5, smithing 6) crafts/builds bronze_bar,
+    plank, nails bronze_bar: craft_item skill=smithing (lvl 1, near anvil) | 1x copper_ore
+    + 1x tin_ore -> 1x bronze_bar plank: craft_item skill=crafting (lvl 5) | 2x logs
+    -> 1x plank nails: craft_item skill=smithing (lvl 5, near anvil) | 1x bronze_bar
+    -> 10x nails the anvil is at (33, 19); g07018_artisan starts next to it. Your
+    role cannot use: harvest_resource.'
+- username: g07018_builder
+  role: builder
+  spawn:
+  - 41
+  - 25
+  skills:
+    crafting: 10
+    health: 15
+  inventory:
+    apple: 3
+  equipment: []
+  restricted_tools:
+  - harvest_resource
+  role_brief: 'g07018_builder (builder; crafting 10) crafts/builds palisade_wall palisade_wall:
+    build_structure (crafting lvl 10) | 3x plank + 10x nails Your role cannot use:
+    harvest_resource.'
+- username: g07018_miner
+  role: miner
+  spawn:
+  - 52
+  - 6
+  skills:
+    mining: 8
+    health: 15
+  inventory:
+    apple: 3
+  equipment:
+  - pickaxe
+  role_brief: g07018_miner (miner; mining 8) gathers copper_ore, tin_ore copper_rock
+    nodes (copper_ore) are close to g07018_miner's start at (52, 6). tin_rock nodes
+    (tin_ore) are close to g07018_miner's start at (52, 6).
+- username: g07018_lumberjack
+  role: lumberjack
+  spawn:
+  - 12
+  - 27
+  skills:
+    lumberjacking: 8
+    health: 15
+  inventory:
+    apple: 3
+  equipment:
+  - axe
+  role_brief: g07018_lumberjack (lumberjack; lumberjacking 8) gathers logs tree nodes
+    (logs) are close to g07018_lumberjack's start at (12, 27).
+extra_entities: []
+relevant_game_context: ''
+verifier:
+  success: all
+  checkpoints:
+  - name: palisade_wall
+    type: structure
+    structure: palisade_wall
+    count: 1
+    near:
+    - 41
+    - 25
+    radius: 4
+reference_solution:
+  g07018_artisan:
+  - - craft_item
+    - skill: smithing
+      item_key: bronze_bar
+      count: 1
+    - until_have:
+        bronze_bar: 1
+      retries: 80
+  - - craft_item
+    - skill: crafting
+      item_key: plank
+      count: 3
+    - until_have:
+        plank: 3
+      retries: 80
+  - - craft_item
+    - skill: smithing
+      item_key: nails
+      count: 1
+    - until_have:
+        nails: 10
+      retries: 80
+  - - move_to
+    - x: 41
+      y: 25
+    - until_near:
+      - 41
+      - 25
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07018_builder
+      item: nails
+      count: 10
+    - retries: 80
+  - - transfer_items
+    - to_agent: g07018_builder
+      item: plank
+      count: 3
+    - retries: 80
+  g07018_builder:
+  - - build_structure
+    - structure: palisade_wall
+    - retries: 80
+  g07018_miner:
+  - - harvest_resource
+    - target: copper_rock
+    - until_have:
+        copper_ore: 1
+      retries: 80
+  - - harvest_resource
+    - target: tin_rock
+    - until_have:
+        tin_ore: 1
+      retries: 80
+  - - move_to
+    - x: 33
+      y: 20
+    - until_near:
+      - 33
+      - 20
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07018_artisan
+      item: copper_ore
+      count: 1
+    - retries: 80
+  - - transfer_items
+    - to_agent: g07018_artisan
+      item: tin_ore
+      count: 1
+    - retries: 80
+  g07018_lumberjack:
+  - - harvest_resource
+    - target: tree
+    - until_have:
+        logs: 6
+      retries: 80
+  - - move_to
+    - x: 33
+      y: 20
+    - until_near:
+      - 33
+      - 20
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07018_artisan
+      item: logs
+      count: 6
+    - retries: 80
+world_guide: true
+generation:
+  params:
+    depth: 3
+    topology: hub
+    obfuscation: 0.78
+    quantity: 1
+    extra_agents: 0
+    seed: 665100
+  obfuscation_bucket: high
+  blueprint:
+    target: palisade_wall
+    goal: structure
+    goal_qty: 1
+    roles:
+      artisan:
+        kind: craft
+        skills:
+          smithing: 6
+          crafting: 5
+        gathers: {}
+        crafts:
+        - - bronze_bar
+          - 1
+        - - plank
+          - 3
+        - - nails
+          - 1
+      builder:
+        kind: craft
+        skills:
+          crafting: 10
+        gathers: {}
+        crafts:
+        - - palisade_wall
+          - 1
+      miner:
+        kind: gather
+        skills:
+          mining: 8
+        gathers:
+          copper_ore: 1
+          tin_ore: 1
+        crafts: []
+      lumberjack:
+        kind: gather
+        skills:
+          lumberjacking: 8
+        gathers:
+          logs: 6
+        crafts: []
+    deliveries:
+    - - artisan
+      - builder
+      - nails
+      - 10
+    - - artisan
+      - builder
+      - plank
+      - 3
+    - - lumberjack
+      - artisan
+      - logs
+      - 6
+    - - miner
+      - artisan
+      - copper_ore
+      - 1
+    - - miner
+      - artisan
+      - tin_ore
+      - 1
+  ground_truth:
+    rounds: 14
+    actions: 54
+    useful_actions: 22
+    cce_rule: 0.407
+  repairs: []
+  axes:
+    handoffs: 5
+    max_handoff_distance: 21
+    rendezvous_travel: true
+    info_asymmetry: true
+    permission_asymmetry: true
+    station_constraint: true
+    team_size: 4
+    recipe_depth: 3
+    goal_quantity: 1

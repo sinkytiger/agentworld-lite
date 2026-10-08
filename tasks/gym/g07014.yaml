@@ -1,0 +1,263 @@
+id: g07014
+name: 'Generated: palisade wall (hub, depth 3)'
+category: construction
+description: A generated hub supply chain of depth 3. Raw materials must be gathered,
+  processed by the right specialists and handed along until the goal is met.
+objectives:
+  primary: Fortify the site that g07014_builder is guarding.
+  secondary:
+  - Avoid wasted materials and redundant messages.
+max_rounds: 45
+agents:
+- username: g07014_artisan
+  role: artisan
+  spawn:
+  - 33
+  - 20
+  skills:
+    smithing: 9
+    crafting: 7
+    health: 15
+  inventory:
+    apple: 3
+  equipment: []
+  restricted_tools:
+  - harvest_resource
+  role_brief: 'g07014_artisan (artisan; crafting 7, smithing 9) crafts/builds bronze_bar,
+    plank, nails Your role cannot use: harvest_resource.'
+- username: g07014_builder
+  role: builder
+  spawn:
+  - 40
+  - 11
+  skills:
+    crafting: 15
+    health: 15
+  inventory:
+    apple: 3
+  equipment: []
+  restricted_tools:
+  - harvest_resource
+  role_brief: 'g07014_builder (builder; crafting 15) crafts/builds palisade_wall What
+    success means: Build a palisade_wall within 4 tiles of (40, 11). Your role cannot
+    use: harvest_resource.'
+- username: g07014_miner
+  role: miner
+  spawn:
+  - 45
+  - 8
+  skills:
+    mining: 12
+    health: 15
+  inventory:
+    apple: 3
+  equipment:
+  - pickaxe
+  role_brief: g07014_miner (miner; mining 12) gathers copper_ore, tin_ore
+- username: g07014_lumberjack
+  role: lumberjack
+  spawn:
+  - 5
+  - 13
+  skills:
+    lumberjacking: 5
+    health: 15
+  inventory:
+    apple: 3
+  equipment:
+  - axe
+  role_brief: g07014_lumberjack (lumberjack; lumberjacking 5) gathers logs
+extra_entities: []
+relevant_game_context: ''
+verifier:
+  success: all
+  checkpoints:
+  - name: palisade_wall
+    type: structure
+    structure: palisade_wall
+    count: 1
+    near:
+    - 40
+    - 11
+    radius: 4
+reference_solution:
+  g07014_artisan:
+  - - craft_item
+    - skill: smithing
+      item_key: bronze_bar
+      count: 1
+    - until_have:
+        bronze_bar: 1
+      retries: 80
+  - - craft_item
+    - skill: crafting
+      item_key: plank
+      count: 3
+    - until_have:
+        plank: 3
+      retries: 80
+  - - craft_item
+    - skill: smithing
+      item_key: nails
+      count: 1
+    - until_have:
+        nails: 10
+      retries: 80
+  - - move_to
+    - x: 40
+      y: 11
+    - until_near:
+      - 40
+      - 11
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07014_builder
+      item: nails
+      count: 10
+    - retries: 80
+  - - transfer_items
+    - to_agent: g07014_builder
+      item: plank
+      count: 3
+    - retries: 80
+  g07014_builder:
+  - - build_structure
+    - structure: palisade_wall
+    - retries: 80
+  g07014_miner:
+  - - harvest_resource
+    - target: copper_rock
+    - until_have:
+        copper_ore: 1
+      retries: 80
+  - - harvest_resource
+    - target: tin_rock
+    - until_have:
+        tin_ore: 1
+      retries: 80
+  - - move_to
+    - x: 33
+      y: 20
+    - until_near:
+      - 33
+      - 20
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07014_artisan
+      item: copper_ore
+      count: 1
+    - retries: 80
+  - - transfer_items
+    - to_agent: g07014_artisan
+      item: tin_ore
+      count: 1
+    - retries: 80
+  g07014_lumberjack:
+  - - harvest_resource
+    - target: tree
+    - until_have:
+        logs: 6
+      retries: 80
+  - - move_to
+    - x: 33
+      y: 20
+    - until_near:
+      - 33
+      - 20
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07014_artisan
+      item: logs
+      count: 6
+    - retries: 80
+world_guide: false
+generation:
+  params:
+    depth: 3
+    topology: hub
+    obfuscation: 1.0
+    quantity: 1
+    extra_agents: 0
+    seed: 927143
+  obfuscation_bucket: max
+  blueprint:
+    target: palisade_wall
+    goal: structure
+    goal_qty: 1
+    roles:
+      artisan:
+        kind: craft
+        skills:
+          smithing: 9
+          crafting: 7
+        gathers: {}
+        crafts:
+        - - bronze_bar
+          - 1
+        - - plank
+          - 3
+        - - nails
+          - 1
+      builder:
+        kind: craft
+        skills:
+          crafting: 15
+        gathers: {}
+        crafts:
+        - - palisade_wall
+          - 1
+      miner:
+        kind: gather
+        skills:
+          mining: 12
+        gathers:
+          copper_ore: 1
+          tin_ore: 1
+        crafts: []
+      lumberjack:
+        kind: gather
+        skills:
+          lumberjacking: 5
+        gathers:
+          logs: 6
+        crafts: []
+    deliveries:
+    - - artisan
+      - builder
+      - nails
+      - 10
+    - - artisan
+      - builder
+      - plank
+      - 3
+    - - lumberjack
+      - artisan
+      - logs
+      - 6
+    - - miner
+      - artisan
+      - copper_ore
+      - 1
+    - - miner
+      - artisan
+      - tin_ore
+      - 1
+  ground_truth:
+    rounds: 15
+    actions: 58
+    useful_actions: 22
+    cce_rule: 0.379
+  repairs: []
+  axes:
+    handoffs: 5
+    max_handoff_distance: 28
+    rendezvous_travel: true
+    info_asymmetry: true
+    permission_asymmetry: true
+    station_constraint: true
+    team_size: 4
+    recipe_depth: 3
+    goal_quantity: 1

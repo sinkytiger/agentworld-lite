@@ -1,0 +1,80 @@
+id: t07_outpost_walls
+name: Fortify the Plains Outpost
+category: construction
+description: >
+  The party is fortifying a new outpost in the northern plains. A palisade wall needs planks
+  (from logs) and nails (smithed from bronze), and the guards want a campfire next to it.
+  Four specialists must run a small supply chain to get it built.
+objectives:
+  primary: Build one palisade_wall and one campfire, both within 4 tiles of the outpost site (24,13).
+  secondary:
+    - Avoid leftover materials.
+max_rounds: 40
+agents:
+  - username: t07_lumberjack
+    role: lumberjack
+    spawn: [15, 11]
+    skills: {lumberjacking: 25, health: 15}
+    inventory: {apple: 3}
+    equipment: [axe]
+  - username: t07_miner
+    role: miner
+    spawn: [46, 8]
+    skills: {mining: 10, health: 15}
+    inventory: {apple: 3}
+    equipment: [pickaxe]
+  - username: t07_smith
+    role: blacksmith
+    spawn: [33, 21]
+    skills: {smithing: 15, health: 15}
+    inventory: {apple: 3}
+    restricted_tools: [harvest_resource]
+  - username: t07_carpenter
+    role: carpenter / builder
+    spawn: [24, 14]
+    skills: {crafting: 15, health: 15}
+    inventory: {apple: 3}
+    restricted_tools: [harvest_resource]
+relevant_game_context: |
+  Outpost site: (24,13) in the northern plains. Structures are built on the builder's current tile;
+  each structure needs its own empty tile.
+  Structures:
+    palisade_wall: build_structure (crafting lvl 10) | 3x plank + 10x nails
+    campfire: build_structure (crafting lvl 1) | 3x logs
+  Recipes:
+    plank: craft_item skill=crafting item_key=plank (crafting lvl 5) | 2x logs -> 1x plank
+    bronze_bar: craft_item skill=smithing item_key=bronze_bar (smithing lvl 1, near anvil) | 1x copper_ore + 1x tin_ore -> 1x bronze_bar
+    nails: craft_item skill=smithing item_key=nails (smithing lvl 5, near anvil) | 1x bronze_bar -> 10x nails
+  The anvil is in the village at (33,19). Trees: north-western forest (e.g. around (14,8)-(14,10)).
+  Copper rocks (42-52, 2-9) and tin rocks (42-52, 10-17) are in the mines. A lumberjack with
+  lumberjacking >= 21 gets 2 logs per harvest.
+verifier:
+  success: all
+  checkpoints:
+    - {name: "Palisade wall", type: structure, structure: palisade_wall, near: [24, 13], radius: 4}
+    - {name: "Campfire", type: structure, structure: campfire, near: [24, 13], radius: 4}
+reference_solution:
+  t07_lumberjack:
+    - [harvest_resource, {target: tree}]
+    - [harvest_resource, {target: tree}]
+    - [harvest_resource, {target: tree}]
+    - [harvest_resource, {target: tree}]
+    - [harvest_resource, {target: tree}]
+    - [move_to, {x: 23, y: 13}]
+    - [transfer_items, {to_agent: t07_carpenter, item: logs, count: 9}]
+  t07_miner:
+    - [harvest_resource, {target: copper_rock}]
+    - [harvest_resource, {target: tin_rock}]
+    - [move_to, {x: 38, y: 17}]
+    - [transfer_items, {to_agent: t07_smith, item: copper_ore, count: 1}]
+    - [transfer_items, {to_agent: t07_smith, item: tin_ore, count: 1}]
+  t07_smith:
+    - [craft_item, {skill: smithing, item_key: bronze_bar, count: 1}, {retries: 20}]
+    - [craft_item, {skill: smithing, item_key: nails, count: 1}]
+    - [move_to, {x: 25, y: 14}]
+    - [transfer_items, {to_agent: t07_carpenter, item: nails, count: 10}]
+  t07_carpenter:
+    - [craft_item, {skill: crafting, item_key: plank, count: 3}, {retries: 20}]
+    - [build_structure, {structure: campfire}]
+    - [move_to, {x: 24, y: 12}]
+    - [build_structure, {structure: palisade_wall}, {retries: 20}]

@@ -1,0 +1,218 @@
+id: g07022
+name: 'Generated: fish stew (chain, depth 2)'
+category: crafting
+description: A generated chain supply chain of depth 2. Raw materials must be gathered,
+  processed by the right specialists and handed along until the goal is met.
+objectives:
+  primary: Help g07022_client complete their order.
+  secondary:
+  - Avoid wasted materials and redundant messages.
+max_rounds: 24
+agents:
+- username: g07022_cook
+  role: cook
+  spawn:
+  - 36
+  - 20
+  skills:
+    cooking: 11
+    health: 15
+  inventory:
+    apple: 3
+  equipment: []
+  restricted_tools:
+  - harvest_resource
+  role_brief: 'g07022_cook (cook; cooking 11) crafts/builds cooked_shrimp, fish_stew
+    Your role cannot use: harvest_resource.'
+- username: g07022_forager
+  role: forager
+  spawn:
+  - 15
+  - 7
+  skills:
+    foraging: 1
+    health: 15
+  inventory:
+    apple: 3
+  equipment: []
+  role_brief: g07022_forager (forager; foraging 1) gathers berries
+- username: g07022_fisher
+  role: fisher
+  spawn:
+  - 42
+  - 34
+  skills:
+    fishing: 11
+    health: 15
+  inventory:
+    apple: 3
+  equipment:
+  - fishing_rod
+  role_brief: g07022_fisher (fisher; fishing 11) gathers shrimp
+- username: g07022_client
+  role: client
+  spawn:
+  - 27
+  - 26
+  skills:
+    health: 15
+  inventory:
+    apple: 3
+  equipment: []
+  restricted_tools:
+  - harvest_resource
+  - craft_item
+  role_brief: 'g07022_client (client; no special skills) is the person the result
+    is for What success means: g07022_client must hold at least 1 fish_stew. Your
+    role cannot use: harvest_resource, craft_item.'
+extra_entities: []
+relevant_game_context: ''
+verifier:
+  success: all
+  checkpoints:
+  - name: fish_stew
+    type: has_item
+    agent: g07022_client
+    item: fish_stew
+    count: 1
+reference_solution:
+  g07022_cook:
+  - - craft_item
+    - skill: cooking
+      item_key: cooked_shrimp
+      count: 2
+    - until_have:
+        cooked_shrimp: 2
+      retries: 80
+  - - craft_item
+    - skill: cooking
+      item_key: fish_stew
+      count: 1
+    - until_have:
+        fish_stew: 1
+      retries: 80
+  - - move_to
+    - x: 27
+      y: 26
+    - until_near:
+      - 27
+      - 26
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07022_client
+      item: fish_stew
+      count: 1
+    - retries: 80
+  g07022_forager:
+  - - harvest_resource
+    - target: berry_bush
+    - until_have:
+        berries: 1
+      retries: 80
+  - - move_to
+    - x: 36
+      y: 20
+    - until_near:
+      - 36
+      - 20
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07022_cook
+      item: berries
+      count: 1
+    - retries: 80
+  g07022_fisher:
+  - - harvest_resource
+    - target: fishing_spot
+    - until_have:
+        shrimp: 2
+      retries: 80
+  - - move_to
+    - x: 36
+      y: 20
+    - until_near:
+      - 36
+      - 20
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07022_cook
+      item: shrimp
+      count: 2
+    - retries: 80
+  g07022_client: []
+world_guide: false
+generation:
+  params:
+    depth: 2
+    topology: chain
+    obfuscation: 1.0
+    quantity: 1
+    extra_agents: 0
+    seed: 277617
+  obfuscation_bucket: max
+  blueprint:
+    target: fish_stew
+    goal: deliver
+    goal_qty: 1
+    roles:
+      cook:
+        kind: craft
+        skills:
+          cooking: 11
+        gathers: {}
+        crafts:
+        - - cooked_shrimp
+          - 2
+        - - fish_stew
+          - 1
+      forager:
+        kind: gather
+        skills:
+          foraging: 1
+        gathers:
+          berries: 1
+        crafts: []
+      fisher:
+        kind: gather
+        skills:
+          fishing: 11
+        gathers:
+          shrimp: 2
+        crafts: []
+      client:
+        kind: client
+        skills: {}
+        gathers: {}
+        crafts: []
+    deliveries:
+    - - cook
+      - client
+      - fish_stew
+      - 1
+    - - fisher
+      - cook
+      - shrimp
+      - 2
+    - - forager
+      - cook
+      - berries
+      - 1
+  ground_truth:
+    rounds: 8
+    actions: 29
+    useful_actions: 12
+    cce_rule: 0.414
+  repairs: []
+  axes:
+    handoffs: 3
+    max_handoff_distance: 21
+    rendezvous_travel: true
+    info_asymmetry: true
+    permission_asymmetry: true
+    station_constraint: true
+    team_size: 4
+    recipe_depth: 2
+    goal_quantity: 1

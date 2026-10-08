@@ -1,0 +1,237 @@
+id: g07021
+name: 'Generated: bow (hub, depth 2)'
+category: crafting
+description: A generated hub supply chain of depth 2. Raw materials must be gathered,
+  processed by the right specialists and handed along until the goal is met.
+objectives:
+  primary: g07021_client (ranger) must have a bow equipped.
+  secondary:
+  - Avoid wasted materials and redundant messages.
+max_rounds: 23
+agents:
+- username: g07021_artisan
+  role: artisan
+  spawn:
+  - 34
+  - 26
+  skills:
+    fletching: 11
+    crafting: 3
+    health: 15
+  inventory:
+    apple: 3
+  equipment: []
+  restricted_tools:
+  - harvest_resource
+  role_brief: 'Your role cannot use: harvest_resource.'
+- username: g07021_forager
+  role: forager
+  spawn:
+  - 23
+  - 4
+  skills:
+    foraging: 13
+    health: 15
+  inventory:
+    apple: 3
+  equipment: []
+  role_brief: flax_patch nodes (flax) are close to g07021_forager's start at (23,
+    4).
+- username: g07021_lumberjack
+  role: lumberjack
+  spawn:
+  - 20
+  - 36
+  skills:
+    lumberjacking: 13
+    health: 15
+  inventory:
+    apple: 3
+  equipment:
+  - axe
+  role_brief: tree nodes (logs) are close to g07021_lumberjack's start at (20, 36).
+- username: g07021_client
+  role: client
+  spawn:
+  - 29
+  - 27
+  skills:
+    fletching: 12
+    health: 15
+  inventory:
+    apple: 3
+  equipment: []
+  restricted_tools:
+  - harvest_resource
+  - craft_item
+  role_brief: 'Your role cannot use: harvest_resource, craft_item.'
+extra_entities: []
+relevant_game_context: "Recipes:\n  stick: craft_item skill=fletching (lvl 5) | 1x\
+  \ logs -> 4x stick\n  string: craft_item skill=crafting (lvl 1) | 2x flax -> 1x\
+  \ string\n  bow: craft_item skill=fletching (lvl 10) | 3x stick + 1x string -> 1x\
+  \ bow\nTeam:\n  g07021_artisan (artisan; crafting 3, fletching 11) crafts/builds\
+  \ stick, string, bow\n  g07021_forager (forager; foraging 13) gathers flax\n  g07021_lumberjack\
+  \ (lumberjack; lumberjacking 13) gathers logs\n  g07021_client (client; fletching\
+  \ 12) is the person the result is for"
+verifier:
+  success: all
+  checkpoints:
+  - name: bow equipped
+    type: equipped
+    agent: g07021_client
+    item: bow
+reference_solution:
+  g07021_artisan:
+  - - craft_item
+    - skill: fletching
+      item_key: stick
+      count: 1
+    - until_have:
+        stick: 4
+      retries: 80
+  - - craft_item
+    - skill: crafting
+      item_key: string
+      count: 1
+    - until_have:
+        string: 1
+      retries: 80
+  - - craft_item
+    - skill: fletching
+      item_key: bow
+      count: 1
+    - until_have:
+        bow: 1
+      retries: 80
+  - - move_to
+    - x: 29
+      y: 27
+    - until_near:
+      - 29
+      - 27
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07021_client
+      item: bow
+      count: 1
+    - retries: 80
+  g07021_forager:
+  - - harvest_resource
+    - target: flax_patch
+    - until_have:
+        flax: 2
+      retries: 80
+  - - move_to
+    - x: 34
+      y: 26
+    - until_near:
+      - 34
+      - 26
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07021_artisan
+      item: flax
+      count: 2
+    - retries: 80
+  g07021_lumberjack:
+  - - harvest_resource
+    - target: tree
+    - until_have:
+        logs: 1
+      retries: 80
+  - - move_to
+    - x: 34
+      y: 26
+    - until_near:
+      - 34
+      - 26
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07021_artisan
+      item: logs
+      count: 1
+    - retries: 80
+  g07021_client:
+  - - equip_item
+    - item: bow
+    - retries: 80
+world_guide: true
+generation:
+  params:
+    depth: 2
+    topology: hub
+    obfuscation: 0.52
+    quantity: 1
+    extra_agents: 0
+    seed: 511776
+  obfuscation_bucket: mid
+  blueprint:
+    target: bow
+    goal: equip
+    goal_qty: 1
+    roles:
+      artisan:
+        kind: craft
+        skills:
+          fletching: 11
+          crafting: 3
+        gathers: {}
+        crafts:
+        - - stick
+          - 1
+        - - string
+          - 1
+        - - bow
+          - 1
+      forager:
+        kind: gather
+        skills:
+          foraging: 13
+        gathers:
+          flax: 2
+        crafts: []
+      lumberjack:
+        kind: gather
+        skills:
+          lumberjacking: 13
+        gathers:
+          logs: 1
+        crafts: []
+      client:
+        kind: client
+        skills:
+          fletching: 12
+        gathers: {}
+        crafts: []
+    deliveries:
+    - - artisan
+      - client
+      - bow
+      - 1
+    - - forager
+      - artisan
+      - flax
+      - 2
+    - - lumberjack
+      - artisan
+      - logs
+      - 1
+  ground_truth:
+    rounds: 9
+    actions: 36
+    useful_actions: 15
+    cce_rule: 0.417
+  repairs: []
+  axes:
+    handoffs: 3
+    max_handoff_distance: 22
+    rendezvous_travel: true
+    info_asymmetry: true
+    permission_asymmetry: true
+    station_constraint: false
+    team_size: 4
+    recipe_depth: 2
+    goal_quantity: 1

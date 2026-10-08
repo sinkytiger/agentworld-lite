@@ -1,0 +1,167 @@
+id: g07019
+name: 'Generated: stick (hub, depth 1)'
+category: crafting
+description: A generated hub supply chain of depth 1. Raw materials must be gathered,
+  processed by the right specialists and handed along until the goal is met.
+objectives:
+  primary: g07019_client must hold at least 4 stick.
+  secondary:
+  - Avoid wasted materials and redundant messages.
+max_rounds: 20
+agents:
+- username: g07019_artisan
+  role: artisan
+  spawn:
+  - 34
+  - 26
+  skills:
+    fletching: 5
+    health: 15
+  inventory:
+    apple: 3
+  equipment: []
+  restricted_tools:
+  - harvest_resource
+  role_brief: 'Your role cannot use: harvest_resource.'
+- username: g07019_lumberjack
+  role: lumberjack
+  spawn:
+  - 3
+  - 5
+  skills:
+    lumberjacking: 11
+    health: 15
+  inventory:
+    apple: 3
+  equipment:
+  - axe
+  role_brief: tree nodes (logs) are close to g07019_lumberjack's start at (3, 5).
+- username: g07019_client
+  role: client
+  spawn:
+  - 31
+  - 27
+  skills:
+    health: 15
+  inventory:
+    apple: 3
+  equipment: []
+  restricted_tools:
+  - harvest_resource
+  - craft_item
+  role_brief: 'Your role cannot use: harvest_resource, craft_item.'
+extra_entities: []
+relevant_game_context: "Recipes:\n  stick: craft_item skill=fletching (lvl 5) | 1x\
+  \ logs -> 4x stick\nTeam:\n  g07019_artisan (artisan; fletching 5) crafts/builds\
+  \ stick\n  g07019_lumberjack (lumberjack; lumberjacking 11) gathers logs\n  g07019_client\
+  \ (client; no special skills) is the person the result is for"
+verifier:
+  success: all
+  checkpoints:
+  - name: stick
+    type: has_item
+    agent: g07019_client
+    item: stick
+    count: 4
+reference_solution:
+  g07019_artisan:
+  - - craft_item
+    - skill: fletching
+      item_key: stick
+      count: 1
+    - until_have:
+        stick: 4
+      retries: 80
+  - - move_to
+    - x: 31
+      y: 27
+    - until_near:
+      - 31
+      - 27
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07019_client
+      item: stick
+      count: 4
+    - retries: 80
+  g07019_lumberjack:
+  - - harvest_resource
+    - target: tree
+    - until_have:
+        logs: 1
+      retries: 80
+  - - move_to
+    - x: 34
+      y: 26
+    - until_near:
+      - 34
+      - 26
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07019_artisan
+      item: logs
+      count: 1
+    - retries: 80
+  g07019_client: []
+world_guide: true
+generation:
+  params:
+    depth: 1
+    topology: hub
+    obfuscation: 0.49
+    quantity: 1
+    extra_agents: 1
+    seed: 107352
+  obfuscation_bucket: mid
+  blueprint:
+    target: stick
+    goal: deliver
+    goal_qty: 4
+    roles:
+      artisan:
+        kind: craft
+        skills:
+          fletching: 5
+        gathers: {}
+        crafts:
+        - - stick
+          - 1
+      lumberjack:
+        kind: gather
+        skills:
+          lumberjacking: 11
+        gathers:
+          logs: 1
+        crafts: []
+      client:
+        kind: client
+        skills: {}
+        gathers: {}
+        crafts: []
+    deliveries:
+    - - artisan
+      - client
+      - stick
+      - 4
+    - - lumberjack
+      - artisan
+      - logs
+      - 1
+  ground_truth:
+    rounds: 8
+    actions: 22
+    useful_actions: 8
+    cce_rule: 0.364
+  repairs: []
+  axes:
+    handoffs: 2
+    max_handoff_distance: 31
+    rendezvous_travel: true
+    info_asymmetry: true
+    permission_asymmetry: true
+    station_constraint: false
+    team_size: 3
+    recipe_depth: 1
+    goal_quantity: 4

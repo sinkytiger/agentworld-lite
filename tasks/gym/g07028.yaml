@@ -1,0 +1,285 @@
+id: g07028
+name: 'Generated: bronze sword (hub, depth 2)'
+category: coordination
+description: A generated hub supply chain of depth 2. Raw materials must be gathered,
+  processed by the right specialists and handed along until the goal is met.
+objectives:
+  primary: g07028_client (knight) must have a bronze_sword equipped.
+  secondary:
+  - Avoid wasted materials and redundant messages.
+max_rounds: 22
+agents:
+- username: g07028_artisan
+  role: artisan
+  spawn:
+  - 33
+  - 20
+  skills:
+    smithing: 9
+    fletching: 6
+    health: 15
+  inventory:
+    apple: 3
+  equipment: []
+  restricted_tools:
+  - harvest_resource
+  role_brief: 'Your role cannot use: harvest_resource.'
+- username: g07028_miner
+  role: miner
+  spawn:
+  - 52
+  - 4
+  skills:
+    mining: 6
+    health: 15
+  inventory:
+    apple: 3
+  equipment:
+  - pickaxe
+- username: g07028_lumberjack
+  role: lumberjack
+  spawn:
+  - 21
+  - 38
+  skills:
+    lumberjacking: 11
+    health: 15
+  inventory:
+    apple: 3
+  equipment:
+  - axe
+- username: g07028_client
+  role: client
+  spawn:
+  - 27
+  - 26
+  skills:
+    strength: 18
+    health: 15
+  inventory:
+    apple: 3
+  equipment: []
+  restricted_tools:
+  - harvest_resource
+  - craft_item
+  role_brief: 'Your role cannot use: harvest_resource, craft_item.'
+- username: g07028_miner2
+  role: miner2
+  spawn:
+  - 52
+  - 12
+  skills:
+    mining: 6
+    health: 15
+  inventory:
+    apple: 3
+  equipment:
+  - pickaxe
+extra_entities: []
+relevant_game_context: "Recipes:\n  bronze_bar: craft_item skill=smithing (lvl 1,\
+  \ near anvil) | 1x copper_ore + 1x tin_ore -> 1x bronze_bar\n  stick: craft_item\
+  \ skill=fletching (lvl 5) | 1x logs -> 4x stick\n  bronze_sword: craft_item skill=smithing\
+  \ (lvl 5, near anvil) | 2x bronze_bar + 1x stick -> 1x bronze_sword\nTeam:\n  g07028_artisan\
+  \ (artisan; fletching 6, smithing 9) crafts/builds bronze_bar, stick, bronze_sword\n\
+  \  g07028_miner (miner; mining 6) gathers copper_ore\n  g07028_lumberjack (lumberjack;\
+  \ lumberjacking 11) gathers logs\n  g07028_client (client; strength 18) is the person\
+  \ the result is for\n  g07028_miner2 (miner2; mining 6) gathers tin_ore\nPlan:\n\
+  \  g07028_artisan hands 1 bronze_sword to g07028_client (at (27, 26)).\n  g07028_lumberjack\
+  \ hands 1 logs to g07028_artisan (at (33, 20)).\n  g07028_miner hands 2 copper_ore\
+  \ to g07028_artisan (at (33, 20)).\n  g07028_miner2 hands 2 tin_ore to g07028_artisan\
+  \ (at (33, 20)).\nLocations:\n  the anvil is at (33, 19); g07028_artisan starts\
+  \ next to it.\n  copper_rock nodes (copper_ore) are close to g07028_miner's start\
+  \ at (52, 4).\n  tree nodes (logs) are close to g07028_lumberjack's start at (21,\
+  \ 38).\n  tin_rock nodes (tin_ore) are close to g07028_miner2's start at (52, 12)."
+verifier:
+  success: all
+  checkpoints:
+  - name: bronze_sword equipped
+    type: equipped
+    agent: g07028_client
+    item: bronze_sword
+reference_solution:
+  g07028_artisan:
+  - - craft_item
+    - skill: smithing
+      item_key: bronze_bar
+      count: 2
+    - until_have:
+        bronze_bar: 2
+      retries: 80
+  - - craft_item
+    - skill: fletching
+      item_key: stick
+      count: 1
+    - until_have:
+        stick: 4
+      retries: 80
+  - - craft_item
+    - skill: smithing
+      item_key: bronze_sword
+      count: 1
+    - until_have:
+        bronze_sword: 1
+      retries: 80
+  - - move_to
+    - x: 27
+      y: 26
+    - until_near:
+      - 27
+      - 26
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07028_client
+      item: bronze_sword
+      count: 1
+    - retries: 80
+  g07028_miner:
+  - - harvest_resource
+    - target: copper_rock
+    - until_have:
+        copper_ore: 2
+      retries: 80
+  - - move_to
+    - x: 33
+      y: 20
+    - until_near:
+      - 33
+      - 20
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07028_artisan
+      item: copper_ore
+      count: 2
+    - retries: 80
+  g07028_lumberjack:
+  - - harvest_resource
+    - target: tree
+    - until_have:
+        logs: 1
+      retries: 80
+  - - move_to
+    - x: 33
+      y: 20
+    - until_near:
+      - 33
+      - 20
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07028_artisan
+      item: logs
+      count: 1
+    - retries: 80
+  g07028_client:
+  - - equip_item
+    - item: bronze_sword
+    - retries: 80
+  g07028_miner2:
+  - - harvest_resource
+    - target: tin_rock
+    - until_have:
+        tin_ore: 2
+      retries: 80
+  - - move_to
+    - x: 33
+      y: 20
+    - until_near:
+      - 33
+      - 20
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: g07028_artisan
+      item: tin_ore
+      count: 2
+    - retries: 80
+world_guide: true
+generation:
+  params:
+    depth: 2
+    topology: hub
+    obfuscation: 0.13
+    quantity: 3
+    extra_agents: 2
+    seed: 382348
+  obfuscation_bucket: low
+  blueprint:
+    target: bronze_sword
+    goal: equip
+    goal_qty: 1
+    roles:
+      artisan:
+        kind: craft
+        skills:
+          smithing: 9
+          fletching: 6
+        gathers: {}
+        crafts:
+        - - bronze_bar
+          - 2
+        - - stick
+          - 1
+        - - bronze_sword
+          - 1
+      miner:
+        kind: gather
+        skills:
+          mining: 6
+        gathers:
+          copper_ore: 2
+        crafts: []
+      lumberjack:
+        kind: gather
+        skills:
+          lumberjacking: 11
+        gathers:
+          logs: 1
+        crafts: []
+      client:
+        kind: client
+        skills:
+          strength: 18
+        gathers: {}
+        crafts: []
+      miner2:
+        kind: gather
+        skills:
+          mining: 6
+        gathers:
+          tin_ore: 2
+        crafts: []
+    deliveries:
+    - - artisan
+      - client
+      - bronze_sword
+      - 1
+    - - lumberjack
+      - artisan
+      - logs
+      - 1
+    - - miner
+      - artisan
+      - copper_ore
+      - 2
+    - - miner2
+      - artisan
+      - tin_ore
+      - 2
+  ground_truth:
+    rounds: 10
+    actions: 49
+    useful_actions: 20
+    cce_rule: 0.408
+  repairs: []
+  axes:
+    handoffs: 4
+    max_handoff_distance: 19
+    rendezvous_travel: true
+    info_asymmetry: false
+    permission_asymmetry: true
+    station_constraint: true
+    team_size: 5
+    recipe_depth: 2
+    goal_quantity: 1
