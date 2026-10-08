@@ -63,6 +63,15 @@ def test_ollama_agent_plays_an_episode(style):
     assert "parameters" in payload["tools"][0]["function"]
 
 
+def test_sampling_seed_is_sent_when_set():
+    client = FakeOllama(lambda p: {"message": {"role": "assistant", "content": "{}"}})
+    client.chat([{"role": "user", "content": "hi"}])
+    assert "seed" not in client.requests[-1][1]["options"]
+    client.seed = 8
+    client.chat([{"role": "user", "content": "hi"}])
+    assert client.requests[-1][1]["options"]["seed"] == 8
+
+
 def test_no_tool_call_is_nudged_then_waits():
     client = FakeOllama(lambda p: {"message": {"role": "assistant", "content": "Let me think about the plan."}})
     task = Task.load(TASK_DIR / "t01_magic_staff.yaml")

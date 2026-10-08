@@ -140,7 +140,7 @@ def make_factory(kind: str, model: str | None = None, effort: str | None = None,
                  host: str | None = None, num_ctx: int | None = None, think: bool | None = None) -> AgentFactory:
     if kind == "llm" and provider == "ollama":
         from .local_llm import DEFAULT_HOST, DEFAULT_NUM_CTX, OllamaAgent, OllamaClient
-        local = OllamaClient(model, host=host or DEFAULT_HOST, num_ctx=num_ctx or DEFAULT_NUM_CTX, think=think)
+        local = OllamaClient(model, host=host or DEFAULT_HOST, num_ctx=num_ctx or DEFAULT_NUM_CTX, think=think, seed=seed)
         local.check()
         return lambda task, name: OllamaAgent(name, local)
     if kind == "llm":

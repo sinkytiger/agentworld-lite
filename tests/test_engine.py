@@ -75,3 +75,13 @@ def test_aggro_damage_at_round_end():
     w.end_round()
     assert w.agents["a"].hp < hp
     assert any(e["type"] == "aggro" for e in w.env_events)
+
+
+def test_episode_seed_does_not_change_the_map():
+    from agentworld_lite.task import Task
+    from conftest import TASK_DIR
+    task = Task.load(TASK_DIR / "t02_supply_run.yaml")
+    layout = lambda w: sorted((e.id, e.pos) for e in w.entities.values())
+    assert layout(task.build_world(seed=7)) == layout(task.build_world(seed=8)) == layout(task.build_world(seed=123))
+    spawns = lambda w: [a.pos for a in w.agents.values()]
+    assert spawns(task.build_world(seed=1, random_spawn=True)) != spawns(task.build_world(seed=2, random_spawn=True))

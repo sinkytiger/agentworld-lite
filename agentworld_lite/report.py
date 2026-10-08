@@ -58,6 +58,17 @@ def _fmt(x, pct=False, nd=2):
     return f"{100 * x:.1f}" if pct else f"{x:.{nd}f}"
 
 
+def _sr_by_seed(ts: list[dict]) -> str:
+    """Success rate per seed as 'min–max' (one value when there is a single seed)."""
+    by_seed: dict[int, list[bool]] = defaultdict(list)
+    for t in ts:
+        by_seed[t["seed"]].append(t["result"]["success"])
+    rates = [mean(v) for v in by_seed.values()]
+    if len(rates) == 1:
+        return "-"
+    return f"{100 * min(rates):.1f}–{100 * max(rates):.1f}"
+
+
 def aggregate(trajs: list[dict], judge: str | None = None) -> dict:
     groups: dict[tuple, list[dict]] = defaultdict(list)
     for t in trajs:
@@ -74,6 +85,7 @@ def aggregate(trajs: list[dict], judge: str | None = None) -> dict:
         rows[key] = {
             "n": len(ts),
             "sr": mean(t["result"]["success"] for t in ts),
+            "sr_by_seed": _sr_by_seed(ts),
             "psr": mean(t["result"]["psr"] for t in ts),
             "cce": mean(c["cce"] for c in cces) if cces else None,
             "cce_succ": mean(c["cce"] for c in cces_s) if cces_s else None,
@@ -97,10 +109,10 @@ def render_markdown(trajs: list[dict], judge: str | None = None, graphs: int = 0
     md.append("")
     md.append("## Main results")
     md.append("")
-    md.append("| System | Setting | N | SR% | PSR% | CCE | CCE \\| success | min PAC \\| success | Avg rounds | Avg chats | Repeated chats % | Failed-action % | Deaths/ep | Cost $ | CCE judge |")
-    md.append("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
+    md.append("| System | Setting | N | SR% | SR% range over seeds | PSR% | CCE | CCE \\| success | min PAC \\| success | Avg rounds | Avg chats | Repeated chats % | Failed-action % | Deaths/ep | Cost $ | CCE judge |")
+    md.append("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
     for (sysname, setting), r in rows.items():
-        md.append(f"| {sysname} | {setting} | {r['n']} | {_fmt(r['sr'], True)} | {_fmt(r['psr'], True)} | {_fmt(r['cce'], nd=3)} | "
+        md.append(f"| {sysname} | {setting} | {r['n']} | {_fmt(r['sr'], True)} | {r['sr_by_seed']} | {_fmt(r['psr'], True)} | {_fmt(r['cce'], nd=3)} | "
                   f"{_fmt(r['cce_succ'], nd=3)} | {_fmt(r['pac_min'], nd=2)} | {_fmt(r['rounds'], nd=1)} | {_fmt(r['chats'], nd=1)} | "
                   f"{_fmt(r['repeat_rate'], True)} | {_fmt(r['fail_rate'], True)} | {_fmt(r['deaths'], nd=2)} | {_fmt(r['cost'], nd=2)} | {r['judge'] or '-'} |")
     md.append("")

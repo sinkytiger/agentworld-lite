@@ -71,8 +71,12 @@ class Task:
         return [a["username"] for a in self.agents]
 
     # ------------------------------------------------------------------ world
+    WORLD_SEED = 7  # the map layout every task's docs and reference solution were written against
+
     def build_world(self, seed: int = 7, random_spawn: bool = False) -> World:
-        world = World(seed=seed)
+        """The map layout is fixed per task (meta `world_seed`, default 7). The episode `seed` only
+        drives the random_spawn ablation; agents' sampling seeds are set by the runner."""
+        world = World(seed=int(self.meta.get("world_seed", self.WORLD_SEED)))
         for e in self.extra_entities:
             extra = {k: v for k, v in e.items() if k not in ("kind", "type", "pos", "id")}
             world.add_entity(e["kind"], e["type"], e["pos"], entity_id=e.get("id"), **extra)

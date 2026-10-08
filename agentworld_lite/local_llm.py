@@ -39,7 +39,7 @@ class OllamaError(RuntimeError):
 class OllamaClient:
     def __init__(self, model: str, host: str = DEFAULT_HOST, num_ctx: int = DEFAULT_NUM_CTX,
                  temperature: float = 0.2, timeout: float = 600.0, think: bool | None = None,
-                 num_predict: int = DEFAULT_NUM_PREDICT) -> None:
+                 num_predict: int = DEFAULT_NUM_PREDICT, seed: int | None = None) -> None:
         self.model = model
         self.host = host.rstrip("/")
         self.num_ctx = num_ctx
@@ -47,6 +47,7 @@ class OllamaClient:
         self.timeout = timeout
         self.think = think
         self.num_predict = num_predict
+        self.seed = seed
         self.usage = UsageMeter()
 
     RETRY_STATUS = (429, 500, 502, 503, 504)
@@ -111,6 +112,8 @@ class OllamaClient:
             "options": {"num_ctx": self.num_ctx, "temperature": self.temperature,
                         "num_predict": num_predict or self.num_predict},
         }
+        if self.seed is not None:
+            payload["options"]["seed"] = self.seed
         if tools:
             payload["tools"] = tools
         if fmt is not None:
