@@ -8,3 +8,4 @@ dist/
 runs/
 reports/
 posts/
+*.log

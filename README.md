@@ -18,7 +18,7 @@ A lightweight, pip-installable testbed for **long-horizon multi-agent LLM collab
 - **Metrics**: success rate, partial success rate, **CCE / per-agent contribution (PAC)** with two judges (the paper's backward-tracing LLM judge, plus a deterministic rule-based judge for free runs and judge-agreement checks), and the paper's 6-way **communication failure taxonomy**.
 - **Blueprint-first task generator** (AutoGym-style, adapted to multi-agent play): sample generation parameters, build the solution DAG (who gathers, crafts and hands what to whom), materialize a task, certify it by running the reference solution, repair failures, set the round budget. No LLM calls; **~93% yield**.
 - **Model backends**: Claude (Anthropic API) and **Ollama** (free local models, or Ollama cloud models such as `gemma4:cloud`).
-- **88 tests**, none of which call an API.
+- **89 tests**, none of which call an API.
 
 ## Quick start (no API key)
 
@@ -90,26 +90,41 @@ Generation parameters: recipe depth of the target (1–3), team structure (`chai
 
 ## Results
 
-Seed 7, all 9 tasks, run on a laptop RTX 2060 (6 GB) at zero API cost. CCE uses the rule-based judge. Full tables: [docs/results.md](docs/results.md).
+Seed 7, run on 2026-10-08 at zero API cost: `gemma4:cloud` through Ollama's free cloud plan, `llama3.2:3b` locally on a laptop RTX 2060 (6 GB). For consistency every CCE below comes from the rule-based judge. Full tables, LLM-judge CCE and causal graphs: [docs/results.md](docs/results.md) (hand-built tasks) and [docs/results_generated.md](docs/results_generated.md) (generated tasks).
 
-| System | Setting | Episodes | Success | Partial success | CCE | Chats / episode | Repeated chats | Failed actions |
+### Hand-built tasks (9)
+
+| System | Setting | Success | Partial success | CCE | CCE \| success | Chats / episode | Repeated chats | Failed actions |
 |---|---|---|---|---|---|---|---|---|
-| Reference solutions (oracle) | full | 9 | 100% | 100% | 0.642 | 0.6 | 0% | 13.1% |
-| llama3.2:3b (local, Ollama) | full | 9 | 0% | 3.7% | 0 | 55.6 | 84.4% | 16.8% |
-| llama3.2:3b (local, Ollama) | no_comm | 9 | 0% | 3.7% | 0 | 0 | – | 34.8% |
-| Random actions | full | 27 | 0% | 5.6% | 0 | 8.1 | 58.3%* | 53.0% |
-| Random actions | no_comm | 27 | 0% | 3.7% | 0 | 0 | – | 58.1% |
+| Reference solutions (oracle) | full | 100% | 100% | 0.642 | 0.642 | 0.6 | 0% | 13.1% |
+| gemma4:cloud (Ollama, free plan) | full | 88.9% | 97.2% | 0.502 | 0.565 | 3.0 | 0% | 0.3% |
+| gemma4:cloud (Ollama, free plan) | no_comm | 77.8% | 77.8% | 0.392 | 0.504 | 0 | – | 4.9% |
+| llama3.2:3b (local) | full | 0% | 3.7% | 0 | – | 55.6 | 84.4% | 16.8% |
+| llama3.2:3b (local) | no_comm | 0% | 3.7% | 0 | – | 0 | – | 34.8% |
+| Random actions (3 seeds) | full | 0% | 5.6% | 0 | – | 8.1 | 58.3%* | 53.0% |
 
 \* The random agent picks from four canned messages, so repeats are expected.
 
-**What a 3B model does in a team** (886 actions in the `full` setting):
+### Generated tasks (17, blueprint-first, sampled across obfuscation levels)
 
-- **No collaboration starts.** Zero items were handed to a teammate and zero crafts succeeded, so none of the supply chains got past the first link. Its success rate equals the random baseline. (On the original benchmark, the weakest model in the AgentWorld paper, DeepSeek R1-70B, solved 20%.)
-- **Talk replaces action.** 56% of its actions are chat messages, and 84% of those repeat a message already sent. This is the paper's most common failure mode (stale and redundant messages). In the staff task, two agents sent 28 messages asking for an axe, while the only agent holding one never cut a tree.
-- **Role confusion.** In the same task the lumberjack tried 12 times to craft sticks it lacked the skill for. In other tasks, agents tried to eat food they did not have (127 failed `eat_food` calls).
-- **Chat hides failure but does not fix it.** With chat available, the failed-action rate halves (16.8% vs 34.8% in `no_comm`), but only because messages replace failing actions; success is unchanged.
+| Obfuscation | Tasks | Success with chat | Success without chat | Gap |
+|---|---|---|---|---|
+| low | 5 | 100% | 100% | 0 pp |
+| mid | 5 | 100% | 80% | 20 pp |
+| high | 5 | 100% | 80% | 20 pp |
+| max | 2 | 50% | 0% | 50 pp |
+| all | 17 | 94.1% | 76.5% | 17.6 pp |
 
-Results for stronger models (Ollama cloud models, Claude) are not in yet. Run them with the commands above, and PRs with results are welcome.
+Model: `gemma4:cloud`. Small samples per level (2–5 tasks, one seed), so read the trend, not the exact numbers.
+
+### What we learned
+
+- **The hand-built tasks are close to saturated for a capable model.** `gemma4:cloud` solves 8 of 9, and blocking chat changes the outcome in only two tasks (the stick hand-off in the staff task and the crystal plates). The shared documents spell out the plan, so agents can follow it without talking. The AgentWorld paper reports a much larger drop without communication (54% → 23%).
+- **Communication still buys efficiency.** With chat, the successful episodes are leaner (CCE 0.565 vs 0.504), finish faster (11.9 vs 14.8 rounds) and fail fewer actions (0.3% vs 4.9%).
+- **The generator's obfuscation knob controls how much communication matters.** In low-obfuscation generated tasks the model never sent a message and still solved everything. As information moves from the shared document into private briefs, the gap between chat and no-chat grows from 0 to 50 points.
+- **A 3B local model never starts collaborating.** `llama3.2:3b` handed zero items to teammates and crafted nothing in 886 actions. 56% of its actions were chat messages and 84% of those repeated an earlier message, the paper's most common failure mode. In the staff task, two agents sent 28 messages asking for an axe while the only agent holding one never cut a tree.
+- **The two CCE judges agree about as well as the paper's human check.** Over the 15 successful `gemma4:cloud` episodes, the rule-based judge and the LLM judge (`gemma4:cloud`, paper procedure) agree on 81% of actions (Cohen's κ 0.60). The paper reports 82% and κ 0.64 between humans and its GPT-4.1 judge; that is a different comparison, but it suggests the cheap rule judge is a usable stand-in. The LLM judge is far more generous on survival tasks (0.93–1.0 vs 0.53–0.60), as expected from its inclusive labelling policy.
+- **Failure taxonomy (gemma4:cloud, full):** 6 of 27 messages were flagged, 4 as stale/redundant and 2 as factual errors (for example, a carpenter reporting the wrong tile).
 
 ## Tasks
 
