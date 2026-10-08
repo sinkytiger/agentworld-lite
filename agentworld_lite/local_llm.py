@@ -28,6 +28,7 @@ from .tools import tool_specs
 
 DEFAULT_HOST = "http://127.0.0.1:11434"  # "localhost" adds ~2s per call on Windows (IPv6 fallback)
 DEFAULT_NUM_CTX = 8192  # prompts are ~3k tokens + ~1.5k of tool schemas; many models default lower
+DEFAULT_NUM_PREDICT = 768  # cap per-turn output; small models otherwise narrate for 1k+ tokens before acting
 
 
 class OllamaError(RuntimeError):
@@ -36,13 +37,15 @@ class OllamaError(RuntimeError):
 
 class OllamaClient:
     def __init__(self, model: str, host: str = DEFAULT_HOST, num_ctx: int = DEFAULT_NUM_CTX,
-                 temperature: float = 0.2, timeout: float = 600.0, think: bool | None = None) -> None:
+                 temperature: float = 0.2, timeout: float = 600.0, think: bool | None = None,
+                 num_predict: int = DEFAULT_NUM_PREDICT) -> None:
         self.model = model
         self.host = host.rstrip("/")
         self.num_ctx = num_ctx
         self.temperature = temperature
         self.timeout = timeout
         self.think = think
+        self.num_predict = num_predict
         self.usage = UsageMeter()
 
     # -- transport (overridden in tests)
@@ -76,10 +79,12 @@ class OllamaClient:
         info = next(m for m in tags["models"] if m.get("name") in wanted or m.get("model") in wanted)
         return (info.get("details") or {}).get("parameter_size", "?")
 
-    def chat(self, messages: list[dict], tools: list[dict] | None = None, fmt: dict | str | None = None) -> tuple[dict, dict]:
+    def chat(self, messages: list[dict], tools: list[dict] | None = None, fmt: dict | str | None = None,
+             num_predict: int | None = None) -> tuple[dict, dict]:
         payload: dict = {
             "model": self.model, "messages": messages, "stream": False,
-            "options": {"num_ctx": self.num_ctx, "temperature": self.temperature},
+            "options": {"num_ctx": self.num_ctx, "temperature": self.temperature,
+                        "num_predict": num_predict or self.num_predict},
         }
         if tools:
             payload["tools"] = tools
@@ -98,13 +103,13 @@ class OllamaClient:
         messages = [{"role": "system", "content": system}, {"role": "user", "content": prompt}]
         if not self.is_cloud:
             try:
-                resp, usage = self.chat(messages, fmt=schema)
+                resp, usage = self.chat(messages, fmt=schema, num_predict=max_tokens)
                 return json.loads((resp.get("message") or {}).get("content", "")), usage
             except (OllamaError, json.JSONDecodeError):
                 pass
         messages[1]["content"] = (prompt + "\n\nRespond with ONLY a JSON object that matches this JSON schema, "
                                   "no other text:\n" + json.dumps(schema))
-        resp, usage = self.chat(messages)
+        resp, usage = self.chat(messages, num_predict=max_tokens)
         text = (resp.get("message") or {}).get("content", "")
         m = _JSON_OBJ.search(text)
         try:

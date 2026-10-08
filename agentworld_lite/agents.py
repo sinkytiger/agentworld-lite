@@ -22,7 +22,8 @@ How the game works:
 - Smithing requires standing within 2 tiles of the anvil; cooking requires a stove or a campfire within 2 tiles.
 - To hand items to a teammate you must be within 2 tiles of them, so agree on a meeting point.
 - At 0 HP you are knocked out for 3 rounds and respawn in the village. Eat food to heal.
-- The round budget is limited: act efficiently, and do not send redundant messages."""
+- The round budget is limited: act efficiently, and do not send redundant messages.
+- Keep any text before your tool call to at most two short sentences."""
 
 NUDGE = "You did not call a tool. You MUST call exactly ONE tool function now."
 
