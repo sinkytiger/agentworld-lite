@@ -24,6 +24,21 @@ def load_run(run_dir: str | Path) -> list[dict]:
     return out
 
 
+def repeated_chats(traj: dict) -> tuple[int, int]:
+    """(repeated, total) chat messages; a message is repeated if the same normalized text was already sent
+    in the episode by anyone. A judge-free proxy for the paper's top failure mode (stale & redundant)."""
+    seen: set[str] = set()
+    repeated = total = 0
+    for a in traj["actions"]:
+        if a["tool"] != "send_chat" or not a["ok"]:
+            continue
+        text = " ".join(str(a["args"].get("message", "")).lower().split())
+        total += 1
+        repeated += text in seen
+        seen.add(text)
+    return repeated, total
+
+
 def system_label(traj: dict) -> str:
     m = traj.get("meta") or {}
     label = m.get("model") or m.get("agent") or "?"
@@ -54,6 +69,8 @@ def aggregate(trajs: list[dict], judge: str | None = None) -> dict:
         cces_s = [c for c in (_cce(t, judge) for t in succ) if c]
         pac_min = [min(c["pac"].values()) for c in cces_s if c["pac"]]
         n_act = sum(t["result"]["n_actions"] for t in ts)
+        rep = [repeated_chats(t) for t in ts]
+        n_chat = sum(c for _, c in rep)
         rows[key] = {
             "n": len(ts),
             "sr": mean(t["result"]["success"] for t in ts),
@@ -64,6 +81,7 @@ def aggregate(trajs: list[dict], judge: str | None = None) -> dict:
             "rounds": mean(t["result"]["rounds_used"] for t in ts),
             "rounds_succ": mean(t["result"]["rounds_used"] for t in succ) if succ else None,
             "chats": mean(t["result"]["n_chats"] for t in ts),
+            "repeat_rate": sum(r for r, _ in rep) / n_chat if n_chat else None,
             "fail_rate": sum(t["result"]["n_failed_actions"] for t in ts) / n_act if n_act else 0.0,
             "deaths": mean(t["result"]["deaths"] for t in ts),
             "cost": sum((t.get("usage") or {}).get("cost_usd", 0.0) for t in ts),
@@ -79,15 +97,17 @@ def render_markdown(trajs: list[dict], judge: str | None = None, graphs: int = 0
     md.append("")
     md.append("## Main results")
     md.append("")
-    md.append("| System | Setting | N | SR% | PSR% | CCE | CCE \\| success | min PAC \\| success | Avg rounds | Avg chats | Failed-action % | Deaths/ep | Cost $ | CCE judge |")
-    md.append("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
+    md.append("| System | Setting | N | SR% | PSR% | CCE | CCE \\| success | min PAC \\| success | Avg rounds | Avg chats | Repeated chats % | Failed-action % | Deaths/ep | Cost $ | CCE judge |")
+    md.append("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
     for (sysname, setting), r in rows.items():
         md.append(f"| {sysname} | {setting} | {r['n']} | {_fmt(r['sr'], True)} | {_fmt(r['psr'], True)} | {_fmt(r['cce'], nd=3)} | "
                   f"{_fmt(r['cce_succ'], nd=3)} | {_fmt(r['pac_min'], nd=2)} | {_fmt(r['rounds'], nd=1)} | {_fmt(r['chats'], nd=1)} | "
-                  f"{_fmt(r['fail_rate'], True)} | {_fmt(r['deaths'], nd=2)} | {_fmt(r['cost'], nd=2)} | {r['judge'] or '-'} |")
+                  f"{_fmt(r['repeat_rate'], True)} | {_fmt(r['fail_rate'], True)} | {_fmt(r['deaths'], nd=2)} | {_fmt(r['cost'], nd=2)} | {r['judge'] or '-'} |")
     md.append("")
     md.append("CCE counts failed episodes as 0 (no success action, so the contributing set is empty); "
-              "'CCE | success' averages successful episodes only. min PAC = least-contributing agent's share of useful actions.")
+              "'CCE | success' averages successful episodes only. min PAC = least-contributing agent's share of useful actions. "
+              "Repeated chats = messages whose text was already sent earlier in the episode "
+              "(judge-free proxy for stale/redundant messages).")
 
     # per-category SR
     keys = list(rows)

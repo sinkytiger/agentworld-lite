@@ -61,3 +61,11 @@ def test_llm_judge_backward_sweep():
     assert call["output_config"]["format"]["type"] == "json_schema"
     agree = agreement(traj, res, res)
     assert agree["raw"] == 1.0 and agree["kappa"] == 1.0
+
+
+def test_repeated_chat_rate():
+    from agentworld_lite.report import repeated_chats
+    chat = lambda i, msg, ok=True: {"id": i, "tool": "send_chat", "ok": ok, "args": {"to": "all", "message": msg}}
+    traj = {"actions": [chat("a", "Need an AXE"), chat("b", "need an  axe"), chat("c", "on my way"),
+                        chat("d", "need an axe", ok=False), {"id": "e", "tool": "wait", "ok": True, "args": {}}]}
+    assert repeated_chats(traj) == (1, 3)

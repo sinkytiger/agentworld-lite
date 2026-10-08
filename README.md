@@ -58,7 +58,9 @@ python -m agentworld_lite run --agent llm --provider ollama --model gemma4:cloud
 python -m agentworld_lite evaluate --run runs/gemma_smoke --judge both --judge-provider ollama --judge-model gemma4:cloud
 ```
 
-Notes: the context window defaults to 8192 tokens (`--num-ctx`), since a turn is roughly 3k tokens of prompt plus 1.5k of tool schemas. Episodes run one at a time by default with Ollama. Cloud models do not support structured outputs, so the judges fall back to a schema-in-prompt request and extract the JSON from the reply. Small models that print a tool call as JSON text instead of a structured call are still executed and tagged `note: text_tool_call`.
+Measured on a laptop RTX 2060 (6 GB): `llama3.2:3b` answers a turn in about 2 s, so the 9-task suite took 27 minutes in the `full` setting. `qwen3:4b` writes 1,000+ tokens of reasoning before acting, even with `--think off`, which means 30–70 s per turn on this GPU. Pick models that support tool calling and answer briefly.
+
+Notes: the context window defaults to 8192 tokens (`--num-ctx`), since a turn is roughly 3k tokens of prompt plus 1.5k of tool schemas. Output is capped at 768 tokens per turn. Episodes run one at a time by default with Ollama. Cloud models do not support structured outputs, so the judges fall back to a schema-in-prompt request and extract the JSON from the reply. Small models that print a tool call as JSON text instead of a structured call are still executed and tagged `note: text_tool_call`.
 
 ## Run with Claude
 
@@ -86,15 +88,28 @@ python -m agentworld_lite gen --n 30 --seed 7 --out tasks/gym
 
 Generation parameters: recipe depth of the target (1–3), team structure (`chain` = one agent per crafting skill, `hub` = one central workshop), **distributed obfuscation** (0–1: how much of the plan moves from the shared document into individual agents' private briefs or out of the docs entirely), quantity, and extra gatherers. Each kept task records its parameters, ground-truth length, repairs, and capability-axis predicates (hand-offs, travel distance, information and permission asymmetry, station constraints). Sampling weights can be overridden with `--weights weights.json`. See [docs/autogym_integration.md](docs/autogym_integration.md) (Korean) for the full design, including the planned distractors, four-signal verifier, difficulty bands, and failure-driven curriculum.
 
-## Baselines
+## Results
 
-| System | Setting | Episodes | Success | Partial success | CCE (rule judge) | Avg. rounds |
-|---|---|---|---|---|---|---|
-| Reference solutions (oracle) | full | 9 | 100% | 100% | 0.642 | 7.4 |
-| Random actions | full | 27 | 0% | 5.6% | 0 | 26.6 |
-| Random actions | no_comm | 27 | 0% | 3.7% | 0 | 26.6 |
+Seed 7, all 9 tasks, run on a laptop RTX 2060 (6 GB) at zero API cost. CCE uses the rule-based judge. Full tables: [docs/results.md](docs/results.md).
 
-LLM baselines are not published yet. Contributions of run results are welcome.
+| System | Setting | Episodes | Success | Partial success | CCE | Chats / episode | Repeated chats | Failed actions |
+|---|---|---|---|---|---|---|---|---|
+| Reference solutions (oracle) | full | 9 | 100% | 100% | 0.642 | 0.6 | 0% | 13.1% |
+| llama3.2:3b (local, Ollama) | full | 9 | 0% | 3.7% | 0 | 55.6 | 84.4% | 16.8% |
+| llama3.2:3b (local, Ollama) | no_comm | 9 | 0% | 3.7% | 0 | 0 | – | 34.8% |
+| Random actions | full | 27 | 0% | 5.6% | 0 | 8.1 | 58.3%* | 53.0% |
+| Random actions | no_comm | 27 | 0% | 3.7% | 0 | 0 | – | 58.1% |
+
+\* The random agent picks from four canned messages, so repeats are expected.
+
+**What a 3B model does in a team** (886 actions in the `full` setting):
+
+- **No collaboration starts.** Zero items were handed to a teammate and zero crafts succeeded, so none of the supply chains got past the first link. Its success rate equals the random baseline. (On the original benchmark, the weakest model in the AgentWorld paper, DeepSeek R1-70B, solved 20%.)
+- **Talk replaces action.** 56% of its actions are chat messages, and 84% of those repeat a message already sent. This is the paper's most common failure mode (stale and redundant messages). In the staff task, two agents sent 28 messages asking for an axe, while the only agent holding one never cut a tree.
+- **Role confusion.** In the same task the lumberjack tried 12 times to craft sticks it lacked the skill for. In other tasks, agents tried to eat food they did not have (127 failed `eat_food` calls).
+- **Chat hides failure but does not fix it.** With chat available, the failed-action rate halves (16.8% vs 34.8% in `no_comm`), but only because messages replace failing actions; success is unchanged.
+
+Results for stronger models (Ollama cloud models, Claude) are not in yet. Run them with the commands above, and PRs with results are welcome.
 
 ## Tasks
 
