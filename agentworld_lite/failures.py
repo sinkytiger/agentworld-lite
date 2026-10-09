@@ -66,8 +66,10 @@ def _state_at(traj: dict, rnd: int, sender: str) -> str:
     snap = traj["snapshots"][min(rnd - 1, len(traj["snapshots"]) - 1)]  # state at the start of that round
     me = snap["agents"][sender]
     cps = ", ".join(f"{c['name']} {c['have']}/{c['need']}" for c in snap["checkpoints"])
-    others = "; ".join(f"{n}@{tuple(s['pos'])} inv={s['inventory']}" for n, s in snap["agents"].items() if n != sender)
-    return f"checkpoints: {cps} | sender@{tuple(me['pos'])} inv={me['inventory']} | others: {others}"
+    def where(s):  # finance snapshots have no position
+        return f"@{tuple(s['pos'])}" if "pos" in s else ""
+    others = "; ".join(f"{n}{where(s)} inv={s['inventory']}" for n, s in snap["agents"].items() if n != sender)
+    return f"checkpoints: {cps} | sender{where(me)} inv={me['inventory']} | others: {others}"
 
 
 def classify_failures(traj: dict, client: ClaudeClient, batch: int = 20) -> dict:

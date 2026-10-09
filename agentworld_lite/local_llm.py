@@ -154,7 +154,7 @@ def to_ollama_tools(specs: list[dict]) -> list[dict]:
 _JSON_OBJ = re.compile(r"\{.*\}", re.S)
 
 
-def parse_text_tool_call(text: str) -> tuple[str, dict] | None:
+def parse_text_tool_call(text: str, valid_names=TOOL_NAMES) -> tuple[str, dict] | None:
     """Fallback for models that print {"name": ..., "arguments": {...}} instead of a structured call."""
     m = _JSON_OBJ.search(text or "")
     if not m:
@@ -172,7 +172,7 @@ def parse_text_tool_call(text: str) -> tuple[str, dict] | None:
             args = json.loads(args)
         except json.JSONDecodeError:
             return None
-    if name in TOOL_NAMES and isinstance(args, dict):
+    if name in valid_names and isinstance(args, dict):
         return name, args
     return None
 
@@ -185,9 +185,9 @@ class OllamaAgent(BaseAgent):
         self.client = client
 
     def act(self, turn: TurnInput) -> Decision:
-        tools = to_ollama_tools(tool_specs(turn.allowed_tools, strict=False))
+        tools = to_ollama_tools((turn.tool_specs or tool_specs)(turn.allowed_tools, strict=False))
         messages = [
-            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "system", "content": turn.system_prompt or SYSTEM_PROMPT},
             {"role": "user", "content": turn.context + "\n\n" + turn.observation},
         ]
         usage_total: dict = {}
@@ -209,7 +209,7 @@ class OllamaAgent(BaseAgent):
                         args = {}
                 note = "" if attempt == 0 else "needed_nudge"
                 return Decision(fn.get("name", "wait"), dict(args), reasoning=text, usage=usage_total, note=note)
-            parsed = parse_text_tool_call(text)
+            parsed = parse_text_tool_call(text, turn.allowed_tools)
             if parsed:
                 return Decision(parsed[0], parsed[1], reasoning=text, usage=usage_total, note="text_tool_call")
             messages = messages + [{"role": "assistant", "content": text}, {"role": "user", "content": NUDGE}]

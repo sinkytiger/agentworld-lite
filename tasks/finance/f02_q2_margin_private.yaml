@@ -1,0 +1,128 @@
+id: f02_q2_margin_private
+name: Second-quarter operating margin of 샘플전자
+category: finance
+domain: finance
+world_guide: false
+description: The desk needs the standalone second-quarter 2025 revenue and operating margin of 샘플전자 (stock code 999990) as
+  of 2025-10-01. The collector pulls filings, the analyst computes, the reporter submits.
+objectives:
+  primary: 'Submit two answers: q2_revenue (revenue of April-June 2025 only, in KRW) and q2_operating_margin (operating income
+    / revenue of that quarter, in percent, e.g. 7.5 for 7.5%).'
+  secondary:
+  - Use as few rounds as possible.
+max_rounds: 16
+inputs:
+  as_of: '2025-10-01'
+  company: 샘플전자
+data:
+  dir: data/finance/sample
+matched:
+  pair_id: f02
+  placement: private
+  fact_counts:
+    analyst: 3
+relevant_game_context: '- Common traps: consolidated (CFS) vs separate (OFS) statements, net income vs net income attributable
+  to owners, cumulative vs single-quarter figures, and reports filed after the as-of date.'
+agents:
+- username: collector
+  role: data collector
+  restricted_tools:
+  - calculate
+  - submit_answer
+- username: analyst
+  role: analyst
+  restricted_tools:
+  - fetch_financials
+  - fetch_shares
+  - submit_answer
+  role_brief: Report figures are cumulative from January, so a standalone Q2 figure = H1 cumulative - Q1 cumulative. Operating
+    margin (%) = operating income / revenue x 100, both from consolidated (CFS) statements. The inputs are the 2025 Q1 CFS
+    and 2025 H1 CFS reports.
+- username: reporter
+  role: reporter
+  restricted_tools:
+  - fetch_financials
+  - fetch_shares
+  - calculate
+verifier:
+  checkpoints:
+  - type: answer
+    name: q2_revenue
+    field: q2_revenue
+    expected: 230000000000
+    rel_tol: 0.005
+  - type: answer
+    name: q2_operating_margin
+    field: q2_operating_margin
+    expected: 8.26087
+    rel_tol: 0.005
+reference_solution:
+  collector:
+  - - fetch_financials
+    - company: '999990'
+      year: 2025
+      period: Q1
+      basis: CFS
+  - - fetch_financials
+    - company: '999990'
+      year: 2025
+      period: H1
+      basis: CFS
+  - - share_facts
+    - to_agent: analyst
+      fact_ids:
+      - 999990.2025Q1.CFS.revenue
+      - 999990.2025H1.CFS.revenue
+      - 999990.2025Q1.CFS.operating_income
+      - 999990.2025H1.CFS.operating_income
+  analyst:
+  - - wait
+    - reason: waiting for inputs
+    - until_have:
+        999990.2025H1.CFS.operating_income: 1
+      retries: 30
+  - - calculate
+    - name: q2_revenue
+      formula: h1 - q1
+      unit: KRW
+      inputs:
+      - var: h1
+        fact_id: 999990.2025H1.CFS.revenue
+      - var: q1
+        fact_id: 999990.2025Q1.CFS.revenue
+  - - calculate
+    - name: q2_operating_income
+      formula: h1 - q1
+      unit: KRW
+      inputs:
+      - var: h1
+        fact_id: 999990.2025H1.CFS.operating_income
+      - var: q1
+        fact_id: 999990.2025Q1.CFS.operating_income
+  - - calculate
+    - name: q2_operating_margin
+      formula: o / r * 100
+      unit: '%'
+      inputs:
+      - var: o
+        fact_id: calc.q2_operating_income
+      - var: r
+        fact_id: calc.q2_revenue
+  - - share_facts
+    - to_agent: reporter
+      fact_ids:
+      - calc.q2_revenue
+      - calc.q2_operating_margin
+  reporter:
+  - - wait
+    - reason: waiting for results
+    - until_have:
+        calc.q2_operating_margin: 1
+        calc.q2_revenue: 1
+      retries: 30
+  - - submit_answer
+    - answers:
+      - field: q2_revenue
+        fact_id: calc.q2_revenue
+      - field: q2_operating_margin
+        fact_id: calc.q2_operating_margin

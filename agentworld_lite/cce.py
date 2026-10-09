@@ -29,7 +29,9 @@ from . import content as C
 from .llm import ClaudeClient
 
 PRODUCTIVE_TOOLS = {"attack_entity", "harvest_resource", "craft_item", "transfer_items", "eat_food",
-                    "equip_item", "buy_item", "sell_item", "build_structure"}
+                    "equip_item", "buy_item", "sell_item", "build_structure",
+                    # finance domain (agentworld_lite.finance)
+                    "fetch_financials", "fetch_shares", "calculate", "share_facts", "submit_answer"}
 
 
 # ---------------------------------------------------------------------- graph utilities
@@ -174,6 +176,10 @@ class RuleJudge:
                             q[0][1] -= take
                             if q[0][1] <= 0:
                                 q.popleft()
+            # read-only use (finance facts are cited, not consumed): link to the latest producer of each fact
+            used_from = {lots[who][item][-1][0] for who, items in (eff.get("uses") or {}).items()
+                         for item in items if lots[who][item]}
+            edges += [(prod, aid) for prod in sorted(used_from - {None, aid})]
             for who, delta in (eff.get("inv") or {}).items():
                 for item, d in delta.items():
                     if d > 0:

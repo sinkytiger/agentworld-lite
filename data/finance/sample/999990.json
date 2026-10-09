@@ -1,0 +1,111 @@
+{
+ "name": "샘플전자",
+ "stock_code": "999990",
+ "corp_code": "SYN00001",
+ "currency": "KRW",
+ "synthetic": true,
+ "note": "SYNTHETIC company for tests and examples. Not a real issuer; numbers are made up. Same schema as files produced by `python -m agentworld_lite.finance fetch` from DART OpenAPI.",
+ "statements": {
+  "2024:H1:CFS": {
+   "filed": "2024-08-14",
+   "rcept_no": "SYN-2024H1",
+   "revenue": 380000000000,
+   "operating_income": 25000000000,
+   "net_income": 19000000000,
+   "net_income_owners": 18000000000,
+   "equity_owners": 580000000000,
+   "equity_total": 608000000000
+  },
+  "2024:FY:CFS": {
+   "filed": "2025-03-18",
+   "rcept_no": "SYN-2024FY",
+   "revenue": 800000000000,
+   "operating_income": 60000000000,
+   "net_income": 45000000000,
+   "net_income_owners": 42000000000,
+   "equity_owners": 600000000000,
+   "equity_total": 630000000000
+  },
+  "2025:Q1:CFS": {
+   "filed": "2025-05-15",
+   "rcept_no": "SYN-2025Q1",
+   "revenue": 210000000000,
+   "operating_income": 16000000000,
+   "net_income": 12500000000,
+   "net_income_owners": 12000000000,
+   "equity_owners": 612000000000,
+   "equity_total": 642000000000
+  },
+  "2025:H1:CFS": {
+   "filed": "2025-08-14",
+   "rcept_no": "SYN-2025H1",
+   "revenue": 440000000000,
+   "operating_income": 35000000000,
+   "net_income": 27000000000,
+   "net_income_owners": 26000000000,
+   "equity_owners": 625000000000,
+   "equity_total": 656000000000
+  },
+  "2025:Q3:CFS": {
+   "filed": "2025-11-14",
+   "rcept_no": "SYN-2025Q3",
+   "revenue": 670000000000,
+   "operating_income": 52000000000,
+   "net_income": 40000000000,
+   "net_income_owners": 38000000000,
+   "equity_owners": 640000000000,
+   "equity_total": 672000000000
+  },
+  "2024:H1:OFS": {
+   "filed": "2024-08-14",
+   "rcept_no": "SYN-2024H1",
+   "revenue": 330000000000,
+   "operating_income": 20000000000,
+   "net_income": 15000000000,
+   "equity_total": 480000000000
+  },
+  "2024:FY:OFS": {
+   "filed": "2025-03-18",
+   "rcept_no": "SYN-2024FY",
+   "revenue": 700000000000,
+   "operating_income": 50000000000,
+   "net_income": 38000000000,
+   "equity_total": 500000000000
+  },
+  "2025:Q1:OFS": {
+   "filed": "2025-05-15",
+   "rcept_no": "SYN-2025Q1",
+   "revenue": 180000000000,
+   "operating_income": 13000000000,
+   "net_income": 10000000000,
+   "equity_total": 505000000000
+  },
+  "2025:H1:OFS": {
+   "filed": "2025-08-14",
+   "rcept_no": "SYN-2025H1",
+   "revenue": 390000000000,
+   "operating_income": 29000000000,
+   "net_income": 21000000000,
+   "equity_total": 515000000000
+  }
+ },
+ "shares": {
+  "2024:FY": {
+   "filed": "2025-03-18",
+   "rcept_no": "SYN-2024FY",
+   "common": 20000000,
+   "preferred": 1000000,
+   "treasury_common": 300000
+  },
+  "2025:H1": {
+   "filed": "2025-08-14",
+   "rcept_no": "SYN-2025H1",
+   "common": 20000000,
+   "preferred": 1000000,
+   "treasury_common": 500000
+  }
+ },
+ "prices": {
+  "2025-09-30": 60000
+ }
+}

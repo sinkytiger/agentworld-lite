@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass, field
+from typing import Callable
 
 from . import content as C
 from .engine import ActionResult, World
@@ -36,6 +37,9 @@ class TurnInput:
     observation: str
     context: str
     allowed_tools: list[str]
+    # Domain hooks (default: the RPG domain). tool_specs(allowed, strict) -> Claude tool definitions.
+    system_prompt: str | None = None
+    tool_specs: Callable | None = None
 
 
 @dataclass
@@ -72,7 +76,7 @@ class LLMAgent(BaseAgent):
         self.strict_tools = strict_tools
 
     def act(self, turn: TurnInput) -> Decision:
-        tools = tool_specs(turn.allowed_tools, strict=self.strict_tools)
+        tools = (turn.tool_specs or tool_specs)(turn.allowed_tools, strict=self.strict_tools)
         messages = [{
             "role": "user",
             "content": [
@@ -83,7 +87,7 @@ class LLMAgent(BaseAgent):
         usage_total: dict = {}
         for attempt in range(2):
             resp, usage = self.client.create(
-                system=SYSTEM_PROMPT,
+                system=turn.system_prompt or SYSTEM_PROMPT,
                 tools=tools,
                 tool_choice={"type": "auto", "disable_parallel_tool_use": True},
                 messages=messages,

@@ -18,7 +18,8 @@ A lightweight, pip-installable testbed for **long-horizon multi-agent LLM collab
 - **Metrics**: success rate, partial success rate, **CCE / per-agent contribution (PAC)** with two judges (the paper's backward-tracing LLM judge, plus a deterministic rule-based judge for free runs and judge-agreement checks), and the paper's 6-way **communication failure taxonomy**.
 - **Blueprint-first task generator** (idea borrowed from AutoGym, adapted to multi-agent play): sample generation parameters, build the solution DAG (who gathers, crafts and hands what to whom), materialize a task, certify it by running the reference solution, repair failures, set the round budget. No LLM calls; **~93% yield**.
 - **Model backends**: Claude (Anthropic API) and **Ollama** (free local models, or Ollama cloud models such as `gemma4:cloud`).
-- **91 tests**, none of which call an API.
+- **Finance domain**: the same protocol on a research desk that fetches DART disclosures, computes valuation metrics and submits cited answers (see below).
+- **112 tests**, none of which call an API.
 
 ## Quick start (no API key)
 
@@ -141,6 +142,26 @@ Model: `gemma4:cloud`. By recipe depth (with / without chat): depth 1 100% / 100
 | t08_crystal_plates | coordination | 4 | 20 | each agent knows a different plate location; all four must be held at once |
 | t09_harvest_feast | coordination | 6 | 30 | two fishers and two foragers feed a cook who serves the host |
 
+## Finance domain (DART disclosures)
+
+The same protocol, trajectory format and metrics, applied to equity research. A **collector** fetches figures from DART periodic reports, an **analyst** computes, a **reporter** submits. Each role is limited with `restricted_tools`, so the team has to hand numbers to each other.
+
+- Every number is a *fact* with an id, held in an agent's notebook. Answers must cite fact ids (no typed-in numbers), calculations are plain arithmetic over notebook facts, and reports filed after the task's as-of date are blocked.
+- The rule-based CCE judge follows fact provenance: fetch → share → calculate → share → submit.
+- 4 tasks: TTM PER and standalone Q2 operating margin, each as a matched **shared / private** pair (the same methodology sentences sit in the shared document or in the analyst's private brief). They use a **synthetic** company in `data/finance/sample` with made-up numbers. Common mistakes (non-controlling interests, separate statements, cumulative vs quarterly figures, treasury or preferred shares) all land outside the 0.5% tolerance.
+- `python -m agentworld_lite.finance fetch` builds the same dataset format from **DART OpenAPI**. Get a free key at opendart.fss.or.kr and set it yourself in `DART_API_KEY`; the tool never prints or stores it. Closing prices are not in DART and are passed with `--price`.
+
+```bash
+python -m agentworld_lite.finance validate
+python -m agentworld_lite.finance run --agent llm --provider ollama --model llama3.2:3b --think off --settings full no_comm --seeds 7 8 9 --out runs/finance_llama
+python -m agentworld_lite evaluate --run runs/finance_llama --judge rule
+python -m agentworld_lite pair-report --runs runs/finance_llama --out reports/finance_pairs.md
+```
+
+**First run** (2026-10-09, no API cost): the scripted reference solves all 4 tasks with and without chat (rule CCE 0.44–0.46), and random actions solve 0/24. Local `llama3.2:3b` solved 0/24 (4 tasks × with/without chat × 3 seeds) and attempted only one calculation. Most failed actions (494 of 708) were `share_facts` calls with no fact ids. In the Q2 task the collector asked 87 times for a "Q2" report, which does not exist because reports are cumulative (Q2 = H1 − Q1). It fetched the right reports only in the shared variant with chat allowed (31 successful fetches) and fetched nothing in the other three conditions. The logs show no clear cause, and one task with one small model is not enough for a finding. `gemma4:cloud` was not run because its free usage limit was reached.
+
+Design, data rules and limits: [docs/finance_domain_design.md](docs/finance_domain_design.md) (Korean).
+
 ## Metrics
 
 | Metric | Definition |
@@ -175,8 +196,11 @@ agentworld_lite/
   gym.py          ground-truth certification, repair, round budget, yield
   augment.py      LLM-written task variants, kept only if their reference solution succeeds
   report.py       Markdown report
+  finance/        finance domain: DART client, dataset, environment and tools, task catalog, runner, CLI
 tasks/main/       9 hand-built tasks
 tasks/gym/        28 generated tasks (example output of `gen`)
+tasks/finance/    4 finance tasks (2 shared/private pairs)
+data/finance/     synthetic sample companies (DART-format)
 docs/             paper analysis and AutoGym integration design (Korean)
 ```
 

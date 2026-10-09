@@ -1,0 +1,158 @@
+id: f01_ttm_per_shared
+name: Trailing PER of 샘플전자
+category: finance
+domain: finance
+world_guide: false
+description: The desk needs the trailing twelve-month (TTM) PER of 샘플전자 (stock code 999990) as of 2025-10-01, using only reports
+  filed by that date. The collector pulls filings, the analyst computes, the reporter submits.
+objectives:
+  primary: 'Submit two answers: ttm_net_income (TTM net income attributable to owners of the parent, in KRW) and per (market
+    capitalization divided by ttm_net_income, as a multiple such as 12.3).'
+  secondary:
+  - Use as few rounds as possible.
+max_rounds: 20
+inputs:
+  as_of: '2025-10-01'
+  company: 샘플전자
+data:
+  dir: data/finance/sample
+matched:
+  pair_id: f01
+  placement: shared
+  fact_counts:
+    analyst: 4
+    reporter: 1
+relevant_game_context: '- Common traps: consolidated (CFS) vs separate (OFS) statements, net income vs net income attributable
+  to owners, cumulative vs single-quarter figures, and reports filed after the as-of date.
+
+  - TTM = latest fiscal-year (FY) figure - prior-year cumulative figure for the same period as the latest report + latest
+  cumulative figure. For an H1 report: FY(prev year) - H1(prev year) + H1(this year).
+
+  - Net income means net_income_owners (attributable to owners of the parent) from consolidated (CFS) statements.
+
+  - Market capitalization = closing price x issued common shares from the latest report (do not subtract treasury shares;
+  exclude preferred shares).
+
+  - The latest report filed by 2025-10-01 is the 2025 H1 report, so the inputs are 2024 FY CFS, 2024 H1 CFS, 2025 H1 CFS and
+  the 2025 H1 share counts.
+
+  - The reporter holds the closing price of 2025-09-30 from the market-data desk.'
+agents:
+- username: collector
+  role: data collector
+  restricted_tools:
+  - calculate
+  - submit_answer
+- username: analyst
+  role: analyst
+  restricted_tools:
+  - fetch_financials
+  - fetch_shares
+  - submit_answer
+- username: reporter
+  role: reporter
+  restricted_tools:
+  - fetch_financials
+  - fetch_shares
+  - calculate
+  initial_facts:
+  - price_of: '999990'
+    date: '2025-09-30'
+verifier:
+  checkpoints:
+  - type: answer
+    name: ttm_net_income
+    field: ttm_net_income
+    expected: 50000000000
+    rel_tol: 0.005
+  - type: answer
+    name: per
+    field: per
+    expected: 24.0
+    rel_tol: 0.005
+reference_solution:
+  collector:
+  - - fetch_financials
+    - company: '999990'
+      year: 2024
+      period: FY
+      basis: CFS
+  - - fetch_financials
+    - company: '999990'
+      year: 2024
+      period: H1
+      basis: CFS
+  - - fetch_financials
+    - company: '999990'
+      year: 2025
+      period: H1
+      basis: CFS
+  - - fetch_shares
+    - company: '999990'
+      year: 2025
+      period: H1
+  - - share_facts
+    - to_agent: analyst
+      fact_ids:
+      - 999990.2024FY.CFS.net_income_owners
+      - 999990.2024H1.CFS.net_income_owners
+      - 999990.2025H1.CFS.net_income_owners
+      - 999990.2025H1.shares_common
+  analyst:
+  - - wait
+    - reason: waiting for inputs
+    - until_have:
+        999990.2025H1.shares_common: 1
+        999990.price.2025-09-30: 1
+      retries: 30
+  - - calculate
+    - name: ttm_net_income
+      formula: fy - h1_prev + h1
+      unit: KRW
+      inputs:
+      - var: fy
+        fact_id: 999990.2024FY.CFS.net_income_owners
+      - var: h1_prev
+        fact_id: 999990.2024H1.CFS.net_income_owners
+      - var: h1
+        fact_id: 999990.2025H1.CFS.net_income_owners
+  - - calculate
+    - name: market_cap
+      formula: p * s
+      unit: KRW
+      inputs:
+      - var: p
+        fact_id: 999990.price.2025-09-30
+      - var: s
+        fact_id: 999990.2025H1.shares_common
+  - - calculate
+    - name: per
+      formula: m / n
+      unit: x
+      inputs:
+      - var: m
+        fact_id: calc.market_cap
+      - var: n
+        fact_id: calc.ttm_net_income
+  - - share_facts
+    - to_agent: reporter
+      fact_ids:
+      - calc.ttm_net_income
+      - calc.per
+  reporter:
+  - - share_facts
+    - to_agent: analyst
+      fact_ids:
+      - 999990.price.2025-09-30
+  - - wait
+    - reason: waiting for results
+    - until_have:
+        calc.per: 1
+        calc.ttm_net_income: 1
+      retries: 30
+  - - submit_answer
+    - answers:
+      - field: ttm_net_income
+        fact_id: calc.ttm_net_income
+      - field: per
+        fact_id: calc.per

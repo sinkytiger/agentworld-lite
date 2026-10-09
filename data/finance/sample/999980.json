@@ -1,0 +1,62 @@
+{
+ "name": "샘플전자홀딩스",
+ "stock_code": "999980",
+ "corp_code": "SYN00002",
+ "currency": "KRW",
+ "synthetic": true,
+ "note": "SYNTHETIC company for tests and examples. Not a real issuer; numbers are made up. Same schema as files produced by `python -m agentworld_lite.finance fetch` from DART OpenAPI.",
+ "statements": {
+  "2024:H1:CFS": {
+   "filed": "2024-08-14",
+   "rcept_no": "SYN-H-2024H1",
+   "revenue": 520000000000,
+   "operating_income": 30000000000,
+   "net_income": 22000000000,
+   "net_income_owners": 11000000000,
+   "equity_owners": 410000000000,
+   "equity_total": 700000000000
+  },
+  "2024:FY:CFS": {
+   "filed": "2025-03-18",
+   "rcept_no": "SYN-H-2024FY",
+   "revenue": 1090000000000,
+   "operating_income": 71000000000,
+   "net_income": 52000000000,
+   "net_income_owners": 24000000000,
+   "equity_owners": 420000000000,
+   "equity_total": 720000000000
+  },
+  "2025:Q1:CFS": {
+   "filed": "2025-05-15",
+   "rcept_no": "SYN-H-2025Q1",
+   "revenue": 280000000000,
+   "operating_income": 19000000000,
+   "net_income": 14000000000,
+   "net_income_owners": 7000000000,
+   "equity_owners": 425000000000,
+   "equity_total": 731000000000
+  },
+  "2025:H1:CFS": {
+   "filed": "2025-08-14",
+   "rcept_no": "SYN-H-2025H1",
+   "revenue": 590000000000,
+   "operating_income": 41000000000,
+   "net_income": 31000000000,
+   "net_income_owners": 15000000000,
+   "equity_owners": 432000000000,
+   "equity_total": 745000000000
+  }
+ },
+ "shares": {
+  "2025:H1": {
+   "filed": "2025-08-14",
+   "rcept_no": "SYN-H-2025H1",
+   "common": 8000000,
+   "preferred": 0,
+   "treasury_common": 0
+  }
+ },
+ "prices": {
+  "2025-09-30": 41000
+ }
+}

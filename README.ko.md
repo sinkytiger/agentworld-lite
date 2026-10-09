@@ -8,6 +8,7 @@
 
 - 논문 분석: [docs/paper_analysis.md](docs/paper_analysis.md)
 - AutoGym 통합 설계: [docs/autogym_integration.md](docs/autogym_integration.md)
+- 금융 도메인 설계: [docs/finance_domain_design.md](docs/finance_domain_design.md)
 - 원 논문은 Kaetram(Node.js MMORPG)을 쓰지만, 이 프로젝트는 같은 프로토콜을 지키는 자체 격자 시뮬레이터를 씁니다. 그래서 설치는 `pip` 하나로 끝납니다.
 
 ## 파이프라인
@@ -181,6 +182,26 @@ python -m agentworld_lite gen --n 30 --seed 7 --out tasks/gym
 - `verifier.checkpoints[]`: `has_item`, `team_total`, `equipped`, `kills`, `all_alive`, `in_region`, `near`, `structure`, `plates`, `entity_defeated`, `rounds_survived`
 - `reference_solution`: 에이전트별 `[tool, {args}, {retries: n}]` 목록. `validate`가 이것을 실제로 재생해 풀 수 있는 과제인지 확인합니다.
 
+## 금융 도메인 (DART 공시)
+
+같은 프로토콜, 궤적 형식, 지표를 주식 리서치에 적용한 도메인입니다. **collector**가 DART 정기보고서 수치를 조회하고, **analyst**가 계산하고, **reporter**가 제출합니다. 역할마다 `restricted_tools`로 도구를 막아 두었기 때문에 팀원끼리 숫자를 넘겨줘야만 풀 수 있습니다.
+
+- 모든 숫자는 ID가 붙은 사실(fact)이고 에이전트별 노트북에 보관됩니다. 답안은 사실 ID를 인용해야 하고(숫자 직접 입력 불가), 계산은 노트북 사실에 대한 사칙연산만 허용하며, 기준일 이후 제출된 보고서는 조회되지 않습니다.
+- 규칙 기반 CCE 판정은 사실의 출처를 따라갑니다: 조회 → 공유 → 계산 → 공유 → 제출.
+- 과제 4개: TTM PER, 2분기 단독 영업이익률을 각각 **공유형 / 개인형** 쌍으로 만들었습니다(같은 방법론 문장이 공유 문서에 있거나 analyst의 개인 브리핑에 있음). 데이터는 `data/finance/sample`의 **가상 회사**이며 수치는 지어낸 것입니다. 비지배지분 포함, 별도 재무제표, 누적과 분기 혼동, 자기주식·우선주 처리 같은 흔한 실수는 모두 허용 오차 0.5% 밖의 오답이 됩니다.
+- `python -m agentworld_lite.finance fetch`는 **DART OpenAPI**에서 같은 형식의 데이터셋을 만듭니다. opendart.fss.or.kr에서 무료 키를 직접 발급받아 `DART_API_KEY` 환경변수에 넣으세요. 도구는 키를 출력하거나 저장하지 않습니다. 종가는 DART에 없으므로 `--price`로 넣습니다.
+
+```bash
+python -m agentworld_lite.finance validate
+python -m agentworld_lite.finance run --agent llm --provider ollama --model llama3.2:3b --think off --settings full no_comm --seeds 7 8 9 --out runs/finance_llama
+python -m agentworld_lite evaluate --run runs/finance_llama --judge rule
+python -m agentworld_lite pair-report --runs runs/finance_llama --out reports/finance_pairs.md
+```
+
+**첫 실행** (2026-10-09, API 비용 0): 정답 시나리오는 4개 과제를 채팅 허용·금지 모두에서 풀었고(규칙 CCE 0.44–0.46), 무작위 행동은 0/24였습니다. 로컬 `llama3.2:3b`는 0/24(과제 4개 × 채팅 허용/금지 × 시드 3개)였고, 계산은 단 한 번 시도했습니다. 실패한 행동 708회 중 494회는 사실 ID 없이 호출한 `share_facts`였습니다. 2분기 과제에서 collector는 존재하지 않는 "Q2" 보고서를 87번 요청했습니다(보고서는 누적이라 2분기 = 상반기 − 1분기). 올바른 보고서를 조회한 것은 공유형·채팅 허용 조건뿐이었고(조회 성공 31회), 나머지 세 조건에서는 한 번도 조회하지 못했습니다. 로그에서 뚜렷한 원인은 보이지 않았고, 과제 하나와 소형 모델 하나로는 결론을 낼 수 없습니다. `gemma4:cloud`는 무료 사용 한도에 걸려 실행하지 못했습니다.
+
+설계, 데이터 규칙, 한계: [docs/finance_domain_design.md](docs/finance_domain_design.md)
+
 ## 산출물과 지표
 
 | 지표 | 정의 |
@@ -236,8 +257,11 @@ agentworld_lite/
   report.py       Markdown 리포트
   blueprint.py    청사진 생성: 파라미터 → 해답 경로·역할·인계 → 과제 YAML
   gym.py          정답 실행·수리·예산·수율 (과제 자동 생성 루프)
+  finance/        금융 도메인: DART 수집기, 데이터셋, 환경·도구, 과제 카탈로그, 실행기, CLI
 tasks/main/       과제 9개 (8개 카테고리)
 tasks/gym/        자동 생성 과제 (gen 산출물)
+tasks/finance/    금융 과제 4개 (공유형/개인형 2쌍)
+data/finance/     가상 샘플 회사 (DART 형식)
 tests/            엔진·과제·CCE·생성기·Claude/Ollama 요청 형식 테스트 (API 호출 없음)
 ```
 
