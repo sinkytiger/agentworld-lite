@@ -190,7 +190,7 @@ A Streamlit app over the same code, offline (no model, no network, no key). It h
 
 An uploaded trajectory is replayed first and rejected if it does not reproduce on the dataset. Query parameters open a given state, e.g. `?task=c03_big5_q3_sector_shared&view=Desk%20replay&round=11`.
 
-`python demo/record_gif.py --out demo.gif` records a GIF of the app. It starts the app, drives a headless Chrome or Edge through the DevTools protocol, waits until each view has finished rendering, and joins the screenshots with Pillow (about 0.5 MB for 12 frames). For Streamlit Community Cloud, point the app at `demo/streamlit_app.py`; `demo/requirements.txt` lists what it installs. That deployment has not been tried yet.
+`python demo/record_gif.py --out demo.gif` records a GIF of the app. It starts the app, drives a headless Chrome or Edge through the DevTools protocol, waits until each view has finished rendering, and joins the screenshots with Pillow (about 0.5 MB for 12 frames). The app runs on Streamlit Community Cloud at [agentworld-canada-desk.streamlit.app](https://agentworld-canada-desk.streamlit.app), deployed from branch `canada-desk` with `demo/streamlit_app.py` as the main file; `demo/requirements.txt` lists what it installs.
 
 ## Running
 
