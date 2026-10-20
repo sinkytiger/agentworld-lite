@@ -178,6 +178,8 @@ streamlit run demo/streamlit_app.py
 
 A Streamlit app over the same code, offline (no model, no network, no key). It has four views.
 
+![Demo: the c03 run replayed round by round, the Big 5 charts, and the cited sector note](img/canada_desk_demo.gif)
+
 - **Desk replay.** A round slider over the scripted reference or an uploaded trajectory. Each agent's moves, the size of its notebook, and which answers are within tolerance so far.
 - **Big 5 data.** Single-quarter net income to common and the CET1 ratio for each bank, as charts and as a table that names the filing behind each figure.
 - **Sector note.** The cited note above, with a Markdown download.

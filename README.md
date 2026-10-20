@@ -187,6 +187,8 @@ Design, data rules and limits: [docs/finance_domain_design.md](docs/finance_doma
 
 The same desk on real filings of RBC, TD, Scotiabank, BMO and CIBC. Details: [docs/finance_canada.md](docs/finance_canada.md).
 
+![Demo: the c03 run replayed round by round, the Big 5 charts, and the sector note with a citation after every figure](docs/img/canada_desk_demo.gif)
+
 - **Filing sources behind one interface** (`agentworld_lite/finance/sources/`): `dart`, `edgar` (XBRL of each 40-F and 6-K, free, needs your contact in `SEC_USER_AGENT`), `local_pdf` (figures you transcribed from documents you downloaded, each checked against the text of the cited page) and `sedar_dds` (a placeholder for the licensed CSA Data Distribution Services feed). SEDAR+ prohibits automated access to its website and has no public API, so there is no SEDAR+ crawler.
 - **Dataset** `data/finance/edgar`: five fiscal periods per bank (fiscal 2025 Q3 and FY, fiscal 2026 Q1, H1, Q3), each figure with its form, accession number, filing date and XBRL concept. The task inputs match the banks' own Q3 2026 releases, e.g. TD's reported efficiency ratio of 50.2% and all five CET1 ratios.
 - **Tasks** `tasks/finance_ca`, as shared / private pairs with a 0.1% tolerance: RBC trailing P/E at fiscal Q3 2026 (18.50x; basic EPS, year-to-date EPS or a stale fiscal year all miss), the fiscal Q3 2026 efficiency ratios of RBC and TD for the quarter alone (52.80% and 50.19%; the nine-month ratios miss), and a Big 5 comparison: each bank's fiscal Q3 2026 net income to common shareholders plus the average and spread of the five CET1 ratios (13.46% and 1.30 pp; year-to-date figures, other net income lines or another period's ratios all miss).
