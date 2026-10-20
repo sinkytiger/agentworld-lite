@@ -174,6 +174,14 @@ def test_bank_dataset_names_aliases_and_formatting():
     assert fmt_value(5_879e6, "CAD", "en").startswith("C$5,879.0 million")
 
 
+def test_every_bank_tags_total_assets_and_rwa_in_every_period():
+    for code in BIG5:
+        for key, st in _bank(code).items():
+            assert st["concepts"]["total_assets"] == "ifrs-full:Assets", (code, key)
+            assert 0.25 < st["rwa"] / st["total_assets"] < 0.40, (code, key)   # RWA density of a Canadian bank
+            assert st["cet1_ratio"] / 100 * st["rwa"] > 30e9, (code, key)        # implied CET1 capital, C$ billions
+
+
 # ---------------------------------------------------------------------- sector note
 def _reference(task_id, mutate=None):
     task = Task.load(CA_DIR / f"{task_id}.yaml")

@@ -19,7 +19,7 @@ A lightweight, pip-installable testbed for **long-horizon multi-agent LLM collab
 - **Blueprint-first task generator** (idea borrowed from AutoGym, adapted to multi-agent play): sample generation parameters, build the solution DAG (who gathers, crafts and hands what to whom), materialize a task, certify it by running the reference solution, repair failures, set the round budget. No LLM calls; **~93% yield**.
 - **Model backends**: Claude (Anthropic API) and **Ollama** (free local models, or Ollama cloud models such as `gemma4:cloud`).
 - **Finance domain**: the same protocol on a research desk that fetches filings, computes valuation metrics and submits cited answers. Korean DART disclosures and **real filings of Canada's Big 5 banks** (SEDAR+ annual and interim reports, read from their SEC EDGAR copies), with a cited sector note generated from a finished run (see below).
-- **176 tests**, none of which call an API.
+- **177 tests**, none of which call an API.
 
 ## Quick start (no API key)
 
@@ -190,7 +190,7 @@ The same desk on real filings of RBC, TD, Scotiabank, BMO and CIBC. Details: [do
 ![Demo: the c03 run replayed round by round, the Big 5 charts, and the sector note with a citation after every figure](docs/img/canada_desk_demo.gif)
 
 - **Filing sources behind one interface** (`agentworld_lite/finance/sources/`): `dart`, `edgar` (XBRL of each 40-F and 6-K, free, needs your contact in `SEC_USER_AGENT`), `local_pdf` (figures you transcribed from documents you downloaded, each checked against the text of the cited page) and `sedar_dds` (a placeholder for the licensed CSA Data Distribution Services feed). SEDAR+ prohibits automated access to its website and has no public API, so there is no SEDAR+ crawler.
-- **Dataset** `data/finance/edgar`: five fiscal periods per bank (fiscal 2025 Q3 and FY, fiscal 2026 Q1, H1, Q3), each figure with its form, accession number, filing date and XBRL concept. The task inputs match the banks' own Q3 2026 releases, e.g. TD's reported efficiency ratio of 50.2% and all five CET1 ratios.
+- **Dataset** `data/finance/edgar`: five fiscal periods per bank (fiscal 2025 Q3 and FY, fiscal 2026 Q1, H1, Q3), each figure with its form, accession number, filing date and XBRL concept, now including total assets and risk-weighted assets. The task inputs match the banks' own Q3 2026 releases, e.g. TD's reported efficiency ratio of 50.2% and all five CET1 ratios.
 - **Tasks** `tasks/finance_ca`, as shared / private pairs with a 0.1% tolerance: RBC trailing P/E at fiscal Q3 2026 (18.50x; basic EPS, year-to-date EPS or a stale fiscal year all miss), the fiscal Q3 2026 efficiency ratios of RBC and TD for the quarter alone (52.80% and 50.19%; the nine-month ratios miss), and a Big 5 comparison: each bank's fiscal Q3 2026 net income to common shareholders plus the average and spread of the five CET1 ratios (13.46% and 1.30 pp; year-to-date figures, other net income lines or another period's ratios all miss).
 - **Sector note** (`python -m agentworld_lite.finance note`): turns a finished trajectory into an English Markdown note without calling a model. Each figure is followed by its fact id, filing form and EDGAR accession number, and the note checks that no figure is left uncited.
 - **Demo** (`pip install -e ".[demo]"`, then `streamlit run demo/streamlit_app.py`): an offline Streamlit app that replays a run round by round, charts the Big 5 figures with the filing behind each one, and shows the sector note. `python demo/record_gif.py --out demo.gif` records a GIF of it.

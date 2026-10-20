@@ -37,6 +37,7 @@ python -m agentworld_lite.finance fetch --source edgar --company RY --periods 20
 |---|---|---|---|---|---|
 | non_interest_expense | `NonInterestExpense` | `NonInterestExpense1` | `NonInterestExpense1` | `NonInterestExpense1` | `NonInterestExpense1` |
 | cet1_ratio | `CommonEquityTierOneCapitalRatio1` | `CommonEquityTier1CapitalRatio1` | `CommonEquityTierOneCapitalRatio1` | `CommonEquityTierOneCapitalRatio1` | `CET1CapitalRatio` |
+| rwa | `TotalCapitalRiskWeightedAssets` | `RiskWeightedAssetsUsedInCalculatingTotalCapitalRatio` | `RiskWeightedAssets` | `CommonEquityTierOneCapitalRatioRiskWeightedAssets` | `TotalCapitalRiskWeightedAssets` |
 
 - **Cache.** Only the parsed facts without dimensions are cached, as small JSON files (about 2 MB for a bank's five periods instead of 10 MB per raw instance). The default is `data/finance/cache/edgar`, which is gitignored. Pass `--cache` to keep it outside a synced folder such as OneDrive.
 
@@ -63,13 +64,15 @@ Five periods per bank: fiscal 2025 Q3 and FY, and fiscal 2026 Q1, H1 and Q3. Eve
 
 | Bank | Ticker | Accounts per period | Not tagged |
 |---|---|---|---|
-| Royal Bank of Canada | RY | 10 | |
-| The Toronto-Dominion Bank | TD | 8 | `net_income_owners` and `equity_owners`. TD tags income for common shareholders and for preferred holders separately; the values are left empty rather than derived |
-| The Bank of Nova Scotia | BNS | 10 | |
-| Bank of Montreal | BMO | 10 | |
-| Canadian Imperial Bank of Commerce | CM | 10 | |
+| Royal Bank of Canada | RY | 12 | |
+| The Toronto-Dominion Bank | TD | 10 | `net_income_owners` and `equity_owners`. TD tags income for common shareholders and for preferred holders separately; the values are left empty rather than derived |
+| The Bank of Nova Scotia | BNS | 12 | |
+| Bank of Montreal | BMO | 12 | |
+| Canadian Imperial Bank of Commerce | CM | 12 | |
 
-Accounts: `revenue` (total revenue), `non_interest_expense`, `net_income`, `net_income_owners`, `net_income_common`, `eps_basic`, `eps_diluted`, `equity_owners`, `equity_total`, `cet1_ratio` (percent).
+Accounts: `revenue` (total revenue), `non_interest_expense`, `net_income`, `net_income_owners`, `net_income_common`, `eps_basic`, `eps_diluted`, `equity_owners`, `equity_total`, `cet1_ratio` (percent), `total_assets` and `rwa` (total risk-weighted assets, the CET1 ratio's denominator).
+
+`total_assets` and `rwa` were added in October 2026. Every bank tags total assets as `ifrs-full:Assets`. Each tags RWA under its own name (table above); Canadian banks report one RWA figure for all three capital ratios, and RWA is 30% to 32% of total assets at every bank in every period. These two accounts are the XBRL as filed and have not been compared with the banks' releases. Provision for credit losses was left out: no bank tags the income-statement line as a consolidated total. The only candidates are cash-flow add-backs, tagged `ifrs-full:AdjustmentsForImpairmentLossReversalOfImpairmentLossRecognisedInProfitOrLoss` by four banks and as the broader `ifrs-full:AdjustmentsForProvisions` by BMO, so the five figures would not be like for like.
 
 **Cross-check.** The task inputs were compared with the banks' own Q3 2026 releases (Exhibit 99.1 of each 6-K).
 

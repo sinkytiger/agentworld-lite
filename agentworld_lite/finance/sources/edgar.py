@@ -94,6 +94,13 @@ ACCOUNT_RULES: dict[str, Rule] = {
     "cet1_ratio": Rule("instant", ("ext:CommonEquityTierOneCapitalRatio1", "ext:CommonEquityTier1CapitalRatio1",
                                    "ext:CET1CapitalRatio", "ext:CommonEquityTierOneCapitalRatio"),
                        "Common Equity Tier 1 (CET1) capital ratio", "pure", 100.0),
+    "total_assets": Rule("instant", ("ifrs-full:Assets", "us-gaap:Assets"), "total assets", "money"),
+    # Each bank names it differently (BNS, RY and CM, TD, BMO in that order). Canadian banks report one RWA figure
+    # for the CET1, Tier 1 and total capital ratios, so these are the same quantity.
+    "rwa": Rule("instant", ("ext:RiskWeightedAssets", "ext:TotalCapitalRiskWeightedAssets",
+                            "ext:RiskWeightedAssetsUsedInCalculatingTotalCapitalRatio",
+                            "ext:CommonEquityTierOneCapitalRatioRiskWeightedAssets"),
+                "total risk-weighted assets (RWA)", "money"),
 }
 
 

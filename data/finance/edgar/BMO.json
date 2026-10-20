@@ -46,6 +46,14 @@
   "cet1_ratio": {
    "label": "Common Equity Tier 1 (CET1) capital ratio",
    "unit": "pure"
+  },
+  "total_assets": {
+   "label": "total assets",
+   "unit": "money"
+  },
+  "rwa": {
+   "label": "total risk-weighted assets (RWA)",
+   "unit": "money"
   }
  },
  "exchange": "TSX",
@@ -69,6 +77,8 @@
    "equity_owners": 86723000000.0,
    "equity_total": 86765000000.0,
    "cet1_ratio": 13.5,
+   "total_assets": 1431553000000.0,
+   "rwa": 430134000000.0,
    "concepts": {
     "revenue": "ifrs-full:Revenue",
     "non_interest_expense": "ext:NonInterestExpense1",
@@ -79,7 +89,9 @@
     "eps_diluted": "ifrs-full:DilutedEarningsLossPerShare",
     "equity_owners": "ifrs-full:EquityAttributableToOwnersOfParent",
     "equity_total": "ifrs-full:Equity",
-    "cet1_ratio": "ext:CommonEquityTierOneCapitalRatio1"
+    "cet1_ratio": "ext:CommonEquityTierOneCapitalRatio1",
+    "total_assets": "ifrs-full:Assets",
+    "rwa": "ext:CommonEquityTierOneCapitalRatioRiskWeightedAssets"
    }
   },
   "2025:FY:CFS": {
@@ -98,6 +110,8 @@
    "equity_owners": 88051000000.0,
    "equity_total": 88100000000.0,
    "cet1_ratio": 13.3,
+   "total_assets": 1476802000000.0,
+   "rwa": 437945000000.0,
    "concepts": {
     "revenue": "ifrs-full:Revenue",
     "non_interest_expense": "ext:NonInterestExpense1",
@@ -108,7 +122,9 @@
     "eps_diluted": "ifrs-full:DilutedEarningsLossPerShare",
     "equity_owners": "ifrs-full:EquityAttributableToOwnersOfParent",
     "equity_total": "ifrs-full:Equity",
-    "cet1_ratio": "ext:CommonEquityTierOneCapitalRatio1"
+    "cet1_ratio": "ext:CommonEquityTierOneCapitalRatio1",
+    "total_assets": "ifrs-full:Assets",
+    "rwa": "ext:CommonEquityTierOneCapitalRatioRiskWeightedAssets"
    }
   },
   "2026:Q1:CFS": {
@@ -127,6 +143,8 @@
    "equity_owners": 85705000000.0,
    "equity_total": 85751000000.0,
    "cet1_ratio": 13.1,
+   "total_assets": 1458132000000.0,
+   "rwa": 442058000000.0,
    "concepts": {
     "revenue": "ifrs-full:Revenue",
     "non_interest_expense": "ext:NonInterestExpense1",
@@ -137,7 +155,9 @@
     "eps_diluted": "ifrs-full:DilutedEarningsLossPerShare",
     "equity_owners": "ifrs-full:EquityAttributableToOwnersOfParent",
     "equity_total": "ifrs-full:Equity",
-    "cet1_ratio": "ext:CommonEquityTierOneCapitalRatio1"
+    "cet1_ratio": "ext:CommonEquityTierOneCapitalRatio1",
+    "total_assets": "ifrs-full:Assets",
+    "rwa": "ext:CommonEquityTierOneCapitalRatioRiskWeightedAssets"
    }
   },
   "2026:H1:CFS": {
@@ -156,6 +176,8 @@
    "equity_owners": 85570000000.0,
    "equity_total": 85617000000.0,
    "cet1_ratio": 13.0,
+   "total_assets": 1499543000000.0,
+   "rwa": 443711000000.0,
    "concepts": {
     "revenue": "ifrs-full:Revenue",
     "non_interest_expense": "ext:NonInterestExpense1",
@@ -166,7 +188,9 @@
     "eps_diluted": "ifrs-full:DilutedEarningsLossPerShare",
     "equity_owners": "ifrs-full:EquityAttributableToOwnersOfParent",
     "equity_total": "ifrs-full:Equity",
-    "cet1_ratio": "ext:CommonEquityTierOneCapitalRatio1"
+    "cet1_ratio": "ext:CommonEquityTierOneCapitalRatio1",
+    "total_assets": "ifrs-full:Assets",
+    "rwa": "ext:CommonEquityTierOneCapitalRatioRiskWeightedAssets"
    }
   },
   "2026:Q3:CFS": {
@@ -185,6 +209,8 @@
    "equity_owners": 86523000000.0,
    "equity_total": 86573000000.0,
    "cet1_ratio": 13.0,
+   "total_assets": 1538685000000.0,
+   "rwa": 454757000000.0,
    "concepts": {
     "revenue": "ifrs-full:Revenue",
     "non_interest_expense": "ext:NonInterestExpense1",
@@ -195,7 +221,9 @@
     "eps_diluted": "ifrs-full:DilutedEarningsLossPerShare",
     "equity_owners": "ifrs-full:EquityAttributableToOwnersOfParent",
     "equity_total": "ifrs-full:Equity",
-    "cet1_ratio": "ext:CommonEquityTierOneCapitalRatio1"
+    "cet1_ratio": "ext:CommonEquityTierOneCapitalRatio1",
+    "total_assets": "ifrs-full:Assets",
+    "rwa": "ext:CommonEquityTierOneCapitalRatioRiskWeightedAssets"
    }
   }
  },
