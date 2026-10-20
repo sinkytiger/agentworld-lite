@@ -58,9 +58,10 @@ def run_episode(task: Task, factory: AgentFactory, setting: str = "full", seed: 
             decision = agents[name].act(TurnInput(env, name, r, obs, contexts[name], allowed,
                                                   system_prompt=system_prompt, tool_specs=specs))
             for k, v in decision.usage.items():
-                usage[k] = usage.get(k, 0) + v
+                if k != "calls":
+                    usage[k] = usage.get(k, 0) + v
             if decision.usage:
-                usage["calls"] += 1
+                usage["calls"] += decision.usage.get("calls", 1)
             if decision.tool not in allowed:
                 result = ActionResult(False, f"Tool '{decision.tool}' is not available in this setting.")
             else:

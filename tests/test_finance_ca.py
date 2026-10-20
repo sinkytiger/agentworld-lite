@@ -151,6 +151,18 @@ def test_ca_desk_uses_the_canadian_prompt_and_drops_share_counts():
     assert traj["market"] == "ca" and not traj["result"]["success"]
 
 
+def test_episode_counts_each_model_call_once():
+    class Billed(BaseAgent):
+        def act(self, turn):
+            return Decision("wait", {"reason": "x"}, usage={"calls": 2, "input_tokens": 10, "cost_usd": 0.5})
+
+    task = Task.load(CA_DIR / "c01_ry_ttm_pe_shared.yaml")
+    traj = run_episode(task, lambda t, n: Billed(n))
+    turns = len(traj["actions"])
+    assert traj["usage"]["calls"] == 2 * turns and traj["usage"]["input_tokens"] == 10 * turns
+    assert abs(traj["usage"]["cost_usd"] - 0.5 * turns) < 1e-9
+
+
 def test_ca_fetch_reports_source_fiscal_periods_and_as_of():
     env = build_env(Task.load(CA_DIR / "c01_ry_ttm_pe_shared.yaml"))
     ok = env.execute("collector", "fetch_financials", {"company": "RBC", "year": 2026, "period": "Q3", "basis": "CFS"})

@@ -232,7 +232,7 @@ python -m agentworld_lite pair-report --runs runs/finance_llama --out reports/fi
 
 - **공시 소스 인터페이스** (`agentworld_lite/finance/sources/`): `dart`, `edgar`(40-F·6-K마다 XBRL을 읽음, 무료, `SEC_USER_AGENT`에 본인 연락처 필요), `local_pdf`(직접 내려받은 문서에서 옮겨 적은 숫자를 인용한 페이지 본문과 대조), `sedar_dds`(CSA 유료 벌크 피드 자리). SEDAR+는 웹사이트 자동 접근을 약관으로 금지하고 공개 API가 없어서 SEDAR+ 크롤러는 만들지 않았습니다.
 - **데이터셋** `data/finance/edgar`: 은행마다 회계연도 기준 5개 기간(2025 회계연도 3분기·연간, 2026 회계연도 1분기·상반기·3분기). 숫자마다 서식, 접수번호, 제출일, XBRL 계정이 붙어 있습니다. 총자산과 위험가중자산(RWA)도 들어 있습니다. 과제 입력값은 은행이 직접 발표한 2026 회계연도 3분기 수치와 일치합니다. 예를 들어 TD가 발표한 효율성비율 50.2%, 5개 은행의 CET1 비율과 같습니다.
-- **과제** `tasks/finance_ca`, 공유형/개인형 쌍, 허용 오차 0.1%: RBC 3분기 말 TTM P/E(18.50배, 기본 EPS·누적 EPS·지난 회계연도 EPS는 모두 오답), RBC·TD의 2026 회계연도 3분기 단독 효율성비율(52.80%, 50.19%, 9개월 누적 비율은 오답), 5대 은행 비교(은행별 2026 회계연도 3분기 단독 보통주주 귀속 순이익과 CET1 비율 5개의 평균·격차 13.46%, 1.30%p. 누적 수치, 다른 순이익 항목, 다른 기간의 비율은 모두 오답).
+- **과제** `tasks/finance_ca`, 공유형/개인형 쌍, 허용 오차 0.1%: RBC 3분기 말 TTM P/E(18.50배, 기본 EPS·누적 EPS·지난 회계연도 EPS는 모두 오답), RBC·TD의 2026 회계연도 3분기 단독 효율성비율(52.81%, 50.19%, 9개월 누적 비율은 오답), 5대 은행 비교(은행별 2026 회계연도 3분기 단독 보통주주 귀속 순이익과 CET1 비율 5개의 평균·격차 13.46%, 1.30%p. 누적 수치, 다른 순이익 항목, 다른 기간의 비율은 모두 오답).
 - **섹터 노트** (`python -m agentworld_lite.finance note`): 끝난 궤적을 모델 호출 없이 영문 마크다운 노트로 만듭니다. 숫자마다 팩트 id, 공시 서식, EDGAR 접수번호가 붙고, 출처 없는 숫자가 하나라도 있으면 노트를 내지 않습니다.
 - **데모** (`pip install -e ".[demo]"` 후 `streamlit run demo/streamlit_app.py`): 오프라인 Streamlit 앱입니다. 실행 과정을 라운드별로 재생하고, 5대 은행 수치를 숫자마다 출처 공시와 함께 차트·표로 보여 주고, 섹터 노트를 띄웁니다. `python demo/record_gif.py --out demo.gif`로 GIF를 녹화합니다.
 
@@ -242,7 +242,7 @@ python -m agentworld_lite.finance validate --tasks tasks/finance_ca
 python -m agentworld_lite.finance note --reference c03_big5_q3_sector_shared --out reports/c03_note.md
 ```
 
-캐나다 과제에는 아직 모델을 실행하지 않았습니다.
+**첫 모델 실행** (2026-10-20): Claude Opus 5.5가 36판(과제 6개 × 채팅 허용·차단 × 시드 3개)을 모두 풀었습니다. 실패한 도구 호출은 없었고, 정답 시나리오와 같거나 더 적은 라운드에 끝났으며, 총비용은 18.13달러였습니다. 채팅을 막아도 성공률은 같았지만 규칙 기반 CCE는 세 과제 모두 낮아졌습니다. 이 과제들로는 최상위 모델끼리 차이가 드러나지 않으므로 작은 모델이나 더 어려운 변형이 필요합니다. 자세한 내용은 [docs/finance_canada.md](docs/finance_canada.md#results-claude-opus-55)(영문)에 있습니다.
 
 설계, 데이터 규칙, 한계: [docs/finance_domain_design.md](docs/finance_domain_design.md)
 

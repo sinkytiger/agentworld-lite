@@ -111,7 +111,7 @@ Using net income attributable to all shareholders (C$22,745 million) or net inco
 
 ### c02: RBC and TD efficiency ratios for fiscal Q3 2026 alone
 
-Single quarter = Q3 YTD − H1 YTD. Answers: RBC **52.80%**, TD **50.19%**.
+Single quarter = Q3 YTD − H1 YTD. Answers: RBC **52.81%**, TD **50.19%**.
 
 | Mistake | RBC | TD |
 |---|---|---|
@@ -210,7 +210,36 @@ python -m agentworld_lite evaluate --run runs/finance_ca_gemma --judge rule
 python -m agentworld_lite pair-report --runs runs/finance_ca_gemma --out reports/finance_ca_pairs.md
 ```
 
-The Canadian desk gets its own system prompt and tool descriptions (fiscal periods, CAD units, no share-count tool). No model has been run on these tasks yet.
+The Canadian desk gets its own system prompt and tool descriptions (fiscal periods, CAD units, no share-count tool).
+
+## Results: Claude Opus 5.5
+
+First model run, 2026-10-20: `claude-opus-5-5` at its default effort, all six tasks, chat allowed (`full`) and blocked
+(`no_comm`), seeds 7, 8 and 9: 36 episodes.
+
+| Task | Setting | Solved | Rounds, mean (range) | Scripted reference | Rule CCE, mean | Cost per episode |
+|---|---|---|---|---|---|---|
+| c01 RBC trailing P/E | full | 6/6 | 6.0 (6-6) of 16 | 7 | 0.61 | $0.22 |
+| c01 | no_comm | 6/6 | 6.2 (6-7) of 16 | 7 | 0.50 | $0.22 |
+| c02 RBC and TD efficiency | full | 6/6 | 7.0 (7-7) of 18 | 11 | 0.69 | $0.26 |
+| c02 | no_comm | 6/6 | 7.0 (7-7) of 18 | 11 | 0.52 | $0.26 |
+| c03 Big 5 earnings and capital | full | 6/6 | 17.7 (17-18) of 30 | 18 | 0.65 | $1.02 |
+| c03 | no_comm | 6/6 | 17.7 (17-18) of 30 | 18 | 0.58 | $1.03 |
+
+- **Every episode solved every answer**, with no failed tool call in 36 episodes. The team never fell for a listed
+  trap and solved each task in about as many rounds as the scripted reference or fewer. On c03 the collector shared
+  bank by bank and the reporter filed answers as they arrived, a pipeline the reference does not use.
+- **Blocking chat did not change success or rounds**, in either information placement (pair report: 9 of 9 complete
+  blocks solved in all four cells). It did lower the share of actions that contributed to success (rule CCE) on all
+  three tasks. With the methodology in private briefs, teams sent more messages (3.2 per chat-allowed episode against
+  2.1 when it was shared).
+- **Cost:** US$18.13 in total (US$6.01, US$5.98 and US$6.13 per seed), 1,107 model calls, 59 minutes of
+  wall-clock time. Seed 7 ran before a fix to the call counter in `finance/run.py`, which had counted every call
+  twice; its cost was always counted correctly.
+- **What it means:** these three tasks do not separate a frontier model from the scripted reference, so differences
+  between models will have to come from smaller models or harder variants. The trajectories and evaluations stay in
+  `runs/` (not committed); `python -m agentworld_lite.finance note --trajectory <file>` turns any of them into a
+  cited sector note.
 
 ## Limits
 
