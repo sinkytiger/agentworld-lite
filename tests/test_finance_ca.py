@@ -1,17 +1,22 @@
-"""Canadian desk: filing sources (EDGAR, local documents, DDS stub), the Big 5 dataset and the c01/c02 tasks.
-No test touches the network: EDGAR responses are served from in-memory fixtures."""
+"""Canadian desk: filing sources (EDGAR, local documents, DDS stub), the Big 5 dataset, the c01-c03 tasks and the
+sector note. No test touches the network: EDGAR responses are served from in-memory fixtures."""
 
+import copy
 import hashlib
+import itertools
 import json
+import statistics
 from pathlib import Path
 
 import pytest
 
 from agentworld_lite.agents import BaseAgent, Decision
-from agentworld_lite.finance.catalog import SPECS_CA, build_task
+from agentworld_lite.finance.__main__ import main as finance_main
+from agentworld_lite.finance.catalog import BIG5, SPECS_CA, build_task
 from agentworld_lite.finance.dataset import Dataset, fmt_value
 from agentworld_lite.finance.env import build_env, evaluate
-from agentworld_lite.finance.run import run_episode, validate_task
+from agentworld_lite.finance.note import NoteError, fmt_figure, sector_note, uncited_figures
+from agentworld_lite.finance.run import make_factory, run_episode, validate_task
 from agentworld_lite.finance.sources import SourceError, SourceUnavailable, get_source, parse_periods
 from agentworld_lite.finance.sources import edgar
 from agentworld_lite.finance.sources.edgar import (EdgarClient, EdgarSource, extract_period, parse_instance,
@@ -36,9 +41,11 @@ def test_committed_ca_tasks_match_the_catalog():
 
 def test_ca_reference_solves_and_idle_team_fails():
     tasks = load_tasks(str(CA_DIR))
-    assert len(tasks) == 4
+    assert len(tasks) == 2 * len(SPECS_CA) == 6
     for t in tasks:
         assert validate_task(t) == [], t.id
+    c03 = Task.load(CA_DIR / "c03_big5_q3_sector_private.yaml")
+    assert run_episode(c03, make_factory("scripted"))["result"]["rounds_used"] == 18 <= c03.max_rounds
 
 
 def test_ca_pairs_differ_only_in_where_the_sentences_are():
@@ -91,6 +98,44 @@ def test_c02_common_mistakes_are_wrong_answers():
     assert _off(td["expected"], ry)                                          # banks swapped
 
 
+def test_c03_common_mistakes_are_wrong_answers():
+    cps = {cp["field"]: cp for cp in SPECS_CA[2]["checkpoints"]}
+    for code in BIG5:
+        st = _bank(code)
+        q1, h1, q3 = st["2026:Q1:CFS"], st["2026:H1:CFS"], st["2026:Q3:CFS"]
+        cp = cps[f"{code.lower()}_q3_net_income_common"]
+        q = lambda k: q3[k] - h1[k]
+        assert not _off(q("net_income_common"), cp)
+        assert _off(q3["net_income_common"], cp)                                    # nine months
+        assert _off(h1["net_income_common"], cp)                                    # six months
+        assert _off(q("net_income"), cp)                                            # incl. NCI and preferred
+        if "net_income_owners" in q3:                                               # TD does not tag it
+            assert _off(q("net_income_owners"), cp)                                 # incl. preferred
+        assert _off(q3["net_income_common"] / 3, cp)                                # average quarter
+        assert _off(h1["net_income_common"] - q1["net_income_common"], cp)          # fiscal Q2 alone
+        fq4 = st["2025:FY:CFS"]["net_income_common"] - st["2025:Q3:CFS"]["net_income_common"]
+        assert _off(fq4, cp)                                                        # fiscal Q4 2025
+        assert _off(q("net_income_common") / 1e6, cp)                               # millions, not CAD
+    for a, b in itertools.permutations([f"{c.lower()}_q3_net_income_common" for c in BIG5], 2):
+        assert _off(cps[a]["expected"], cps[b])                                     # banks swapped
+    cet1 = lambda key: [_bank(c)[key]["cet1_ratio"] for c in BIG5]
+    spread = lambda v: max(v) - min(v)
+    avg_cp, spread_cp = cps["cet1_average"], cps["cet1_spread_pp"]
+    now = cet1("2026:Q3:CFS")
+    assert not _off(statistics.mean(now), avg_cp) and not _off(spread(now), spread_cp)
+    for key in ("2026:H1:CFS", "2026:Q1:CFS", "2025:FY:CFS", "2025:Q3:CFS"):        # wrong period
+        assert _off(statistics.mean(cet1(key)), avg_cp)
+    for key in ("2026:Q1:CFS", "2025:FY:CFS", "2025:Q3:CFS"):
+        assert _off(spread(cet1(key)), spread_cp)
+    assert not _off(spread(cet1("2026:H1:CFS")), spread_cp)  # TD and BMO unchanged: the average catches H1 instead
+    assert _off(statistics.median(now), avg_cp)                                     # median, not mean
+    assert _off(statistics.mean([v for c, v in zip(BIG5, now) if c != "TD"]), avg_cp)  # a bank left out
+    assert _off(statistics.mean(now) / 100, avg_cp) and _off(spread(now) / 100, spread_cp)  # fraction
+    assert _off(spread(now) * 100, spread_cp)                                       # basis points
+    assert _off((max(now) / min(now) - 1) * 100, spread_cp)                         # relative spread
+    assert _off(max(now) - statistics.mean(now), spread_cp)                         # highest minus average
+
+
 def test_ca_desk_uses_the_canadian_prompt_and_drops_share_counts():
     seen = []
 
@@ -127,6 +172,92 @@ def test_bank_dataset_names_aliases_and_formatting():
     assert ds.find("royal bank of canada").stock_code == "RY" and ds.lang == "en" and ds.market == "ca"
     assert fmt_value(18.5, "x", "en") == "18.50x" and fmt_value(18.5, "x") == "18.50배"
     assert fmt_value(5_879e6, "CAD", "en").startswith("C$5,879.0 million")
+
+
+# ---------------------------------------------------------------------- sector note
+def _reference(task_id, mutate=None):
+    task = Task.load(CA_DIR / f"{task_id}.yaml")
+    if mutate:
+        d = copy.deepcopy(task.to_dict())
+        mutate(d)
+        task = Task.from_dict(d)
+    return task, run_episode(task, make_factory("scripted"), meta={"agent": "scripted", "model": "scripted"})
+
+
+def test_sector_note_cites_every_figure_with_its_filing():
+    task, traj = _reference("c03_big5_q3_sector_shared")
+    note = sector_note(traj, task)
+    assert uncited_figures(note) == []
+    assert sector_note(traj, task) == note                                     # deterministic
+    ds = Dataset(BANKS)
+    for code in BIG5:
+        q3 = ds.companies[code].statement(2026, "Q3", "CFS")
+        h1 = ds.companies[code].statement(2026, "H1", "CFS")
+        for fid, value, doc in ((f"{code}.2026Q3.CFS.net_income_common", q3["net_income_common"], q3["doc_id"]),
+                                (f"{code}.2026H1.CFS.net_income_common", h1["net_income_common"], h1["doc_id"]),
+                                (f"{code}.2026Q3.CFS.cet1_ratio", q3["cet1_ratio"], q3["doc_id"])):
+            unit = "%" if fid.endswith("cet1_ratio") else "CAD"
+            assert f"{fmt_figure(value, unit)} [fact `{fid}` from 6-K {doc}]" in note
+        single = fmt_figure(q3["net_income_common"] - h1["net_income_common"], "CAD")
+        assert (f"{single} [fact `calc.{code.lower()}_q3_net_income_common` from 6-K {q3['doc_id']}; "
+                f"6-K {h1['doc_id']}]") in note
+    assert "13.46% [fact `calc.cet1_average`" in note and "1.30 pp [fact `calc.cet1_spread_pp`" in note
+    table = note.split("## Comparison")[1].split("##")[0]
+    order = [table.index(f"({c})") for c in ("RY", "TD", "BNS", "CM", "BMO")]
+    assert order == sorted(order)                                              # highest first
+    assert "every answer is within the task's tolerance" in note and note.count("(within tolerance)") == 7
+
+
+def test_uncited_figures_flags_bare_numbers_only():
+    ok = ("Fiscal 2026 Q3 (May-July 2026), as of 2026-09-30, for the Big 5 banks. "
+          "C$5,879 million [fact `calc.x` from 6-K 0001193125-26-369461] and **13.46%** [fact `calc.y` from 6-K 1]")
+    assert uncited_figures(ok) == []
+    bad = "RBC earned C$5,879 million; CET1 averaged 13.46%, a spread of 1.30 pp, at 18.50x and 1,667 in total."
+    assert uncited_figures(bad) == ["C$5,879 million", "13.46%", "1.30 pp", "18.50x", "1,667"]
+    assert uncited_figures("13.46% [fact `calc.y` from 6-K 1] then 2.5 [fact `calc.z` from 6-K 2] and 0.4") == ["0.4"]
+
+
+class _Wait(BaseAgent):
+    def act(self, turn):
+        return Decision("wait", {"reason": "idle"})
+
+
+def test_sector_note_refuses_wrong_or_tampered_trajectories():
+    def swap(d):  # the reporter files RBC's quarter as TD's
+        d["reference_solution"]["reporter"][-1][1]["answers"][1]["fact_id"] = "calc.ry_q3_net_income_common"
+    task, traj = _reference("c03_big5_q3_sector_shared", swap)
+    assert not traj["result"]["success"]
+    with pytest.raises(NoteError, match="6 of 7"):
+        sector_note(traj, task)
+    note = sector_note(traj, task, require_success=False)
+    assert "### `td_q3_net_income_common` (outside tolerance)" in note and uncited_figures(note) == []
+    task, traj = _reference("c03_big5_q3_sector_shared")
+    tampered = copy.deepcopy(traj)
+    tampered["submission"]["cet1_spread_pp"]["value"] = 1.5
+    with pytest.raises(NoteError, match="recorded"):
+        sector_note(tampered, task)
+    idle = run_episode(task, lambda t, n: _Wait(n))
+    with pytest.raises(NoteError, match="no answers"):
+        sector_note(idle, task, require_success=False)
+    with pytest.raises(NoteError, match="not c01"):
+        sector_note(traj, Task.load(CA_DIR / "c01_ry_ttm_pe_shared.yaml"))
+
+
+def test_note_cli_from_reference_and_from_trajectory(tmp_path, capsys):
+    out = tmp_path / "c03.md"
+    assert finance_main(["note", "--reference", "c03_big5_q3_sector_private", "--out", str(out)]) == 0
+    raw = out.read_bytes()
+    assert b"\r\n" not in raw and uncited_figures(raw.decode("utf-8")) == []
+    _, traj = _reference("c01_ry_ttm_pe_shared")
+    path = tmp_path / "traj.json"
+    path.write_text(json.dumps(traj), encoding="utf-8")
+    capsys.readouterr()
+    assert finance_main(["note", "--trajectory", str(path)]) == 0
+    printed = capsys.readouterr().out
+    assert "18.50x [fact `calc.pe` from" in printed and "40-F 0001193125-25-305927" in printed
+    traj["submission"]["pe"]["value"] = 20.0
+    path.write_text(json.dumps(traj), encoding="utf-8")
+    assert finance_main(["note", "--trajectory", str(path)]) == 1
 
 
 # ---------------------------------------------------------------------- EDGAR parsing (offline fixtures)

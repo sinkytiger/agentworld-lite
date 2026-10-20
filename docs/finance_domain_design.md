@@ -132,7 +132,7 @@ python -m agentworld_lite pair-report --runs runs/finance_llama32_3b --out repor
 
 ## 캐나다 데스크
 
-같은 데스크를 캐나다 5대 은행의 실제 공시(SEC EDGAR에 함께 제출된 40-F·6-K의 XBRL)에 적용했습니다. 공시 소스 인터페이스(`dart`, `edgar`, `local_pdf`, `sedar_dds`), 데이터 정규화, 은행 발표치와의 대조, 과제 c01·c02는 [finance_canada.md](finance_canada.md)(영문)에 정리했습니다.
+같은 데스크를 캐나다 5대 은행의 실제 공시(SEC EDGAR에 함께 제출된 40-F·6-K의 XBRL)에 적용했습니다. 공시 소스 인터페이스(`dart`, `edgar`, `local_pdf`, `sedar_dds`), 데이터 정규화, 은행 발표치와의 대조, 과제 c01~c03, 섹터 노트 생성기는 [finance_canada.md](finance_canada.md)(영문)에 정리했습니다.
 
 ## 다음 단계
 

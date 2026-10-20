@@ -3,6 +3,7 @@
   make-tasks   write the matched shared/private task pairs in catalog.py to tasks/finance
   validate     replay reference solutions (must succeed) and idle teams (must fail)
   run          run episodes; trajectories work with `python -m agentworld_lite evaluate/report/pair-report`
+  note         write an English Markdown sector note from a trajectory's submitted, cited facts (no LLM)
   fetch        build a company dataset from a filing source:
                  --source dart       DART OpenAPI (your own key in DART_API_KEY)
                  --source edgar      SEC EDGAR XBRL of 40-F / 6-K / 10-K / 10-Q (your contact in SEC_USER_AGENT)
@@ -45,6 +46,32 @@ def cmd_run(args) -> int:
     run_suite(tasks, args.out, agent=args.agent, settings=args.settings, seeds=args.seeds, verbose=args.verbose,
               model=args.model, provider=args.provider, host=args.ollama_host, num_ctx=args.num_ctx, think=think,
               effort=args.effort)
+    return 0
+
+
+def cmd_note(args) -> int:
+    import json
+    from pathlib import Path
+    from .note import NoteError, find_task, sector_note
+    from .run import make_factory, run_episode
+    try:
+        if args.reference:
+            task = find_task(args.reference, args.tasks)
+            traj = run_episode(task, make_factory("scripted"), meta={"agent": "scripted", "model": "scripted reference"})
+        else:
+            traj = json.loads(Path(args.trajectory).read_text(encoding="utf-8"))
+            task = find_task(traj["task_id"], args.tasks)
+        note = sector_note(traj, task, require_success=not args.allow_failed)
+    except NoteError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    if args.out:
+        Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+        with open(args.out, "w", encoding="utf-8", newline="\n") as f:
+            f.write(note)
+        print(f"wrote {args.out}")
+    else:
+        sys.stdout.write(note)
     return 0
 
 
@@ -104,6 +131,14 @@ def main(argv=None) -> int:
     r.add_argument("--out", required=True)
     r.add_argument("--verbose", action="store_true")
 
+    n = sub.add_parser("note", help="write a Markdown sector note from a trajectory's cited answers (no LLM)")
+    src = n.add_mutually_exclusive_group(required=True)
+    src.add_argument("--trajectory", help="trajectory JSON written by `run`")
+    src.add_argument("--reference", metavar="TASK_ID", help="replay the task's scripted reference solution instead")
+    n.add_argument("--tasks", nargs="+", default=["tasks/finance_ca", "tasks/finance"], help="where to find the task")
+    n.add_argument("--out", help="Markdown file to write (default: print)")
+    n.add_argument("--allow-failed", action="store_true", help="also write a note when some answers are wrong")
+
     f = sub.add_parser("fetch", help="build company datasets from DART, EDGAR or hand-checked local documents")
     f.add_argument("--source", choices=["dart", "edgar", "local_pdf", "sedar_dds"], default="dart")
     f.add_argument("--company", nargs="+", help="DART: stock code or exact name; EDGAR: ticker (RY), CIK or exact name")
@@ -125,7 +160,8 @@ def main(argv=None) -> int:
         if args.provider == "ollama":
             ap.error("--model is required with --provider ollama (e.g. llama3.2:3b or gemma4:cloud)")
         args.model = DEFAULT_MODEL
-    return {"make-tasks": cmd_make_tasks, "validate": cmd_validate, "run": cmd_run, "fetch": cmd_fetch}[args.cmd](args)
+    return {"make-tasks": cmd_make_tasks, "validate": cmd_validate, "run": cmd_run, "note": cmd_note,
+            "fetch": cmd_fetch}[args.cmd](args)
 
 
 if __name__ == "__main__":

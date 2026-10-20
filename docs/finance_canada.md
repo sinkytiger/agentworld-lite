@@ -1,6 +1,6 @@
 # Canadian desk: Big 5 bank filings on the same protocol
 
-The finance domain's research desk (a collector fetches filings, an analyst computes, a reporter submits, and every number is a cited fact) now also runs on real filings of Canada's five largest banks. This page covers where the numbers come from, how they are normalized, how they were checked, and the two tasks built on them.
+The finance domain's research desk (a collector fetches filings, an analyst computes, a reporter submits, and every number is a cited fact) now also runs on real filings of Canada's five largest banks. This page covers where the numbers come from, how they are normalized, how they were checked, the three tasks built on them, and the sector note written from a finished run.
 
 ## Where Canadian filings can be collected
 
@@ -81,14 +81,16 @@ Accounts: `revenue` (total revenue), `non_interest_expense`, `net_income`, `net_
 | RBC net income available to common, 9M 2026 / 9M 2025 | 16,894 / 14,575 | 16,894 / 14,575 |
 | TD Q3 total revenue | 16,885 | 49,267 − 32,382 = 16,885 |
 | TD reported efficiency ratio, Q3 / 9M | 50.2% / 52.0% | 50.19% / 51.96% |
+| Q3 reported net income, TD / BNS / BMO / CIBC | 4,615 / 2,953 / 1,750 / 2,409 | 12,909 − 8,294 / 7,884 − 4,931 / 6,869 − 5,119 / 7,974 − 5,565 |
+| CET1 ratio at July 31, 2026, RY / TD / BNS / BMO / CIBC | 13.5% / 14.3% / 13.1% / 13.0% / 13.4% | the same |
 
-Amounts in C$ millions.
+Amounts in C$ millions. For c03, total net income and the CET1 ratio were compared with each bank's Q3 2026 release; the split between common and preferred holders (`net_income_common`) is the XBRL as filed. BMO's reported Q3 includes a C$962 million after-tax goodwill charge tied to the announced sale of its Transportation Finance and Vendor Finance businesses, so its reported quarter sits well below its adjusted earnings. The tasks use reported figures.
 
 **Share prices** are not in the XBRL. RBC's TSX closes at quarter end (C$293.41 on 2026-07-31 and C$177.79 on 2025-07-31) come from the "Common share price (RY on TSX)" line of its Q3 2026 Report to Shareholders (Exhibit 99.2 of 6-K 0001193125-26-369461), and the dataset stores that citation.
 
 ## Tasks (`tasks/finance_ca`)
 
-Both tasks come as matched shared / private pairs, like the Korean ones: the methodology sentences sit either in the shared document or in the analyst's private brief. The as-of date is 2026-09-30 and the tolerance is 0.1%, tight enough to separate basic from diluted EPS.
+All tasks come as matched shared / private pairs, like the Korean ones: the methodology sentences sit either in the shared document or in the analyst's private brief. The as-of date is 2026-09-30 and the tolerance is 0.1%, tight enough to separate basic from diluted EPS.
 
 ### c01: RBC trailing P/E at fiscal Q3 2026
 
@@ -114,7 +116,55 @@ Single quarter = Q3 YTD − H1 YTD. Answers: RBC **52.80%**, TD **50.19%**.
 | Six-month ratio | 53.37% (+1.1%) | 52.88% (+5.4%) |
 | Fraction instead of percent | 0.528 | 0.502 |
 
-The scripted reference solves c01 in 7 rounds of 16 and c02 in 11 rounds of 18. An idle team fails both.
+### c03: Big 5 earnings and capital at fiscal Q3 2026
+
+Seven answers across all five banks: each bank's net income available to common shareholders for fiscal Q3 2026 alone (Q3 YTD − H1 YTD), and the simple average and the spread (highest minus lowest) of the five CET1 ratios at July 31, 2026.
+
+| Bank | Q3 net income to common | CET1 |
+|---|---|---|
+| RY | 16,894 − 11,015 = **5,879** | 13.5% |
+| TD | 12,512 − 7,991 = **4,521** | 14.3% |
+| BNS | 7,401 − 4,623 = **2,778** | 13.1% |
+| BMO | 6,563 − 4,896 = **1,667** | 13.0% |
+| CM | 7,601 − 5,330 = **2,271** | 13.4% |
+
+CET1 average **13.46%**; spread 14.3 − 13.0 = **1.30 pp** (TD highest, BMO lowest). Amounts in C$ millions.
+
+| Mistake | Off by |
+|---|---|
+| Nine-month or six-month figure as the quarter | +66% to +294% |
+| `net_income` (incl. non-controlling interests and preferred holders) | +2.1% (TD) to +6.3% (BNS) |
+| `net_income_owners` where tagged (TD has none, which invites mixing definitions) | +2.4% (RY) to +5.6% (CM) |
+| Nine months ÷ 3 | −11% (BNS) to +31% (BMO) |
+| Fiscal Q2 alone (H1 − Q1) | −11% to +49% |
+| Stale quarter, fiscal Q4 2025 (FY − Q3 YTD 2025) | −32% to +27% |
+| CET1 average from H1, Q1, FY 2025 or Q3 2025 | 13.54 to 13.64 (+0.6% to +1.3%) |
+| CET1 spread from Q1, FY 2025 or Q3 2025 | 1.4 to 1.6 (+7.7% to +23%) |
+| Median instead of mean | 13.40 (−0.45%) |
+| Average of four banks (TD left out) | 13.25 (−1.6%) |
+| Spread in basis points, as a fraction, or relative (14.3 / 13.0 − 1) | 130, 0.013, 10.0 |
+
+H1 ratios give the same spread, because TD and BMO did not move between April and July. The spread alone would let that period mistake through, so the average is asked too.
+
+The scripted reference solves c01 in 7 rounds of 16, c02 in 11 rounds of 18 and c03 in 18 rounds of 30 (ten fetches by the collector, then seven calculations by the analyst). An idle team fails all three.
+
+## Sector note
+
+```bash
+python -m agentworld_lite.finance note --trajectory runs/finance_ca_gemma/trajectories/c03_big5_q3_sector_shared__full__s7.json --out reports/c03_note.md
+```
+
+```bash
+python -m agentworld_lite.finance note --reference c03_big5_q3_sector_shared
+```
+
+`agentworld_lite/finance/note.py` turns a finished trajectory into an English Markdown note, without calling a model. It replays the recorded actions on a fresh desk (the environment is deterministic) to recover each submitted fact and its provenance, and it refuses the trajectory if the replay does not reproduce the recorded submission. Every figure is followed by its fact id and its filing, and a derived figure lists every filing behind it:
+
+```
+C$5,879 million [fact `calc.ry_q3_net_income_common` from 6-K 0001193125-26-369461; 6-K 0001193125-26-242928]
+```
+
+The note has a comparison table (per-bank answers, plus inputs taken from every bank, such as the CET1 ratios), the sector-wide answers, the derivation of each answer down to the filed figures, and a sources table that links each accession number to its EDGAR folder. Before returning, it checks its own text: every figure (a number with a currency sign, decimal point, thousands separator or unit) must be followed by a citation. Notes are written only for successful runs unless `--allow-failed` is passed, in which case each answer is marked within or outside tolerance. `--reference TASK_ID` replays the task's scripted reference solution instead of a saved run.
 
 ## Running
 
@@ -142,3 +192,4 @@ The Canadian desk gets its own system prompt and tool descriptions (fiscal perio
 - Extension concepts are matched by name. A bank that renames an element needs a new candidate in `ACCOUNT_RULES`; the stored `concept` shows what matched.
 - Period matching allows ±7 days around the computed period end, which suits month-end fiscal years such as the banks'. 52/53-week fiscal years have not been tested.
 - Share prices and share counts at period end come from the report text, not from XBRL, so they are added by hand with a citation.
+- Fact labels describe every account of a filing as "year-to-date", including period-end ratios such as CET1, which the sector note repeats.

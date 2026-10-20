@@ -1,0 +1,278 @@
+id: c03_big5_q3_sector_shared
+name: 'Big 5 Canadian banks: fiscal Q3 2026 earnings and capital'
+category: finance
+domain: finance
+world_guide: false
+description: 'The desk compares Canada''s five largest banks, Royal Bank of Canada (TSX: RY), The Toronto-Dominion Bank (TSX:
+  TD), The Bank of Nova Scotia (TSX: BNS), Bank of Montreal (TSX: BMO) and Canadian Imperial Bank of Commerce (TSX: CM), on
+  earnings for the third quarter of fiscal 2026 alone (May-July 2026) and on capital at the end of that quarter, using only
+  filings made by 2026-09-30. The collector pulls filings, the analyst computes, the reporter submits.'
+objectives:
+  primary: 'Submit seven answers: ry_q3_net_income_common, td_q3_net_income_common, bns_q3_net_income_common, bmo_q3_net_income_common
+    and cm_q3_net_income_common (each bank''s net income available to common shareholders for that single quarter, in CAD);
+    cet1_average (the simple average of the five banks'' CET1 ratios at July 31, 2026, in percent, e.g. 12.5 for 12.5%); and
+    cet1_spread_pp (the highest of those five CET1 ratios minus the lowest, in percentage points, e.g. 0.5).'
+  secondary:
+  - Use as few rounds as possible.
+max_rounds: 30
+inputs:
+  as_of: '2026-09-30'
+  company: Royal Bank of Canada; The Toronto-Dominion Bank; The Bank of Nova Scotia; Bank of Montreal; Canadian Imperial Bank
+    of Commerce
+data:
+  dir: data/finance/edgar
+matched:
+  pair_id: c03
+  placement: shared
+  fact_counts:
+    analyst: 4
+relevant_game_context: '- Common traps: fiscal vs calendar periods (the banks'' fiscal year ends October 31), year-to-date
+  vs single-quarter figures, net income attributable to shareholders vs net income available to common shareholders, basic
+  vs diluted EPS, ratios as fractions vs percent, and filings made after the as-of date.
+
+  - Filing figures are fiscal year-to-date, so a single fiscal Q3 figure = Q3 year-to-date (9 months) - H1 year-to-date (6
+  months).
+
+  - Net income means net_income_common (available to common shareholders) from consolidated (CFS) statements, for every bank,
+  so the five figures are comparable; do not mix in net_income or net_income_owners.
+
+  - cet1_ratio is a period-end ratio already in percent, so it needs no single-quarter adjustment: use each bank''s fiscal
+  2026 Q3 value (July 31, 2026).
+
+  - All five fiscal years end October 31, so the inputs are each bank''s fiscal 2026 H1 and fiscal 2026 Q3 CFS reports.'
+agents:
+- username: collector
+  role: data collector
+  restricted_tools:
+  - calculate
+  - submit_answer
+- username: analyst
+  role: analyst
+  restricted_tools:
+  - fetch_financials
+  - submit_answer
+- username: reporter
+  role: reporter
+  restricted_tools:
+  - fetch_financials
+  - calculate
+verifier:
+  checkpoints:
+  - type: answer
+    name: ry_q3_net_income_common
+    field: ry_q3_net_income_common
+    expected: 5879000000
+    rel_tol: 0.001
+  - type: answer
+    name: td_q3_net_income_common
+    field: td_q3_net_income_common
+    expected: 4521000000
+    rel_tol: 0.001
+  - type: answer
+    name: bns_q3_net_income_common
+    field: bns_q3_net_income_common
+    expected: 2778000000
+    rel_tol: 0.001
+  - type: answer
+    name: bmo_q3_net_income_common
+    field: bmo_q3_net_income_common
+    expected: 1667000000
+    rel_tol: 0.001
+  - type: answer
+    name: cm_q3_net_income_common
+    field: cm_q3_net_income_common
+    expected: 2271000000
+    rel_tol: 0.001
+  - type: answer
+    name: cet1_average
+    field: cet1_average
+    expected: 13.46
+    rel_tol: 0.001
+  - type: answer
+    name: cet1_spread_pp
+    field: cet1_spread_pp
+    expected: 1.3
+    rel_tol: 0.001
+reference_solution:
+  collector:
+  - - fetch_financials
+    - company: RY
+      year: 2026
+      period: H1
+      basis: CFS
+  - - fetch_financials
+    - company: RY
+      year: 2026
+      period: Q3
+      basis: CFS
+  - - fetch_financials
+    - company: TD
+      year: 2026
+      period: H1
+      basis: CFS
+  - - fetch_financials
+    - company: TD
+      year: 2026
+      period: Q3
+      basis: CFS
+  - - fetch_financials
+    - company: BNS
+      year: 2026
+      period: H1
+      basis: CFS
+  - - fetch_financials
+    - company: BNS
+      year: 2026
+      period: Q3
+      basis: CFS
+  - - fetch_financials
+    - company: BMO
+      year: 2026
+      period: H1
+      basis: CFS
+  - - fetch_financials
+    - company: BMO
+      year: 2026
+      period: Q3
+      basis: CFS
+  - - fetch_financials
+    - company: CM
+      year: 2026
+      period: H1
+      basis: CFS
+  - - fetch_financials
+    - company: CM
+      year: 2026
+      period: Q3
+      basis: CFS
+  - - share_facts
+    - to_agent: analyst
+      fact_ids:
+      - RY.2026H1.CFS.net_income_common
+      - RY.2026Q3.CFS.net_income_common
+      - TD.2026H1.CFS.net_income_common
+      - TD.2026Q3.CFS.net_income_common
+      - BNS.2026H1.CFS.net_income_common
+      - BNS.2026Q3.CFS.net_income_common
+      - BMO.2026H1.CFS.net_income_common
+      - BMO.2026Q3.CFS.net_income_common
+      - CM.2026H1.CFS.net_income_common
+      - CM.2026Q3.CFS.net_income_common
+      - RY.2026Q3.CFS.cet1_ratio
+      - TD.2026Q3.CFS.cet1_ratio
+      - BNS.2026Q3.CFS.cet1_ratio
+      - BMO.2026Q3.CFS.cet1_ratio
+      - CM.2026Q3.CFS.cet1_ratio
+  analyst:
+  - - wait
+    - reason: waiting for inputs
+    - until_have:
+        CM.2026Q3.CFS.cet1_ratio: 1
+      retries: 30
+  - - calculate
+    - name: ry_q3_net_income_common
+      formula: q3 - h1
+      unit: CAD
+      inputs:
+      - var: q3
+        fact_id: RY.2026Q3.CFS.net_income_common
+      - var: h1
+        fact_id: RY.2026H1.CFS.net_income_common
+  - - calculate
+    - name: td_q3_net_income_common
+      formula: q3 - h1
+      unit: CAD
+      inputs:
+      - var: q3
+        fact_id: TD.2026Q3.CFS.net_income_common
+      - var: h1
+        fact_id: TD.2026H1.CFS.net_income_common
+  - - calculate
+    - name: bns_q3_net_income_common
+      formula: q3 - h1
+      unit: CAD
+      inputs:
+      - var: q3
+        fact_id: BNS.2026Q3.CFS.net_income_common
+      - var: h1
+        fact_id: BNS.2026H1.CFS.net_income_common
+  - - calculate
+    - name: bmo_q3_net_income_common
+      formula: q3 - h1
+      unit: CAD
+      inputs:
+      - var: q3
+        fact_id: BMO.2026Q3.CFS.net_income_common
+      - var: h1
+        fact_id: BMO.2026H1.CFS.net_income_common
+  - - calculate
+    - name: cm_q3_net_income_common
+      formula: q3 - h1
+      unit: CAD
+      inputs:
+      - var: q3
+        fact_id: CM.2026Q3.CFS.net_income_common
+      - var: h1
+        fact_id: CM.2026H1.CFS.net_income_common
+  - - calculate
+    - name: cet1_average
+      formula: (ry + td + bns + bmo + cm) / 5
+      unit: '%'
+      inputs:
+      - var: ry
+        fact_id: RY.2026Q3.CFS.cet1_ratio
+      - var: td
+        fact_id: TD.2026Q3.CFS.cet1_ratio
+      - var: bns
+        fact_id: BNS.2026Q3.CFS.cet1_ratio
+      - var: bmo
+        fact_id: BMO.2026Q3.CFS.cet1_ratio
+      - var: cm
+        fact_id: CM.2026Q3.CFS.cet1_ratio
+  - - calculate
+    - name: cet1_spread_pp
+      formula: td - bmo
+      unit: pp
+      inputs:
+      - var: td
+        fact_id: TD.2026Q3.CFS.cet1_ratio
+      - var: bmo
+        fact_id: BMO.2026Q3.CFS.cet1_ratio
+  - - share_facts
+    - to_agent: reporter
+      fact_ids:
+      - calc.ry_q3_net_income_common
+      - calc.td_q3_net_income_common
+      - calc.bns_q3_net_income_common
+      - calc.bmo_q3_net_income_common
+      - calc.cm_q3_net_income_common
+      - calc.cet1_average
+      - calc.cet1_spread_pp
+  reporter:
+  - - wait
+    - reason: waiting for results
+    - until_have:
+        calc.cet1_spread_pp: 1
+        calc.cet1_average: 1
+        calc.ry_q3_net_income_common: 1
+        calc.td_q3_net_income_common: 1
+        calc.bns_q3_net_income_common: 1
+        calc.bmo_q3_net_income_common: 1
+        calc.cm_q3_net_income_common: 1
+      retries: 30
+  - - submit_answer
+    - answers:
+      - field: ry_q3_net_income_common
+        fact_id: calc.ry_q3_net_income_common
+      - field: td_q3_net_income_common
+        fact_id: calc.td_q3_net_income_common
+      - field: bns_q3_net_income_common
+        fact_id: calc.bns_q3_net_income_common
+      - field: bmo_q3_net_income_common
+        fact_id: calc.bmo_q3_net_income_common
+      - field: cm_q3_net_income_common
+        fact_id: calc.cm_q3_net_income_common
+      - field: cet1_average
+        fact_id: calc.cet1_average
+      - field: cet1_spread_pp
+        fact_id: calc.cet1_spread_pp

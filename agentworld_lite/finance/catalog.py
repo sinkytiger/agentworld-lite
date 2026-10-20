@@ -158,6 +158,7 @@ def _ca_ids(code: str, *names: str) -> list[str]:
 
 
 RY_PRICE = 293.41  # TSX close on 2026-07-31, as reported in RBC's Q3 2026 Report to Shareholders
+BIG5 = ("RY", "TD", "BNS", "BMO", "CM")
 SPECS_CA = [
     {
         "pair": "c01", "slug": "ry_ttm_pe", "max_rounds": 16, "market": "ca",
@@ -284,6 +285,82 @@ SPECS_CA = [
                 ["submit_answer", {"answers": [
                     {"field": "ry_q3_efficiency_ratio", "fact_id": "calc.ry_q3_efficiency_ratio"},
                     {"field": "td_q3_efficiency_ratio", "fact_id": "calc.td_q3_efficiency_ratio"}]}],
+            ],
+        },
+    },
+    {
+        # Single-quarter net income available to common (Q3 YTD - H1 YTD, C$ millions) and CET1 ratios at July 31,
+        # 2026. The spread alone would not catch H1 ratios (TD 14.3 and BMO 13.0 in both), so the average is asked too.
+        "pair": "c03", "slug": "big5_q3_sector", "max_rounds": 30, "market": "ca",
+        "company": ("Royal Bank of Canada; The Toronto-Dominion Bank; The Bank of Nova Scotia; Bank of Montreal; "
+                    "Canadian Imperial Bank of Commerce"),
+        "name": "Big 5 Canadian banks: fiscal Q3 2026 earnings and capital",
+        "description": ("The desk compares Canada's five largest banks, Royal Bank of Canada (TSX: RY), The Toronto-Dominion "
+                        "Bank (TSX: TD), The Bank of Nova Scotia (TSX: BNS), Bank of Montreal (TSX: BMO) and Canadian "
+                        "Imperial Bank of Commerce (TSX: CM), on earnings for the third quarter of fiscal 2026 alone "
+                        "(May-July 2026) and on capital at the end of that quarter, using only filings made by 2026-09-30. "
+                        "The collector pulls filings, the analyst computes, the reporter submits."),
+        "primary": ("Submit seven answers: ry_q3_net_income_common, td_q3_net_income_common, bns_q3_net_income_common, "
+                    "bmo_q3_net_income_common and cm_q3_net_income_common (each bank's net income available to common "
+                    "shareholders for that single quarter, in CAD); cet1_average (the simple average of the five banks' "
+                    "CET1 ratios at July 31, 2026, in percent, e.g. 12.5 for 12.5%); and cet1_spread_pp (the highest of "
+                    "those five CET1 ratios minus the lowest, in percentage points, e.g. 0.5)."),
+        "facts": {
+            "analyst": [
+                "Filing figures are fiscal year-to-date, so a single fiscal Q3 figure = Q3 year-to-date (9 months) - "
+                "H1 year-to-date (6 months).",
+                "Net income means net_income_common (available to common shareholders) from consolidated (CFS) statements, "
+                "for every bank, so the five figures are comparable; do not mix in net_income or net_income_owners.",
+                "cet1_ratio is a period-end ratio already in percent, so it needs no single-quarter adjustment: use each "
+                "bank's fiscal 2026 Q3 value (July 31, 2026).",
+                "All five fiscal years end October 31, so the inputs are each bank's fiscal 2026 H1 and fiscal 2026 Q3 "
+                "CFS reports.",
+            ],
+        },
+        "initial": {},
+        "checkpoints": [
+            *[{"type": "answer", "name": f"{code.lower()}_q3_net_income_common", "field": f"{code.lower()}_q3_net_income_common",
+               "expected": (q3 - h1) * 1_000_000, "rel_tol": 0.001}
+              for code, q3, h1 in (("RY", 16_894, 11_015), ("TD", 12_512, 7_991), ("BNS", 7_401, 4_623),
+                                   ("BMO", 6_563, 4_896), ("CM", 7_601, 5_330))],
+            {"type": "answer", "name": "cet1_average", "field": "cet1_average",
+             "expected": round((13.5 + 14.3 + 13.1 + 13.0 + 13.4) / 5, 6), "rel_tol": 0.001},
+            {"type": "answer", "name": "cet1_spread_pp", "field": "cet1_spread_pp", "expected": round(14.3 - 13.0, 6),
+             "rel_tol": 0.001},
+        ],
+        "reference": {
+            "collector": [
+                *[["fetch_financials", {"company": code, "year": 2026, "period": period, "basis": "CFS"}]
+                  for code in BIG5 for period in ("H1", "Q3")],
+                ["share_facts", {"to_agent": "analyst", "fact_ids": [
+                    *[f for code in BIG5 for f in _ca_ids(code, "2026H1.CFS.net_income_common",
+                                                          "2026Q3.CFS.net_income_common")],
+                    *[f"{code}.2026Q3.CFS.cet1_ratio" for code in BIG5]]}],
+            ],
+            "analyst": [
+                ["wait", {"reason": "waiting for inputs"},
+                 {"until_have": {"CM.2026Q3.CFS.cet1_ratio": 1}, "retries": 30}],
+                *[["calculate", {"name": f"{code.lower()}_q3_net_income_common", "formula": "q3 - h1", "unit": "CAD",
+                                 "inputs": _inputs(q3=f"{code}.2026Q3.CFS.net_income_common",
+                                                   h1=f"{code}.2026H1.CFS.net_income_common")}]
+                  for code in BIG5],
+                ["calculate", {"name": "cet1_average", "formula": "(ry + td + bns + bmo + cm) / 5", "unit": "%",
+                               "inputs": _inputs(**{code.lower(): f"{code}.2026Q3.CFS.cet1_ratio" for code in BIG5})}],
+                ["calculate", {"name": "cet1_spread_pp", "formula": "td - bmo", "unit": "pp",
+                               "inputs": _inputs(td="TD.2026Q3.CFS.cet1_ratio", bmo="BMO.2026Q3.CFS.cet1_ratio")}],
+                ["share_facts", {"to_agent": "reporter", "fact_ids": [
+                    *[f"calc.{code.lower()}_q3_net_income_common" for code in BIG5], "calc.cet1_average",
+                    "calc.cet1_spread_pp"]}],
+            ],
+            "reporter": [
+                ["wait", {"reason": "waiting for results"},
+                 {"until_have": {"calc.cet1_spread_pp": 1, "calc.cet1_average": 1,
+                                 **{f"calc.{code.lower()}_q3_net_income_common": 1 for code in BIG5}}, "retries": 30}],
+                ["submit_answer", {"answers": [
+                    *[{"field": f"{code.lower()}_q3_net_income_common",
+                       "fact_id": f"calc.{code.lower()}_q3_net_income_common"} for code in BIG5],
+                    {"field": "cet1_average", "fact_id": "calc.cet1_average"},
+                    {"field": "cet1_spread_pp", "fact_id": "calc.cet1_spread_pp"}]}],
             ],
         },
     },

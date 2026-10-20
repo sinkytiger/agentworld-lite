@@ -227,12 +227,14 @@ python -m agentworld_lite pair-report --runs runs/finance_llama --out reports/fi
 같은 데스크를 RBC, TD, Scotiabank, BMO, CIBC의 실제 공시에 적용했습니다. 자세한 내용은 [docs/finance_canada.md](docs/finance_canada.md)(영문)에 있습니다.
 
 - **공시 소스 인터페이스** (`agentworld_lite/finance/sources/`): `dart`, `edgar`(40-F·6-K마다 XBRL을 읽음, 무료, `SEC_USER_AGENT`에 본인 연락처 필요), `local_pdf`(직접 내려받은 문서에서 옮겨 적은 숫자를 인용한 페이지 본문과 대조), `sedar_dds`(CSA 유료 벌크 피드 자리). SEDAR+는 웹사이트 자동 접근을 약관으로 금지하고 공개 API가 없어서 SEDAR+ 크롤러는 만들지 않았습니다.
-- **데이터셋** `data/finance/edgar`: 은행마다 회계연도 기준 5개 기간(2025 회계연도 3분기·연간, 2026 회계연도 1분기·상반기·3분기). 숫자마다 서식, 접수번호, 제출일, XBRL 계정이 붙어 있습니다. 과제 입력값은 은행이 직접 발표한 2026 회계연도 3분기 수치와 일치합니다. 예를 들어 TD가 발표한 효율성비율 50.2%와 같습니다.
-- **과제** `tasks/finance_ca`, 공유형/개인형 쌍, 허용 오차 0.1%: RBC 3분기 말 TTM P/E(18.50배, 기본 EPS·누적 EPS·지난 회계연도 EPS는 모두 오답)와 RBC·TD의 2026 회계연도 3분기 단독 효율성비율(52.80%, 50.19%, 9개월 누적 비율은 오답).
+- **데이터셋** `data/finance/edgar`: 은행마다 회계연도 기준 5개 기간(2025 회계연도 3분기·연간, 2026 회계연도 1분기·상반기·3분기). 숫자마다 서식, 접수번호, 제출일, XBRL 계정이 붙어 있습니다. 과제 입력값은 은행이 직접 발표한 2026 회계연도 3분기 수치와 일치합니다. 예를 들어 TD가 발표한 효율성비율 50.2%, 5개 은행의 CET1 비율과 같습니다.
+- **과제** `tasks/finance_ca`, 공유형/개인형 쌍, 허용 오차 0.1%: RBC 3분기 말 TTM P/E(18.50배, 기본 EPS·누적 EPS·지난 회계연도 EPS는 모두 오답), RBC·TD의 2026 회계연도 3분기 단독 효율성비율(52.80%, 50.19%, 9개월 누적 비율은 오답), 5대 은행 비교(은행별 2026 회계연도 3분기 단독 보통주주 귀속 순이익과 CET1 비율 5개의 평균·격차 13.46%, 1.30%p. 누적 수치, 다른 순이익 항목, 다른 기간의 비율은 모두 오답).
+- **섹터 노트** (`python -m agentworld_lite.finance note`): 끝난 궤적을 모델 호출 없이 영문 마크다운 노트로 만듭니다. 숫자마다 팩트 id, 공시 서식, EDGAR 접수번호가 붙고, 출처 없는 숫자가 하나라도 있으면 노트를 내지 않습니다.
 
 ```bash
 python -m agentworld_lite.finance fetch --source edgar --company RY --periods 2025:FY 2026:Q3 --cache C:/edgar_cache
 python -m agentworld_lite.finance validate --tasks tasks/finance_ca
+python -m agentworld_lite.finance note --reference c03_big5_q3_sector_shared --out reports/c03_note.md
 ```
 
 캐나다 과제에는 아직 모델을 실행하지 않았습니다.
@@ -299,7 +301,7 @@ agentworld_lite/
 tasks/main/       과제 9개 (8개 카테고리)
 tasks/gym/        자동 생성 과제 (gen 산출물)
 tasks/finance/    한국 금융 과제 4개 (공유형/개인형 2쌍, 가상 회사)
-tasks/finance_ca/ 캐나다 금융 과제 4개 (공유형/개인형 2쌍, 실제 은행 공시)
+tasks/finance_ca/ 캐나다 금융 과제 6개 (공유형/개인형 3쌍, 실제 은행 공시)
 data/finance/     sample/ 가상 회사(DART 형식), edgar/ 캐나다 5대 은행
 tests/            엔진·과제·CCE·생성기·Claude/Ollama 요청 형식 테스트 (API 호출 없음)
 ```
