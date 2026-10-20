@@ -1,0 +1,207 @@
+{
+ "name": "The Bank of Nova Scotia",
+ "stock_code": "BNS",
+ "cik": "0000009631",
+ "lang": "en",
+ "market": "ca",
+ "fiscal_year_end": "10-31",
+ "source": "SEC EDGAR: XBRL instance of each periodic filing (40-F annual, 6-K interim)",
+ "accounts": {
+  "revenue": {
+   "label": "total revenue",
+   "unit": "money"
+  },
+  "non_interest_expense": {
+   "label": "non-interest expense",
+   "unit": "money"
+  },
+  "net_income": {
+   "label": "net income (incl. non-controlling interests)",
+   "unit": "money"
+  },
+  "net_income_owners": {
+   "label": "net income attributable to shareholders (common, preferred and other equity holders)",
+   "unit": "money"
+  },
+  "net_income_common": {
+   "label": "net income available to common shareholders",
+   "unit": "money"
+  },
+  "eps_basic": {
+   "label": "basic earnings per common share",
+   "unit": "money/share"
+  },
+  "eps_diluted": {
+   "label": "diluted earnings per common share",
+   "unit": "money/share"
+  },
+  "equity_owners": {
+   "label": "equity attributable to shareholders (incl. preferred shares and other equity instruments)",
+   "unit": "money"
+  },
+  "equity_total": {
+   "label": "total equity (incl. non-controlling interests)",
+   "unit": "money"
+  },
+  "cet1_ratio": {
+   "label": "Common Equity Tier 1 (CET1) capital ratio",
+   "unit": "pure"
+  }
+ },
+ "exchange": "TSX",
+ "aliases": [
+  "Bank of Nova Scotia",
+  "Scotiabank"
+ ],
+ "statements": {
+  "2025:Q3:CFS": {
+   "filed": "2025-08-26",
+   "doc_id": "0001193125-25-188101",
+   "form": "6-K",
+   "period_end": "2025-07-31",
+   "currency": "CAD",
+   "revenue": 27938000000.0,
+   "non_interest_expense": 16690000000.0,
+   "net_income": 5552000000.0,
+   "net_income_owners": 5570000000.0,
+   "net_income_common": 5179000000.0,
+   "eps_basic": 4.14,
+   "eps_diluted": 4.02,
+   "equity_owners": 83802000000.0,
+   "equity_total": 85483000000.0,
+   "cet1_ratio": 13.3,
+   "concepts": {
+    "revenue": "ifrs-full:Revenue",
+    "non_interest_expense": "ext:NonInterestExpense1",
+    "net_income": "ifrs-full:ProfitLoss",
+    "net_income_owners": "ifrs-full:ProfitLossAttributableToOwnersOfParent",
+    "net_income_common": "ifrs-full:ProfitLossAttributableToOrdinaryEquityHoldersOfParentEntity",
+    "eps_basic": "ifrs-full:BasicEarningsLossPerShare",
+    "eps_diluted": "ifrs-full:DilutedEarningsLossPerShare",
+    "equity_owners": "ifrs-full:EquityAttributableToOwnersOfParent",
+    "equity_total": "ifrs-full:Equity",
+    "cet1_ratio": "ext:CommonEquityTierOneCapitalRatio1"
+   }
+  },
+  "2025:FY:CFS": {
+   "filed": "2025-12-02",
+   "doc_id": "0001193125-25-304643",
+   "form": "40-F",
+   "period_end": "2025-10-31",
+   "currency": "CAD",
+   "revenue": 37741000000.0,
+   "non_interest_expense": 22518000000.0,
+   "net_income": 7758000000.0,
+   "net_income_owners": 7789000000.0,
+   "net_income_common": 7283000000.0,
+   "eps_basic": 5.84,
+   "eps_diluted": 5.67,
+   "equity_owners": 86866000000.0,
+   "equity_total": 88587000000.0,
+   "cet1_ratio": 13.2,
+   "concepts": {
+    "revenue": "ifrs-full:Revenue",
+    "non_interest_expense": "ext:NonInterestExpense1",
+    "net_income": "ifrs-full:ProfitLoss",
+    "net_income_owners": "ifrs-full:ProfitLossAttributableToOwnersOfParent",
+    "net_income_common": "ifrs-full:ProfitLossAttributableToOrdinaryEquityHoldersOfParentEntity",
+    "eps_basic": "ifrs-full:BasicEarningsLossPerShare",
+    "eps_diluted": "ifrs-full:DilutedEarningsLossPerShare",
+    "equity_owners": "ifrs-full:EquityAttributableToOwnersOfParent",
+    "equity_total": "ifrs-full:Equity",
+    "cet1_ratio": "ext:CommonEquityTierOneCapitalRatio1"
+   }
+  },
+  "2026:Q1:CFS": {
+   "filed": "2026-02-24",
+   "doc_id": "0001193125-26-065249",
+   "form": "6-K",
+   "period_end": "2026-01-31",
+   "currency": "CAD",
+   "revenue": 9646000000.0,
+   "non_interest_expense": 5299000000.0,
+   "net_income": 2299000000.0,
+   "net_income_owners": 2287000000.0,
+   "net_income_common": 2155000000.0,
+   "eps_basic": 1.75,
+   "eps_diluted": 1.73,
+   "equity_owners": 87588000000.0,
+   "equity_total": 89022000000.0,
+   "cet1_ratio": 13.3,
+   "concepts": {
+    "revenue": "ifrs-full:Revenue",
+    "non_interest_expense": "ext:NonInterestExpense1",
+    "net_income": "ifrs-full:ProfitLoss",
+    "net_income_owners": "ifrs-full:ProfitLossAttributableToOwnersOfParent",
+    "net_income_common": "ifrs-full:ProfitLossAttributableToOrdinaryEquityHoldersOfParentEntity",
+    "eps_basic": "ifrs-full:BasicEarningsLossPerShare",
+    "eps_diluted": "ifrs-full:DilutedEarningsLossPerShare",
+    "equity_owners": "ifrs-full:EquityAttributableToOwnersOfParent",
+    "equity_total": "ifrs-full:Equity",
+    "cet1_ratio": "ext:CommonEquityTierOneCapitalRatio1"
+   }
+  },
+  "2026:H1:CFS": {
+   "filed": "2026-05-27",
+   "doc_id": "0001193125-26-240473",
+   "form": "6-K",
+   "period_end": "2026-04-30",
+   "currency": "CAD",
+   "revenue": 19483000000.0,
+   "non_interest_expense": 10488000000.0,
+   "net_income": 4931000000.0,
+   "net_income_owners": 4882000000.0,
+   "net_income_common": 4623000000.0,
+   "eps_basic": 3.75,
+   "eps_diluted": 3.73,
+   "equity_owners": 87161000000.0,
+   "equity_total": 88582000000.0,
+   "cet1_ratio": 13.3,
+   "concepts": {
+    "revenue": "ifrs-full:Revenue",
+    "non_interest_expense": "ext:NonInterestExpense1",
+    "net_income": "ifrs-full:ProfitLoss",
+    "net_income_owners": "ifrs-full:ProfitLossAttributableToOwnersOfParent",
+    "net_income_common": "ifrs-full:ProfitLossAttributableToOrdinaryEquityHoldersOfParentEntity",
+    "eps_basic": "ifrs-full:BasicEarningsLossPerShare",
+    "eps_diluted": "ifrs-full:DilutedEarningsLossPerShare",
+    "equity_owners": "ifrs-full:EquityAttributableToOwnersOfParent",
+    "equity_total": "ifrs-full:Equity",
+    "cet1_ratio": "ext:CommonEquityTierOneCapitalRatio1"
+   }
+  },
+  "2026:Q3:CFS": {
+   "filed": "2026-08-25",
+   "doc_id": "0001193125-26-364115",
+   "form": "6-K",
+   "period_end": "2026-07-31",
+   "currency": "CAD",
+   "revenue": 30018000000.0,
+   "non_interest_expense": 16044000000.0,
+   "net_income": 7884000000.0,
+   "net_income_owners": 7790000000.0,
+   "net_income_common": 7401000000.0,
+   "eps_basic": 6.02,
+   "eps_diluted": 6.0,
+   "equity_owners": 89151000000.0,
+   "equity_total": 90622000000.0,
+   "cet1_ratio": 13.1,
+   "concepts": {
+    "revenue": "ifrs-full:Revenue",
+    "non_interest_expense": "ext:NonInterestExpense1",
+    "net_income": "ifrs-full:ProfitLoss",
+    "net_income_owners": "ifrs-full:ProfitLossAttributableToOwnersOfParent",
+    "net_income_common": "ifrs-full:ProfitLossAttributableToOrdinaryEquityHoldersOfParentEntity",
+    "eps_basic": "ifrs-full:BasicEarningsLossPerShare",
+    "eps_diluted": "ifrs-full:DilutedEarningsLossPerShare",
+    "equity_owners": "ifrs-full:EquityAttributableToOwnersOfParent",
+    "equity_total": "ifrs-full:Equity",
+    "cet1_ratio": "ext:CommonEquityTierOneCapitalRatio1"
+   }
+  }
+ },
+ "shares": {},
+ "prices": {},
+ "price_sources": {},
+ "currency": "CAD"
+}

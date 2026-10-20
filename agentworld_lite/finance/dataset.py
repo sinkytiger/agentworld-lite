@@ -36,6 +36,11 @@ ACCOUNTS = {
 }
 PERIOD_LABEL = {"Q1": "1분기보고서(누적)", "H1": "반기보고서(누적)", "Q3": "3분기보고서(누적)", "FY": "사업보고서(연간)"}
 BASIS_LABEL = {"CFS": "연결", "OFS": "별도"}
+# English datasets (EDGAR, local documents): periods are FISCAL and year-to-date.
+PERIOD_LABEL_EN = {"Q1": "Q1 (3 months", "H1": "H1 year-to-date (6 months", "Q3": "Q3 year-to-date (9 months",
+                   "FY": "full year (12 months"}
+BASIS_LABEL_EN = {"CFS": "consolidated", "OFS": "separate"}
+CURRENCY_SIGN = {"CAD": "C$", "USD": "US$", "EUR": "EUR ", "GBP": "GBP "}
 
 
 @dataclass
@@ -50,17 +55,24 @@ class Fact:
         return {"id": self.id, "label": self.label, "value": self.value, "unit": self.unit, "meta": self.meta}
 
 
-def fmt_value(value: float, unit: str) -> str:
+def fmt_value(value: float, unit: str, lang: str = "ko") -> str:
     if unit == "KRW" and abs(value) >= 1e8:
         return f"{value / 1e8:,.1f}억원 ({value:,.0f}원)"
     if unit == "KRW":
         return f"{value:,.0f}원"
+    if unit in CURRENCY_SIGN:
+        sign = CURRENCY_SIGN[unit]
+        if abs(value) >= 1e6:
+            return f"{sign}{value / 1e6:,.1f} million ({value:,.0f})"
+        return f"{sign}{value:,.2f}"
+    if unit.endswith("/share") and unit.split("/")[0] in CURRENCY_SIGN:
+        return f"{CURRENCY_SIGN[unit.split('/')[0]]}{value:,.2f} per share"
     if unit == "shares":
-        return f"{value:,.0f}주"
+        return f"{value:,.0f}주" if lang == "ko" else f"{value:,.0f} shares"
     if unit == "%":
         return f"{value:,.2f}%"
     if unit == "x":
-        return f"{value:,.2f}배"
+        return f"{value:,.2f}배" if lang == "ko" else f"{value:,.2f}x"
     return f"{value:,.4g} {unit}".strip()
 
 
@@ -69,6 +81,22 @@ class Company:
         self.data = data
         self.name: str = data["name"]
         self.stock_code: str = data["stock_code"]
+        self.lang: str = data.get("lang", "ko")
+        self.market: str = data.get("market", "kr")
+        self.currency: str = data.get("currency", "KRW")
+        if "cik" in data:
+            self.source = "EDGAR"
+        elif "documents" in data:
+            self.source = "local documents"
+        else:
+            self.source = "DART"
+
+    def accounts(self) -> dict[str, tuple[str, str]]:
+        """account -> (label, unit). DART files use the built-in Korean table; other sources carry their own."""
+        if "accounts" not in self.data:
+            return ACCOUNTS
+        units = {"money": self.currency, "money/share": f"{self.currency}/share", "pure": "%"}
+        return {k: (v["label"], units.get(v["unit"], v["unit"])) for k, v in self.data["accounts"].items()}
 
     def statement(self, year: int, period: str, basis: str) -> dict | None:
         return self.data.get("statements", {}).get(f"{year}:{period}:{basis}")
@@ -90,12 +118,26 @@ class Dataset:
             c = Company(json.loads(p.read_text(encoding="utf-8")))
             self.companies[c.stock_code] = c
 
+    @property
+    def lang(self) -> str:
+        langs = {c.lang for c in self.companies.values()}
+        return "en" if langs == {"en"} else "ko"
+
+    @property
+    def market(self) -> str:
+        markets = {c.market for c in self.companies.values()}
+        return markets.pop() if len(markets) == 1 else "kr"
+
     def find(self, query: str) -> Company | None:
         q = str(query).strip()
         if q in self.companies:
             return self.companies[q]
         for c in self.companies.values():
             if c.name == q or c.name.replace(" ", "") == q.replace(" ", ""):
+                return c
+        for c in self.companies.values():  # tickers, English names and aliases, case-insensitive
+            names = [c.name, *c.data.get("aliases", [])]
+            if q.upper() == c.stock_code.upper() or q.lower() in (n.lower() for n in names):
                 return c
         return None
 
@@ -109,14 +151,24 @@ def statement_facts(company: Company, year: int, period: str, basis: str) -> lis
     if st is None:
         return []
     out = []
-    for account, (ko, unit) in ACCOUNTS.items():
+    for account, (label, unit) in company.accounts().items():
         if st.get(account) is None:
             continue
-        label = f"{company.name} {year} {PERIOD_LABEL[period]} {BASIS_LABEL[basis]} {ko}"
-        out.append(Fact(statement_fact_id(company, year, period, basis, account), label, float(st[account]), unit,
-                        {"source": "DART", "rcept_no": st.get("rcept_no"), "filed": st.get("filed"),
-                         "company": company.stock_code, "year": year, "period": period, "basis": basis,
-                         "account": account}))
+        if company.lang == "en":
+            end = f" to {st['period_end']}" if st.get("period_end") else ""
+            text = (f"{company.name} fiscal {year} {PERIOD_LABEL_EN[period]}{end}), "
+                    f"{BASIS_LABEL_EN[basis]} {label}")
+        else:
+            text = f"{company.name} {year} {PERIOD_LABEL[period]} {BASIS_LABEL[basis]} {label}"
+        meta = {"source": company.source, "rcept_no": st.get("doc_id") or st.get("rcept_no"), "filed": st.get("filed"),
+                "company": company.stock_code, "year": year, "period": period, "basis": basis, "account": account}
+        if st.get("form"):
+            meta["form"] = st["form"]
+        if (st.get("concepts") or {}).get(account):
+            meta["concept"] = st["concepts"][account]
+        if (st.get("pages") or {}).get(account):
+            meta["page"] = st["pages"][account]
+        out.append(Fact(statement_fact_id(company, year, period, basis, account), text, float(st[account]), unit, meta))
     return out
 
 
@@ -135,5 +187,11 @@ def price_fact(company: Company, date: str) -> Fact | None:
     px = company.price(date)
     if px is None:
         return None
+    if company.lang == "en":
+        exchange = company.data.get("exchange", "")
+        label = f"{company.name} closing share price ({date}{', ' + exchange if exchange else ''})"
+        meta = {"source": (company.data.get("price_sources") or {}).get(date, "task input"),
+                "company": company.stock_code, "date": date}
+        return Fact(f"{company.stock_code}.price.{date}", label, float(px), company.currency, meta)
     return Fact(f"{company.stock_code}.price.{date}", f"{company.name} 종가 ({date}, KRX)", float(px), "KRW",
                 {"source": "KRX", "company": company.stock_code, "date": date})

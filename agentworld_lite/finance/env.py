@@ -94,6 +94,8 @@ class FinanceEnv:
     def __init__(self, dataset: Dataset, as_of: str) -> None:
         self.dataset = dataset
         self.as_of = as_of
+        self.lang = dataset.lang
+        self.market = dataset.market
         self.round = 0
         self.completed_rounds = 0
         self.agents: dict[str, DeskAgent] = {}
@@ -180,6 +182,9 @@ class FinanceEnv:
         c = self._company(company)
         year, period, basis = int(year), str(period).upper(), str(basis).upper()
         if period not in PERIODS:
+            if self.market == "ca":
+                return False, ("period must be Q1 (first fiscal quarter), H1 (first two fiscal quarters), Q3 (first "
+                               "three) or FY (full fiscal year); income-statement figures are fiscal year-to-date."), {}
             return False, ("period must be Q1 (Jan-Mar), H1 (Jan-Jun), Q3 (Jan-Sep) or FY (full year); "
                            "income-statement figures are cumulative."), {}
         if basis not in BASES:
@@ -192,8 +197,10 @@ class FinanceEnv:
         if not self._filed_ok(filed):
             return False, f"The {year} {period} report of {c.name} was filed on {filed}, after the as-of date {self.as_of}.", {}
         self._give(agent, facts)
-        lines = [f"{f.id} = {fmt_value(f.value, f.unit)}" for f in facts]
-        return True, f"Fetched {len(facts)} facts from DART (filed {filed}):\n" + "\n".join(lines), {}
+        lines = [f"{f.id} = {fmt_value(f.value, f.unit, self.lang)}" for f in facts]
+        meta = facts[0].meta
+        where = f"{c.source} {meta['form']} {meta['rcept_no']}" if meta.get("form") else c.source
+        return True, f"Fetched {len(facts)} facts from {where} (filed {filed}):\n" + "\n".join(lines), {}
 
     def _t_fetch_shares(self, agent, company, year, period):
         c = self._company(company)
@@ -206,7 +213,7 @@ class FinanceEnv:
         if not self._filed_ok(filed):
             return False, f"That report was filed on {filed}, after the as-of date {self.as_of}.", {}
         self._give(agent, facts)
-        return True, "Fetched share counts:\n" + "\n".join(f"{f.id} = {fmt_value(f.value, f.unit)}" for f in facts), {}
+        return True, "Fetched share counts:\n" + "\n".join(f"{f.id} = {fmt_value(f.value, f.unit, self.lang)}" for f in facts), {}
 
     def _t_calculate(self, agent, name, formula, inputs, unit):
         values, used = {}, []
@@ -234,7 +241,7 @@ class FinanceEnv:
                     {"source": "calculation", "formula": str(formula), "inputs": {v: f for v, f in zip(values, used)},
                      "by": agent.name})
         self._give(agent, [fact])
-        return True, f"Computed {fid} = {fmt_value(result, fact.unit)} ({formula}).", {"uses": {agent.name: used}}
+        return True, f"Computed {fid} = {fmt_value(result, fact.unit, self.lang)} ({formula}).", {"uses": {agent.name: used}}
 
     def _t_share_facts(self, agent, to_agent, fact_ids):
         other = self.agents.get(str(to_agent).strip())
@@ -268,7 +275,7 @@ class FinanceEnv:
             if agent.inventory[fid] <= 0:
                 return False, f"Fact '{fid}' is not in your notebook; answers must cite facts you hold.", {}
             self.submission[fld] = fid
-            recorded.append(f"{fld} = {fid} ({fmt_value(self.facts[fid].value, self.facts[fid].unit)})")
+            recorded.append(f"{fld} = {fid} ({fmt_value(self.facts[fid].value, self.facts[fid].unit, self.lang)})")
             used.append(fid)
         if not recorded:
             return False, "No answers given. Use a list of {field, fact_id}.", {}
@@ -315,7 +322,7 @@ def render_observation(env: FinanceEnv, agent_name: str, *, max_rounds: int, his
     if held:
         lines.append(f"Your notebook ({len(held)} facts; cite them by id):")
         for f in held:
-            lines.append(f"  - {f.id} = {fmt_value(f.value, f.unit)} | {f.label}")
+            lines.append(f"  - {f.id} = {fmt_value(f.value, f.unit, env.lang)} | {f.label}")
     else:
         lines.append("Your notebook: (empty)")
     if env.submission:

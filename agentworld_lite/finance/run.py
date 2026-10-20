@@ -16,7 +16,7 @@ from ..task import Task, load_tasks
 from ..tools import format_call
 from .dataset import BASES, PERIODS
 from .env import TOOL_NAMES, FinanceEnv, build_env, evaluate, render_observation
-from .tools import SYSTEM_PROMPT, tool_specs
+from .tools import system_prompt_for, tool_names_for, tool_specs_for
 
 SETTINGS: dict[str, dict] = {
     "full": {"chat": True, "docs": True, "whitebox": False},
@@ -32,7 +32,9 @@ def run_episode(task: Task, factory: AgentFactory, setting: str = "full", seed: 
     env = build_env(task)
     names = task.usernames
     agents = {n: factory(task, n) for n in names}
-    allowed = [t for t in TOOL_NAMES if cfg["chat"] or t != "send_chat"]
+    market = env.market
+    allowed = [t for t in tool_names_for(market) if cfg["chat"] or t != "send_chat"]
+    system_prompt, specs = system_prompt_for(market), tool_specs_for(market)
     contexts = {n: task.context_block(n, include_docs=cfg["docs"]) for n in names}
 
     actions: list[dict] = []
@@ -54,7 +56,7 @@ def run_episode(task: Task, factory: AgentFactory, setting: str = "full", seed: 
                                      last_actions=last_call)
             seen[name] = len(chats[name])
             decision = agents[name].act(TurnInput(env, name, r, obs, contexts[name], allowed,
-                                                  system_prompt=SYSTEM_PROMPT, tool_specs=tool_specs))
+                                                  system_prompt=system_prompt, tool_specs=specs))
             for k, v in decision.usage.items():
                 usage[k] = usage.get(k, 0) + v
             if decision.usage:
@@ -95,7 +97,7 @@ def run_episode(task: Task, factory: AgentFactory, setting: str = "full", seed: 
 
     final = evaluate(env, task.verifier)
     return {
-        "task_id": task.id, "task_name": task.name, "category": task.category, "domain": "finance",
+        "task_id": task.id, "task_name": task.name, "category": task.category, "domain": "finance", "market": market,
         "setting": setting, "seed": seed, "max_rounds": task.max_rounds, "objective": task.primary_objective,
         "agents": [{"username": a["username"], "role": a.get("role", "")} for a in task.agents],
         "matched": (task.meta.get("matched")),

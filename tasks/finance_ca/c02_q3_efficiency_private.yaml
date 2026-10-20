@@ -1,0 +1,170 @@
+id: c02_q3_efficiency_private
+name: Fiscal Q3 2026 efficiency ratios of RBC and TD
+category: finance
+domain: finance
+world_guide: false
+description: 'The desk compares the efficiency ratios of Royal Bank of Canada (TSX: RY) and The Toronto-Dominion Bank (TSX:
+  TD) for the third quarter of fiscal 2026 alone (May-July 2026), using only filings made by 2026-09-30. The collector pulls
+  filings, the analyst computes, the reporter submits.'
+objectives:
+  primary: 'Submit two answers: ry_q3_efficiency_ratio and td_q3_efficiency_ratio (non-interest expense divided by total revenue
+    for that single quarter, in percent, e.g. 55.0 for 55.0%).'
+  secondary:
+  - Use as few rounds as possible.
+max_rounds: 18
+inputs:
+  as_of: '2026-09-30'
+  company: Royal Bank of Canada; The Toronto-Dominion Bank
+data:
+  dir: data/finance/edgar
+matched:
+  pair_id: c02
+  placement: private
+  fact_counts:
+    analyst: 3
+relevant_game_context: '- Common traps: fiscal vs calendar periods (the banks'' fiscal year ends October 31), year-to-date
+  vs single-quarter figures, net income attributable to shareholders vs net income available to common shareholders, basic
+  vs diluted EPS, ratios as fractions vs percent, and filings made after the as-of date.'
+agents:
+- username: collector
+  role: data collector
+  restricted_tools:
+  - calculate
+  - submit_answer
+- username: analyst
+  role: analyst
+  restricted_tools:
+  - fetch_financials
+  - submit_answer
+  role_brief: Filing figures are fiscal year-to-date, so a single fiscal Q3 figure = Q3 year-to-date (9 months) - H1 year-to-date
+    (6 months). Efficiency ratio (%) = non_interest_expense / revenue x 100, both for the same single quarter from consolidated
+    (CFS) statements. Both banks' fiscal years end October 31, so the inputs are each bank's fiscal 2026 H1 and fiscal 2026
+    Q3 CFS reports.
+- username: reporter
+  role: reporter
+  restricted_tools:
+  - fetch_financials
+  - calculate
+verifier:
+  checkpoints:
+  - type: answer
+    name: ry_q3_efficiency_ratio
+    field: ry_q3_efficiency_ratio
+    expected: 52.805049
+    rel_tol: 0.001
+  - type: answer
+    name: td_q3_efficiency_ratio
+    field: td_q3_efficiency_ratio
+    expected: 50.192479
+    rel_tol: 0.001
+reference_solution:
+  collector:
+  - - fetch_financials
+    - company: RY
+      year: 2026
+      period: H1
+      basis: CFS
+  - - fetch_financials
+    - company: RY
+      year: 2026
+      period: Q3
+      basis: CFS
+  - - fetch_financials
+    - company: TD
+      year: 2026
+      period: H1
+      basis: CFS
+  - - fetch_financials
+    - company: TD
+      year: 2026
+      period: Q3
+      basis: CFS
+  - - share_facts
+    - to_agent: analyst
+      fact_ids:
+      - RY.2026H1.CFS.revenue
+      - RY.2026Q3.CFS.revenue
+      - RY.2026H1.CFS.non_interest_expense
+      - RY.2026Q3.CFS.non_interest_expense
+      - TD.2026H1.CFS.revenue
+      - TD.2026Q3.CFS.revenue
+      - TD.2026H1.CFS.non_interest_expense
+      - TD.2026Q3.CFS.non_interest_expense
+  analyst:
+  - - wait
+    - reason: waiting for inputs
+    - until_have:
+        TD.2026Q3.CFS.non_interest_expense: 1
+      retries: 30
+  - - calculate
+    - name: ry_q3_revenue
+      formula: q3 - h1
+      unit: CAD
+      inputs:
+      - var: q3
+        fact_id: RY.2026Q3.CFS.revenue
+      - var: h1
+        fact_id: RY.2026H1.CFS.revenue
+  - - calculate
+    - name: ry_q3_non_interest_expense
+      formula: q3 - h1
+      unit: CAD
+      inputs:
+      - var: q3
+        fact_id: RY.2026Q3.CFS.non_interest_expense
+      - var: h1
+        fact_id: RY.2026H1.CFS.non_interest_expense
+  - - calculate
+    - name: ry_q3_efficiency_ratio
+      formula: e / r * 100
+      unit: '%'
+      inputs:
+      - var: e
+        fact_id: calc.ry_q3_non_interest_expense
+      - var: r
+        fact_id: calc.ry_q3_revenue
+  - - calculate
+    - name: td_q3_revenue
+      formula: q3 - h1
+      unit: CAD
+      inputs:
+      - var: q3
+        fact_id: TD.2026Q3.CFS.revenue
+      - var: h1
+        fact_id: TD.2026H1.CFS.revenue
+  - - calculate
+    - name: td_q3_non_interest_expense
+      formula: q3 - h1
+      unit: CAD
+      inputs:
+      - var: q3
+        fact_id: TD.2026Q3.CFS.non_interest_expense
+      - var: h1
+        fact_id: TD.2026H1.CFS.non_interest_expense
+  - - calculate
+    - name: td_q3_efficiency_ratio
+      formula: e / r * 100
+      unit: '%'
+      inputs:
+      - var: e
+        fact_id: calc.td_q3_non_interest_expense
+      - var: r
+        fact_id: calc.td_q3_revenue
+  - - share_facts
+    - to_agent: reporter
+      fact_ids:
+      - calc.ry_q3_efficiency_ratio
+      - calc.td_q3_efficiency_ratio
+  reporter:
+  - - wait
+    - reason: waiting for results
+    - until_have:
+        calc.ry_q3_efficiency_ratio: 1
+        calc.td_q3_efficiency_ratio: 1
+      retries: 30
+  - - submit_answer
+    - answers:
+      - field: ry_q3_efficiency_ratio
+        fact_id: calc.ry_q3_efficiency_ratio
+      - field: td_q3_efficiency_ratio
+        fact_id: calc.td_q3_efficiency_ratio

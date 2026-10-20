@@ -130,6 +130,10 @@ python -m agentworld_lite pair-report --runs runs/finance_llama32_3b --out repor
 
 `gemma4:cloud`는 무료 사용 한도에 걸려 실행하지 못했습니다. 이 과제에서 협업이나 정보 배치를 비교하려면 기본 도구 사용이 되는 더 큰 모델이 필요합니다.
 
+## 캐나다 데스크
+
+같은 데스크를 캐나다 5대 은행의 실제 공시(SEC EDGAR에 함께 제출된 40-F·6-K의 XBRL)에 적용했습니다. 공시 소스 인터페이스(`dart`, `edgar`, `local_pdf`, `sedar_dds`), 데이터 정규화, 은행 발표치와의 대조, 과제 c01·c02는 [finance_canada.md](finance_canada.md)(영문)에 정리했습니다.
+
 ## 다음 단계
 
 - DART 실데이터 기반 과제(정답값을 공시 원문과 대조해 고정).

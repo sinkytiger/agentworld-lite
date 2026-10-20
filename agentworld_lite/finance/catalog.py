@@ -139,16 +139,175 @@ SPECS = [
 ]
 
 
+# ---------------------------------------------------------------------- Canadian desk (EDGAR filings of the Big 5)
+# Real figures from data/finance/edgar (XBRL of each bank's 40-F and 6-K filings). The inputs below were checked
+# against the banks' own Q3 2026 releases: RBC total revenue 18,538, non-interest expense 9,789 and diluted EPS
+# 4.23 / 12.10 (9M) / 10.31 (9M 2025); TD total revenue 16,885 and reported efficiency ratio 50.2% (Q3), 52.0% (9M).
+AGENTS_CA = [
+    {"username": "collector", "role": "data collector", "restricted_tools": ["calculate", "submit_answer"]},
+    {"username": "analyst", "role": "analyst", "restricted_tools": ["fetch_financials", "submit_answer"]},
+    {"username": "reporter", "role": "reporter", "restricted_tools": ["fetch_financials", "calculate"]},
+]
+TRAPS_CA = ("Common traps: fiscal vs calendar periods (the banks' fiscal year ends October 31), year-to-date vs "
+            "single-quarter figures, net income attributable to shareholders vs net income available to common "
+            "shareholders, basic vs diluted EPS, ratios as fractions vs percent, and filings made after the as-of date.")
+
+
+def _ca_ids(code: str, *names: str) -> list[str]:
+    return [f"{code}.{n}" for n in names]
+
+
+RY_PRICE = 293.41  # TSX close on 2026-07-31, as reported in RBC's Q3 2026 Report to Shareholders
+SPECS_CA = [
+    {
+        "pair": "c01", "slug": "ry_ttm_pe", "max_rounds": 16, "market": "ca",
+        "name": "Trailing P/E of Royal Bank of Canada",
+        "description": ("The desk needs the trailing twelve-month (TTM) P/E of Royal Bank of Canada (TSX: RY) at the end "
+                        "of its fiscal 2026 third quarter (July 31, 2026), using only filings made by 2026-09-30. The "
+                        "collector pulls filings, the analyst computes, the reporter submits."),
+        "primary": ("Submit two answers: ttm_net_income_common (TTM net income available to common shareholders, in CAD) "
+                    "and pe (the closing share price on 2026-07-31 divided by TTM diluted EPS, as a multiple such as 12.3)."),
+        "facts": {
+            "analyst": [
+                "TTM = latest fiscal-year (FY) figure - prior-year year-to-date figure for the same period as the latest "
+                "report + latest year-to-date figure. For a fiscal Q3 report: FY(fiscal 2025) - Q3(fiscal 2025) + "
+                "Q3(fiscal 2026).",
+                "Net income means net_income_common (available to common shareholders, after preferred dividends and "
+                "distributions on other equity instruments) from consolidated (CFS) statements.",
+                "P/E = closing share price / TTM diluted EPS, where TTM diluted EPS applies the same TTM formula to eps_diluted.",
+                "RBC's fiscal year ends October 31. The latest filing made by 2026-09-30 is the fiscal 2026 Q3 report "
+                "(period ended July 31, 2026), so the inputs are the fiscal 2025 FY, fiscal 2025 Q3 and fiscal 2026 Q3 "
+                "CFS reports.",
+            ],
+            "reporter": ["The reporter holds RBC's TSX closing price of 2026-07-31 from the market-data desk."],
+        },
+        "initial": {"reporter": [{"price_of": "RY", "date": "2026-07-31"}]},
+        "checkpoints": [
+            {"type": "answer", "name": "ttm_net_income_common", "field": "ttm_net_income_common",
+             "expected": 19_868_000_000 - 14_575_000_000 + 16_894_000_000, "rel_tol": 0.001},
+            {"type": "answer", "name": "pe", "field": "pe", "expected": round(RY_PRICE / (14.07 - 10.31 + 12.10), 6),
+             "rel_tol": 0.001},
+        ],
+        "reference": {
+            "collector": [
+                ["fetch_financials", {"company": "RY", "year": 2025, "period": "FY", "basis": "CFS"}],
+                ["fetch_financials", {"company": "RY", "year": 2025, "period": "Q3", "basis": "CFS"}],
+                ["fetch_financials", {"company": "RY", "year": 2026, "period": "Q3", "basis": "CFS"}],
+                ["share_facts", {"to_agent": "analyst", "fact_ids": _ca_ids(
+                    "RY", "2025FY.CFS.net_income_common", "2025Q3.CFS.net_income_common", "2026Q3.CFS.net_income_common",
+                    "2025FY.CFS.eps_diluted", "2025Q3.CFS.eps_diluted", "2026Q3.CFS.eps_diluted")}],
+            ],
+            "analyst": [
+                ["wait", {"reason": "waiting for inputs"},
+                 {"until_have": {"RY.2026Q3.CFS.eps_diluted": 1, "RY.price.2026-07-31": 1}, "retries": 30}],
+                ["calculate", {"name": "ttm_net_income_common", "formula": "fy - ytd_prev + ytd", "unit": "CAD",
+                               "inputs": _inputs(fy="RY.2025FY.CFS.net_income_common",
+                                                 ytd_prev="RY.2025Q3.CFS.net_income_common",
+                                                 ytd="RY.2026Q3.CFS.net_income_common")}],
+                ["calculate", {"name": "ttm_eps_diluted", "formula": "fy - ytd_prev + ytd", "unit": "CAD/share",
+                               "inputs": _inputs(fy="RY.2025FY.CFS.eps_diluted", ytd_prev="RY.2025Q3.CFS.eps_diluted",
+                                                 ytd="RY.2026Q3.CFS.eps_diluted")}],
+                ["calculate", {"name": "pe", "formula": "p / e", "unit": "x",
+                               "inputs": _inputs(p="RY.price.2026-07-31", e="calc.ttm_eps_diluted")}],
+                ["share_facts", {"to_agent": "reporter", "fact_ids": ["calc.ttm_net_income_common", "calc.pe"]}],
+            ],
+            "reporter": [
+                ["share_facts", {"to_agent": "analyst", "fact_ids": ["RY.price.2026-07-31"]}],
+                ["wait", {"reason": "waiting for results"},
+                 {"until_have": {"calc.pe": 1, "calc.ttm_net_income_common": 1}, "retries": 30}],
+                ["submit_answer", {"answers": [{"field": "ttm_net_income_common", "fact_id": "calc.ttm_net_income_common"},
+                                               {"field": "pe", "fact_id": "calc.pe"}]}],
+            ],
+        },
+    },
+    {
+        "pair": "c02", "slug": "q3_efficiency", "max_rounds": 18, "market": "ca",
+        "company": "Royal Bank of Canada; The Toronto-Dominion Bank",
+        "name": "Fiscal Q3 2026 efficiency ratios of RBC and TD",
+        "description": ("The desk compares the efficiency ratios of Royal Bank of Canada (TSX: RY) and The Toronto-Dominion "
+                        "Bank (TSX: TD) for the third quarter of fiscal 2026 alone (May-July 2026), using only filings made "
+                        "by 2026-09-30. The collector pulls filings, the analyst computes, the reporter submits."),
+        "primary": ("Submit two answers: ry_q3_efficiency_ratio and td_q3_efficiency_ratio (non-interest expense divided "
+                    "by total revenue for that single quarter, in percent, e.g. 55.0 for 55.0%)."),
+        "facts": {
+            "analyst": [
+                "Filing figures are fiscal year-to-date, so a single fiscal Q3 figure = Q3 year-to-date (9 months) - "
+                "H1 year-to-date (6 months).",
+                "Efficiency ratio (%) = non_interest_expense / revenue x 100, both for the same single quarter from "
+                "consolidated (CFS) statements.",
+                "Both banks' fiscal years end October 31, so the inputs are each bank's fiscal 2026 H1 and fiscal 2026 Q3 "
+                "CFS reports.",
+            ],
+        },
+        "initial": {},
+        "checkpoints": [
+            {"type": "answer", "name": "ry_q3_efficiency_ratio", "field": "ry_q3_efficiency_ratio",
+             "expected": round((28_689 - 18_900) / (53_951 - 35_413) * 100, 6), "rel_tol": 0.001},
+            {"type": "answer", "name": "td_q3_efficiency_ratio", "field": "td_q3_efficiency_ratio",
+             "expected": round((25_600 - 17_125) / (49_267 - 32_382) * 100, 6), "rel_tol": 0.001},
+        ],
+        "reference": {
+            "collector": [
+                ["fetch_financials", {"company": "RY", "year": 2026, "period": "H1", "basis": "CFS"}],
+                ["fetch_financials", {"company": "RY", "year": 2026, "period": "Q3", "basis": "CFS"}],
+                ["fetch_financials", {"company": "TD", "year": 2026, "period": "H1", "basis": "CFS"}],
+                ["fetch_financials", {"company": "TD", "year": 2026, "period": "Q3", "basis": "CFS"}],
+                ["share_facts", {"to_agent": "analyst", "fact_ids": [
+                    *_ca_ids("RY", "2026H1.CFS.revenue", "2026Q3.CFS.revenue",
+                             "2026H1.CFS.non_interest_expense", "2026Q3.CFS.non_interest_expense"),
+                    *_ca_ids("TD", "2026H1.CFS.revenue", "2026Q3.CFS.revenue",
+                             "2026H1.CFS.non_interest_expense", "2026Q3.CFS.non_interest_expense")]}],
+            ],
+            "analyst": [
+                ["wait", {"reason": "waiting for inputs"},
+                 {"until_have": {"TD.2026Q3.CFS.non_interest_expense": 1}, "retries": 30}],
+                ["calculate", {"name": "ry_q3_revenue", "formula": "q3 - h1", "unit": "CAD",
+                               "inputs": _inputs(q3="RY.2026Q3.CFS.revenue", h1="RY.2026H1.CFS.revenue")}],
+                ["calculate", {"name": "ry_q3_non_interest_expense", "formula": "q3 - h1", "unit": "CAD",
+                               "inputs": _inputs(q3="RY.2026Q3.CFS.non_interest_expense",
+                                                 h1="RY.2026H1.CFS.non_interest_expense")}],
+                ["calculate", {"name": "ry_q3_efficiency_ratio", "formula": "e / r * 100", "unit": "%",
+                               "inputs": _inputs(e="calc.ry_q3_non_interest_expense", r="calc.ry_q3_revenue")}],
+                ["calculate", {"name": "td_q3_revenue", "formula": "q3 - h1", "unit": "CAD",
+                               "inputs": _inputs(q3="TD.2026Q3.CFS.revenue", h1="TD.2026H1.CFS.revenue")}],
+                ["calculate", {"name": "td_q3_non_interest_expense", "formula": "q3 - h1", "unit": "CAD",
+                               "inputs": _inputs(q3="TD.2026Q3.CFS.non_interest_expense",
+                                                 h1="TD.2026H1.CFS.non_interest_expense")}],
+                ["calculate", {"name": "td_q3_efficiency_ratio", "formula": "e / r * 100", "unit": "%",
+                               "inputs": _inputs(e="calc.td_q3_non_interest_expense", r="calc.td_q3_revenue")}],
+                ["share_facts", {"to_agent": "reporter",
+                                 "fact_ids": ["calc.ry_q3_efficiency_ratio", "calc.td_q3_efficiency_ratio"]}],
+            ],
+            "reporter": [
+                ["wait", {"reason": "waiting for results"},
+                 {"until_have": {"calc.ry_q3_efficiency_ratio": 1, "calc.td_q3_efficiency_ratio": 1}, "retries": 30}],
+                ["submit_answer", {"answers": [
+                    {"field": "ry_q3_efficiency_ratio", "fact_id": "calc.ry_q3_efficiency_ratio"},
+                    {"field": "td_q3_efficiency_ratio", "fact_id": "calc.td_q3_efficiency_ratio"}]}],
+            ],
+        },
+    },
+]
+
+
+MARKETS = {
+    "kr": {"agents": AGENTS, "traps": TRAPS, "as_of": "2025-10-01", "company": "샘플전자", "data_dir": "data/finance/sample"},
+    "ca": {"agents": AGENTS_CA, "traps": TRAPS_CA, "as_of": "2026-09-30", "company": "Royal Bank of Canada",
+           "data_dir": "data/finance/edgar"},
+}
+
+
 def build_task(spec: dict, placement: str) -> dict:
     if placement not in ("shared", "private"):
         raise ValueError(f"unknown placement {placement!r}")
-    agents = copy.deepcopy(AGENTS)
+    market = MARKETS[spec.get("market", "kr")]
+    agents = copy.deepcopy(market["agents"])
     for a in agents:
         if spec["initial"].get(a["username"]):
             a["initial_facts"] = spec["initial"][a["username"]]
         if placement == "private" and spec["facts"].get(a["username"]):
             a["role_brief"] = " ".join(spec["facts"][a["username"]])
-    shared = [TRAPS]
+    shared = [market["traps"]]
     if placement == "shared":
         for owner in ("collector", "analyst", "reporter"):
             shared += spec["facts"].get(owner, [])
@@ -158,8 +317,8 @@ def build_task(spec: dict, placement: str) -> dict:
         "description": spec["description"],
         "objectives": {"primary": spec["primary"], "secondary": ["Use as few rounds as possible."]},
         "max_rounds": spec["max_rounds"],
-        "inputs": {"as_of": "2025-10-01", "company": "샘플전자"},
-        "data": {"dir": "data/finance/sample"},
+        "inputs": {"as_of": spec.get("as_of", market["as_of"]), "company": spec.get("company", market["company"])},
+        "data": {"dir": spec.get("data_dir", market["data_dir"])},
         "matched": {"pair_id": spec["pair"], "placement": placement,
                     "fact_counts": {k: len(v) for k, v in spec["facts"].items()}},
         "relevant_game_context": "\n".join(f"- {s}" for s in shared),
@@ -169,15 +328,16 @@ def build_task(spec: dict, placement: str) -> dict:
     }
 
 
-def write_tasks(out_dir: str | Path = "tasks/finance") -> list[Path]:
-    out = Path(out_dir)
-    out.mkdir(parents=True, exist_ok=True)
+def write_tasks(out_dir: str | Path = "tasks/finance", ca_out_dir: str | Path = "tasks/finance_ca") -> list[Path]:
     paths = []
-    for spec in SPECS:
-        for placement in ("shared", "private"):
-            td = build_task(spec, placement)
-            p = out / f"{td['id']}.yaml"
-            with open(p, "w", encoding="utf-8", newline="\n") as f:
-                yaml.safe_dump(td, f, allow_unicode=True, sort_keys=False, width=120)
-            paths.append(p)
+    for specs, directory in ((SPECS, out_dir), (SPECS_CA, ca_out_dir)):
+        out = Path(directory)
+        out.mkdir(parents=True, exist_ok=True)
+        for spec in specs:
+            for placement in ("shared", "private"):
+                td = build_task(spec, placement)
+                p = out / f"{td['id']}.yaml"
+                with open(p, "w", encoding="utf-8", newline="\n") as f:
+                    yaml.safe_dump(td, f, allow_unicode=True, sort_keys=False, width=120)
+                paths.append(p)
     return paths

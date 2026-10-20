@@ -20,12 +20,13 @@ classifiers = [
 [project.optional-dependencies]
 claude = ["anthropic>=1.12"]
 dev = ["pytest>=8.0"]
+pdf = ["pypdf>=4"]
 
 [project.scripts]
 agentworld-lite = "agentworld_lite.__main__:main"
 
 [tool.setuptools]
-packages = ["agentworld_lite", "agentworld_lite.finance"]
+packages = ["agentworld_lite", "agentworld_lite.finance", "agentworld_lite.finance.sources"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
