@@ -166,6 +166,27 @@ C$5,879 million [fact `calc.ry_q3_net_income_common` from 6-K 0001193125-26-3694
 
 The note has a comparison table (per-bank answers, plus inputs taken from every bank, such as the CET1 ratios), the sector-wide answers, the derivation of each answer down to the filed figures, and a sources table that links each accession number to its EDGAR folder. Before returning, it checks its own text: every figure (a number with a currency sign, decimal point, thousands separator or unit) must be followed by a citation. Notes are written only for successful runs unless `--allow-failed` is passed, in which case each answer is marked within or outside tolerance. `--reference TASK_ID` replays the task's scripted reference solution instead of a saved run.
 
+## Demo
+
+```bash
+pip install -e ".[demo]"
+```
+
+```bash
+streamlit run demo/streamlit_app.py
+```
+
+A Streamlit app over the same code, offline (no model, no network, no key). It has four views.
+
+- **Desk replay.** A round slider over the scripted reference or an uploaded trajectory. Each agent's moves, the size of its notebook, and which answers are within tolerance so far.
+- **Big 5 data.** Single-quarter net income to common and the CET1 ratio for each bank, as charts and as a table that names the filing behind each figure.
+- **Sector note.** The cited note above, with a Markdown download.
+- **Task.** The brief, roles and tool limits, where the methodology sits (shared document or private briefs), and the answer key.
+
+An uploaded trajectory is replayed first and rejected if it does not reproduce on the dataset. Query parameters open a given state, e.g. `?task=c03_big5_q3_sector_shared&view=Desk%20replay&round=11`.
+
+`python demo/record_gif.py --out demo.gif` records a GIF of the app. It starts the app, drives a headless Chrome or Edge through the DevTools protocol, waits until each view has finished rendering, and joins the screenshots with Pillow (about 0.5 MB for 12 frames). For Streamlit Community Cloud, point the app at `demo/streamlit_app.py`; `demo/requirements.txt` lists what it installs. That deployment has not been tried yet.
+
 ## Running
 
 ```bash

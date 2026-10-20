@@ -230,6 +230,7 @@ python -m agentworld_lite pair-report --runs runs/finance_llama --out reports/fi
 - **데이터셋** `data/finance/edgar`: 은행마다 회계연도 기준 5개 기간(2025 회계연도 3분기·연간, 2026 회계연도 1분기·상반기·3분기). 숫자마다 서식, 접수번호, 제출일, XBRL 계정이 붙어 있습니다. 과제 입력값은 은행이 직접 발표한 2026 회계연도 3분기 수치와 일치합니다. 예를 들어 TD가 발표한 효율성비율 50.2%, 5개 은행의 CET1 비율과 같습니다.
 - **과제** `tasks/finance_ca`, 공유형/개인형 쌍, 허용 오차 0.1%: RBC 3분기 말 TTM P/E(18.50배, 기본 EPS·누적 EPS·지난 회계연도 EPS는 모두 오답), RBC·TD의 2026 회계연도 3분기 단독 효율성비율(52.80%, 50.19%, 9개월 누적 비율은 오답), 5대 은행 비교(은행별 2026 회계연도 3분기 단독 보통주주 귀속 순이익과 CET1 비율 5개의 평균·격차 13.46%, 1.30%p. 누적 수치, 다른 순이익 항목, 다른 기간의 비율은 모두 오답).
 - **섹터 노트** (`python -m agentworld_lite.finance note`): 끝난 궤적을 모델 호출 없이 영문 마크다운 노트로 만듭니다. 숫자마다 팩트 id, 공시 서식, EDGAR 접수번호가 붙고, 출처 없는 숫자가 하나라도 있으면 노트를 내지 않습니다.
+- **데모** (`pip install -e ".[demo]"` 후 `streamlit run demo/streamlit_app.py`): 오프라인 Streamlit 앱입니다. 실행 과정을 라운드별로 재생하고, 5대 은행 수치를 숫자마다 출처 공시와 함께 차트·표로 보여 주고, 섹터 노트를 띄웁니다. `python demo/record_gif.py --out demo.gif`로 GIF를 녹화합니다.
 
 ```bash
 python -m agentworld_lite.finance fetch --source edgar --company RY --periods 2025:FY 2026:Q3 --cache C:/edgar_cache
@@ -298,6 +299,7 @@ agentworld_lite/
   gym.py          정답 실행·수리·예산·수율 (과제 자동 생성 루프)
   finance/        금융 도메인: 데이터셋, 환경·도구, 과제 카탈로그, 실행기, CLI
     sources/      공시 소스: dart, edgar, local_pdf, sedar_dds(자리만 있음)
+demo/            캐나다 데스크 Streamlit 데모와 GIF 녹화 스크립트
 tasks/main/       과제 9개 (8개 카테고리)
 tasks/gym/        자동 생성 과제 (gen 산출물)
 tasks/finance/    한국 금융 과제 4개 (공유형/개인형 2쌍, 가상 회사)

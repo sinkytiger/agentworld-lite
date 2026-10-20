@@ -21,6 +21,7 @@ classifiers = [
 claude = ["anthropic>=1.12"]
 dev = ["pytest>=8.0"]
 pdf = ["pypdf>=4"]
+demo = ["streamlit>=1.40", "pillow>=10"]
 
 [project.scripts]
 agentworld-lite = "agentworld_lite.__main__:main"
