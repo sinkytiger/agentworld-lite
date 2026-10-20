@@ -1,17 +1,21 @@
-"""Streamlit demo of the Canadian research desk: replay a run, compare the Big 5 banks, read the cited sector note.
+"""Streamlit demo of the Canadian research desk: replay a run, compare the Big 5 banks, read the cited sector note,
+a valuation snapshot and a news-based sector risk digest.
 
     pip install streamlit
     streamlit run demo/streamlit_app.py
 
-Offline: no model, no network, no API key. A run is either a task's scripted reference solution, replayed here,
-or a trajectory JSON written by `python -m agentworld_lite.finance run` (upload it in the sidebar).
+No model and no API key. Everything is offline except the News digest view, which fetches public RSS headlines and
+Bank of Canada data only when its button is pressed. A run is either a task's scripted reference solution, replayed
+here, or a trajectory JSON written by `python -m agentworld_lite.finance run` (upload it in the sidebar).
 Query parameters open a given state, which demo/record_gif.py uses: ?task=<task id>&view=<view>&round=<n>
 """
 
 from __future__ import annotations
 
+import datetime as dt
 import json
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -24,13 +28,15 @@ import streamlit as st  # noqa: E402
 
 from agentworld_lite.finance.catalog import BIG5  # noqa: E402
 from agentworld_lite.finance.dataset import Dataset  # noqa: E402
+from agentworld_lite.finance.news import FEEDS, NewsError, build_digest  # noqa: E402
 from agentworld_lite.finance.note import NoteError, replay, sector_note  # noqa: E402
 from agentworld_lite.finance.run import make_factory, run_episode  # noqa: E402
+from agentworld_lite.finance.valuation import ValuationError, snapshot  # noqa: E402
 from agentworld_lite.task import load_tasks  # noqa: E402
 
 TASK_DIR = ROOT / "tasks" / "finance_ca"
 DATA_DIR = ROOT / "data" / "finance" / "edgar"
-VIEWS = ("Desk replay", "Big 5 data", "Sector note", "Task")
+VIEWS = ("Desk replay", "Big 5 data", "Sector note", "Valuation", "News digest", "Task")
 DEFAULT_TASK = "c03_big5_q3_sector_shared"
 SERIES = {"light": "#2a78d6", "dark": "#3987e5"}  # one series: categorical slot 1 of the reference palette
 INK = {"light": "#0b0b0b", "dark": "#f0efec"}     # values and labels wear text ink, not the series color
@@ -193,9 +199,56 @@ def view_note(task, traj: dict) -> None:
     if not traj["result"]["success"]:
         st.warning("Some answers are outside tolerance; the note marks each one.")
     st.download_button("Download the note (Markdown)", note, file_name=f"{task.id}_note.md", mime="text/markdown")
-    body = note.split("\n", 1)[1] if note.startswith("# ") else note  # the page header already shows the title
+    show_markdown(note)
+
+
+def show_markdown(md: str) -> None:
+    body = md.split("\n", 1)[1] if md.startswith("# ") else md  # the page header already shows a title
     with st.container(border=True):
         st.markdown(body.replace("$", "\\$"))  # C$ amounts, not LaTeX
+
+
+def view_valuation(start_bank: str | None) -> None:
+    names = {code: dataset().companies[code].name for code in BIG5}
+    bank = st.selectbox("Subject bank", BIG5, index=BIG5.index(start_bank) if start_bank in BIG5 else 0,
+                        format_func=lambda c: f"{names[c]} ({c})")
+    try:
+        md, n = snapshot(bank)
+    except ValuationError as exc:
+        st.error(str(exc))
+        return
+    cols = st.columns(4)
+    cols[0].metric("P/E (TTM diluted)", f"{n['pe'][bank]:.2f}x")
+    cols[1].metric("Peer median P/E", f"{n['peer_pe']['median']:.2f}x")
+    cols[2].metric("Implied by peer P/Es (C$)", f"{n['implied']['low']:.0f} to {n['implied']['high']:.0f}")
+    cols[3].metric("Close on 2026-07-31 (C$)", f"{n['price']:.2f}")
+    st.caption("Educational sample, not investment advice: no rating and no target price. Every figure below cites "
+               "its filing.")
+    st.download_button("Download the snapshot (Markdown)", md, file_name=f"{bank.lower()}_valuation.md",
+                       mime="text/markdown")
+    show_markdown(md)
+
+
+@st.cache_data(ttl=3600, show_spinner="Fetching headlines and Bank of Canada data")
+def live_digest(as_of: str) -> str:
+    md, _ = build_digest(FEEDS, cache_dir=Path(tempfile.gettempdir()) / "awl_news", as_of=as_of)
+    return md
+
+
+def view_news() -> None:
+    st.markdown("A sector risk digest built by fixed rules from public RSS headlines (Financial Post, CBC Business) "
+                "and the Bank of Canada Valet API, set beside each bank's filed figures. Only the headline, link, "
+                "date and the feed's short summary are read; article pages are never opened. Results are cached for "
+                "an hour.")
+    if not st.button("Fetch the latest headlines and build the digest"):
+        return
+    try:
+        md = live_digest(dt.date.today().isoformat())
+    except NewsError as exc:
+        st.error(f"No digest: {exc}")
+        return
+    st.download_button("Download the digest (Markdown)", md, file_name="sector_risk_digest.md", mime="text/markdown")
+    show_markdown(md)
 
 
 def view_task(task) -> None:
@@ -259,6 +312,10 @@ def main() -> None:
                + (f"run: {(traj.get('meta') or {}).get('model', 'uploaded')}" if traj else "upload a run to replay it"))
     if view == "Big 5 data":
         view_big5()
+    elif view == "Valuation":
+        view_valuation(qp.get("bank"))
+    elif view == "News digest":
+        view_news()
     elif view == "Task":
         view_task(task)
     elif traj is None:

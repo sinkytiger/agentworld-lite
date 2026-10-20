@@ -5,6 +5,7 @@
   run          run episodes; trajectories work with `python -m agentworld_lite evaluate/report/pair-report`
   note         write an English Markdown sector note from a trajectory's submitted, cited facts (no LLM)
   news         write a Big 5 sector risk digest from news feeds and the banks' filed figures (no LLM)
+  valuation    write a cited valuation snapshot of one bank with the other Big 5 banks as comps (no LLM)
   fetch        build a company dataset from a filing source:
                  --source dart       DART OpenAPI (your own key in DART_API_KEY)
                  --source edgar      SEC EDGAR XBRL of 40-F / 6-K / 10-K / 10-Q (your contact in SEC_USER_AGENT)
@@ -98,6 +99,24 @@ def cmd_news(args) -> int:
     return 0
 
 
+def cmd_valuation(args) -> int:
+    from pathlib import Path
+    from .valuation import ValuationError, snapshot
+    try:
+        md, _ = snapshot(args.bank, as_of=args.as_of, year=args.year)
+    except ValuationError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    if args.out:
+        Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+        with open(args.out, "w", encoding="utf-8", newline="\n") as f:
+            f.write(md)
+        print(f"wrote {args.out}")
+    else:
+        sys.stdout.write(md)
+    return 0
+
+
 def cmd_fetch(args) -> int:
     from .sources import SourceError, get_source
     prices = {}
@@ -172,6 +191,12 @@ def main(argv=None) -> int:
     w.add_argument("--no-macro", action="store_true", help="skip the Bank of Canada Valet series")
     w.add_argument("--feed", nargs="+", metavar="NAME=URL", help="replace the default feeds")
 
+    val = sub.add_parser("valuation", help="write a cited valuation snapshot of one Big 5 bank (no LLM)")
+    val.add_argument("--bank", default="RY", help="ticker or name of the subject bank, e.g. RY, TD, CIBC")
+    val.add_argument("--as-of", default="2026-09-30", help="use only filings made by this date")
+    val.add_argument("--year", type=int, default=2026, help="fiscal year of the Q3 report")
+    val.add_argument("--out", help="Markdown file to write (default: print)")
+
     f = sub.add_parser("fetch", help="build company datasets from DART, EDGAR or hand-checked local documents")
     f.add_argument("--source", choices=["dart", "edgar", "local_pdf", "sedar_dds"], default="dart")
     f.add_argument("--company", nargs="+", help="DART: stock code or exact name; EDGAR: ticker (RY), CIK or exact name")
@@ -194,7 +219,7 @@ def main(argv=None) -> int:
             ap.error("--model is required with --provider ollama (e.g. llama3.2:3b or gemma4:cloud)")
         args.model = DEFAULT_MODEL
     return {"make-tasks": cmd_make_tasks, "validate": cmd_validate, "run": cmd_run, "note": cmd_note,
-            "news": cmd_news, "fetch": cmd_fetch}[args.cmd](args)
+            "news": cmd_news, "valuation": cmd_valuation, "fetch": cmd_fetch}[args.cmd](args)
 
 
 if __name__ == "__main__":

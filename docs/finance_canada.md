@@ -89,7 +89,7 @@ Accounts: `revenue` (total revenue), `non_interest_expense`, `net_income`, `net_
 
 Amounts in C$ millions. For c03, total net income and the CET1 ratio were compared with each bank's Q3 2026 release; the split between common and preferred holders (`net_income_common`) is the XBRL as filed. BMO's reported Q3 includes a C$962 million after-tax goodwill charge tied to the announced sale of its Transportation Finance and Vendor Finance businesses, so its reported quarter sits well below its adjusted earnings. The tasks use reported figures.
 
-**Share prices** are not in the XBRL. RBC's TSX closes at quarter end (C$293.41 on 2026-07-31 and C$177.79 on 2025-07-31) come from the "Common share price (RY on TSX)" line of its Q3 2026 Report to Shareholders (Exhibit 99.2 of 6-K 0001193125-26-369461), and the dataset stores that citation.
+**Share prices** are not in the XBRL. RBC's TSX closes at quarter end (C$293.41 on 2026-07-31 and C$177.79 on 2025-07-31) come from the "Common share price (RY on TSX)" line of its Q3 2026 Report to Shareholders (Exhibit 99.2 of 6-K 0001193125-26-369461), and the dataset stores that citation. The 2026-07-31 closes of the other four come from Exhibit 99.1 (the Q3 2026 Report to Shareholders) of the same 6-K that carries each bank's XBRL, and each figure was found in the exhibit text: TD C$168.04 ("Closing share price (TSX)"), Scotiabank C$122.97 ("Closing share price (TSX)" under common share information), BMO C$251.47 and CIBC C$166.04 ("Closing share price"; those two exhibits do not name the exchange, and the amounts are in Canadian dollars).
 
 ## Tasks (`tasks/finance_ca`)
 
@@ -196,6 +196,30 @@ answers. BNN Bloomberg has no RSS feed and is not used.
   themes are set beside net income.
 - **Self-check.** A digest with a filed figure that lacks a citation is refused; headline text is quoted, not checked.
 
+## Valuation snapshot
+
+```bash
+python -m agentworld_lite.finance valuation --bank RY --out ry_valuation.md
+```
+
+`agentworld_lite/finance/valuation.py` compares one bank with the other four on one page, with no model. For all five
+banks it shows the fiscal Q3 2026 close, TTM diluted EPS (FY 2025 - Q3 YTD 2025 + Q3 YTD 2026), P/E, the
+efficiency ratio of fiscal Q3 alone and the CET1 ratio; then the peers' lowest, median and highest P/E and the price
+range those multiples imply for the subject's TTM EPS. Every number cites its fact ids and filings, and the page
+carries a methods section and an educational-sample disclaimer. It gives no rating and no target price.
+
+| Bank | Close, 2026-07-31 | TTM diluted EPS | P/E | Efficiency ratio, Q3 alone | CET1 |
+|---|---|---|---|---|---|
+| RY | 293.41 | 15.86 | 18.50x | 52.81% | 13.5% |
+| TD | 168.04 | 9.34 | 17.99x | 50.19% | 14.3% |
+| BNS | 122.97 | 7.65 | 16.07x | 52.74% | 13.1% |
+| BMO | 251.47 | 12.27 | 20.49x | 67.48% | 13.0% |
+| CM | 166.04 | 10.42 | 15.93x | 55.99% | 13.4% |
+
+For RBC the peer P/E runs from 15.93x (CIBC) to 20.49x (BMO), median 17.03x, which implies C$252.72 to C$325.05 per
+share (C$270.14 at the median) against its close of C$293.41. BMO's P/E and efficiency ratio are high partly because
+its reported fiscal Q3 includes the goodwill charge described above; the snapshot uses reported earnings and says so.
+
 ## Demo
 
 ```bash
@@ -206,13 +230,15 @@ pip install -e ".[demo]"
 streamlit run demo/streamlit_app.py
 ```
 
-A Streamlit app over the same code, offline (no model, no network, no key). It has four views.
+A Streamlit app over the same code, with no model and no key. It has six views; all but the news digest work offline.
 
 ![Demo: the c03 run replayed round by round, the Big 5 charts, and the cited sector note](img/canada_desk_demo.gif)
 
 - **Desk replay.** A round slider over the scripted reference or an uploaded trajectory. Each agent's moves, the size of its notebook, and which answers are within tolerance so far.
 - **Big 5 data.** Single-quarter net income to common and the CET1 ratio for each bank, as charts and as a table that names the filing behind each figure.
 - **Sector note.** The cited note above, with a Markdown download.
+- **Valuation.** The snapshot above for any of the five banks, with headline metrics and a Markdown download.
+- **News digest.** Builds the sector risk digest from the live feeds when its button is pressed (cached for an hour); nothing is fetched until then.
 - **Task.** The brief, roles and tool limits, where the methodology sits (shared document or private briefs), and the answer key.
 
 An uploaded trajectory is replayed first and rejected if it does not reproduce on the dataset. Query parameters open a given state, e.g. `?task=c03_big5_q3_sector_shared&view=Desk%20replay&round=11`.

@@ -38,6 +38,16 @@ def test_big5_view_shows_the_c03_figures():
         "RY": 5879, "TD": 4521, "BNS": 2778, "BMO": 1667, "CM": 2271}
 
 
+def test_valuation_view_and_news_view_without_network():
+    at = _open(view="Valuation", bank="TD")
+    assert next(s for s in at.selectbox if s.label == "Subject bank").value == "TD"
+    assert [m.value for m in at.metric][0] == "17.99x"
+    assert "C\\$168.04 [fact `TD.price.2026-07-31`" in " ".join(m.value for m in at.markdown)
+    at = _open(view="News digest")
+    assert at.button[0].label.startswith("Fetch the latest headlines")   # nothing is fetched until it is pressed
+    assert "article pages are never opened" in " ".join(m.value for m in at.markdown)
+
+
 def test_sector_note_view_and_other_tasks():
     at = _open(view="Sector note")
     note = " ".join(m.value for m in at.markdown)

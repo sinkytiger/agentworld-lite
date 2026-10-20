@@ -210,7 +210,11 @@
   }
  },
  "shares": {},
- "prices": {},
- "price_sources": {},
+ "prices": {
+  "2026-07-31": 168.04
+ },
+ "price_sources": {
+  "2026-07-31": "TSX closing price at the end of the quarter, as reported in TD's Q3 2026 Report to Shareholders (Exhibit 99.1 of Form 6-K 0001562762-26-000098, Closing share price (TSX))"
+ },
  "currency": "CAD"
 }

@@ -235,12 +235,14 @@ python -m agentworld_lite pair-report --runs runs/finance_llama --out reports/fi
 - **과제** `tasks/finance_ca`, 공유형/개인형 쌍, 허용 오차 0.1%: RBC 3분기 말 TTM P/E(18.50배, 기본 EPS·누적 EPS·지난 회계연도 EPS는 모두 오답), RBC·TD의 2026 회계연도 3분기 단독 효율성비율(52.81%, 50.19%, 9개월 누적 비율은 오답), 5대 은행 비교(은행별 2026 회계연도 3분기 단독 보통주주 귀속 순이익과 CET1 비율 5개의 평균·격차 13.46%, 1.30%p. 누적 수치, 다른 순이익 항목, 다른 기간의 비율은 모두 오답).
 - **섹터 노트** (`python -m agentworld_lite.finance note`): 끝난 궤적을 모델 호출 없이 영문 마크다운 노트로 만듭니다. 숫자마다 팩트 id, 공시 서식, EDGAR 접수번호가 붙고, 출처 없는 숫자가 하나라도 있으면 노트를 내지 않습니다.
 - **뉴스 섹터 리스크 다이제스트** (`python -m agentworld_lite.finance news`): Financial Post·CBC 헤드라인을 은행별·리스크 주제별(신용, 주택, 무역, 금리, 자본, 규제, 구조조정)로 키워드 규칙에 따라 분류하고, 캐나다은행 기준금리와 5년물 금리, 은행별 공시 수치(출처 포함)와 나란히 보여 줍니다. 헤드라인·링크·날짜·피드 요약만 저장하고 기사 본문은 열지 않습니다.
-- **데모** (`pip install -e ".[demo]"` 후 `streamlit run demo/streamlit_app.py`): 오프라인 Streamlit 앱입니다. 실행 과정을 라운드별로 재생하고, 5대 은행 수치를 숫자마다 출처 공시와 함께 차트·표로 보여 주고, 섹터 노트를 띄웁니다. `python demo/record_gif.py --out demo.gif`로 GIF를 녹화합니다.
+- **밸류에이션 스냅샷** (`python -m agentworld_lite.finance valuation --bank RY`): 한 은행을 나머지 4개 은행과 TTM 희석 EPS, P/E, 효율성비율, CET1로 비교하고, 동종 P/E 중앙값과 동종 P/E 범위가 가리키는 주가 범위를 보여 줍니다. 숫자마다 출처 공시가 붙고, 종가는 각 은행의 2026 회계연도 3분기 6-K 첨부 문서에서 읽었습니다. 투자의견과 목표주가는 없는 교육용 샘플입니다.
+- **데모** (`pip install -e ".[demo]"` 후 `streamlit run demo/streamlit_app.py`): Streamlit 앱입니다. 실행 과정을 라운드별로 재생하고, 5대 은행 수치를 숫자마다 출처 공시와 함께 차트·표로 보여 주고, 섹터 노트와 밸류에이션 스냅샷, (버튼을 누르면 실시간 피드로) 뉴스 다이제스트를 띄웁니다. `python demo/record_gif.py --out demo.gif`로 GIF를 녹화합니다.
 
 ```bash
 python -m agentworld_lite.finance fetch --source edgar --company RY --periods 2025:FY 2026:Q3 --cache C:/edgar_cache
 python -m agentworld_lite.finance validate --tasks tasks/finance_ca
 python -m agentworld_lite.finance note --reference c03_big5_q3_sector_shared --out reports/c03_note.md
+python -m agentworld_lite.finance valuation --bank RY --out reports/ry_valuation.md
 ```
 
 **첫 모델 실행** (2026-10-20): Claude Opus 5.5가 36판(과제 6개 × 채팅 허용·차단 × 시드 3개)을 모두 풀었습니다. 실패한 도구 호출은 없었고, 정답 시나리오와 같거나 더 적은 라운드에 끝났으며, 총비용은 18.13달러였습니다. 채팅을 막아도 성공률은 같았지만 규칙 기반 CCE는 세 과제 모두 낮아졌습니다. 이 과제들로는 최상위 모델끼리 차이가 드러나지 않으므로 작은 모델이나 더 어려운 변형이 필요합니다. 자세한 내용은 [docs/finance_canada.md](docs/finance_canada.md#results-claude-opus-55)(영문)에 있습니다.

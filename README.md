@@ -19,7 +19,7 @@ A lightweight, pip-installable testbed for **long-horizon multi-agent LLM collab
 - **Blueprint-first task generator** (idea borrowed from AutoGym, adapted to multi-agent play): sample generation parameters, build the solution DAG (who gathers, crafts and hands what to whom), materialize a task, certify it by running the reference solution, repair failures, set the round budget. No LLM calls; **~93% yield**.
 - **Model backends**: Claude (Anthropic API) and **Ollama** (free local models, or Ollama cloud models such as `gemma4:cloud`).
 - **Finance domain**: the same protocol on a research desk that fetches filings, computes valuation metrics and submits cited answers. Korean DART disclosures and **real filings of Canada's Big 5 banks** (SEDAR+ annual and interim reports, read from their SEC EDGAR copies), with a cited sector note generated from a finished run (see below).
-- **185 tests**, none of which call an API.
+- **191 tests**, none of which call an API.
 
 ## Quick start (no API key)
 
@@ -196,13 +196,16 @@ The same desk on real filings of RBC, TD, Scotiabank, BMO and CIBC. Details: [do
 - **Tasks** `tasks/finance_ca`, as shared / private pairs with a 0.1% tolerance: RBC trailing P/E at fiscal Q3 2026 (18.50x; basic EPS, year-to-date EPS or a stale fiscal year all miss), the fiscal Q3 2026 efficiency ratios of RBC and TD for the quarter alone (52.81% and 50.19%; the nine-month ratios miss), and a Big 5 comparison: each bank's fiscal Q3 2026 net income to common shareholders plus the average and spread of the five CET1 ratios (13.46% and 1.30 pp; year-to-date figures, other net income lines or another period's ratios all miss).
 - **Sector note** (`python -m agentworld_lite.finance note`): turns a finished trajectory into an English Markdown note without calling a model. Each figure is followed by its fact id, filing form and EDGAR accession number, and the note checks that no figure is left uncited.
 - **News sector risk digest** (`python -m agentworld_lite.finance news`): Financial Post and CBC headlines tagged by bank and by risk theme (credit, housing, trade, rates, capital, regulation, restructuring) with literal keyword rules, the Bank of Canada policy rate and 5-year yield, and each bank's themes set beside its cited filed figures. Only headlines, links, dates and feed summaries are kept; article pages are never opened.
-- **Demo** (`pip install -e ".[demo]"`, then `streamlit run demo/streamlit_app.py`): an offline Streamlit app that replays a run round by round, charts the Big 5 figures with the filing behind each one, and shows the sector note. `python demo/record_gif.py --out demo.gif` records a GIF of it.
+- **Valuation snapshot** (`python -m agentworld_lite.finance valuation --bank RY`): one bank against the other four on TTM diluted EPS, P/E, efficiency ratio and CET1, with the peer median and the price range the peers' P/E range implies. Every number cites its filing; the closing prices were read from each bank's Q3 2026 6-K exhibit. No rating and no target price: an educational sample.
+- **Demo** (`pip install -e ".[demo]"`, then `streamlit run demo/streamlit_app.py`): a Streamlit app that replays a run round by round, charts the Big 5 figures with the filing behind each one, and shows the sector note, the valuation snapshot and (on request, from the live feeds) the news digest. `python demo/record_gif.py --out demo.gif` records a GIF of it.
 
 ```bash
 python -m agentworld_lite.finance fetch --source edgar --company RY --periods 2025:FY 2026:Q3 --cache C:/edgar_cache
 python -m agentworld_lite.finance validate --tasks tasks/finance_ca
 python -m agentworld_lite.finance run --tasks tasks/finance_ca --agent llm --provider ollama --model gemma4:cloud --settings full no_comm --seeds 7 8 9 --out runs/finance_ca_gemma
 python -m agentworld_lite.finance note --reference c03_big5_q3_sector_shared --out reports/c03_note.md
+python -m agentworld_lite.finance valuation --bank RY --out reports/ry_valuation.md
+python -m agentworld_lite.finance news --cache C:/news_cache --out reports/digest.md
 ```
 
 **First model run** (2026-10-20): Claude Opus 5.5 solved all 36 episodes (6 tasks, chat allowed and blocked, 3 seeds) with no failed tool call, in as few rounds as the scripted reference or fewer, for US$18.13 in total. Blocking chat did not change success but lowered rule CCE on every task, so these tasks are too easy to separate frontier models; see [docs/finance_canada.md](docs/finance_canada.md#results-claude-opus-55).

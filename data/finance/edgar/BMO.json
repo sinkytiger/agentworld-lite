@@ -228,7 +228,11 @@
   }
  },
  "shares": {},
- "prices": {},
- "price_sources": {},
+ "prices": {
+  "2026-07-31": 251.47
+ },
+ "price_sources": {
+  "2026-07-31": "Closing share price at the end of the quarter, in Canadian dollars, as reported in BMO's Q3 2026 Report to Shareholders (Exhibit 99.1 of Form 6-K 0000927971-26-000108, Closing share price; the exhibit does not name the exchange)"
+ },
  "currency": "CAD"
 }
