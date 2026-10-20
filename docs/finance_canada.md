@@ -11,6 +11,8 @@ The finance domain's research desk (a collector fetches filings, an analyst comp
 | SEC EDGAR | Cross-listed issuers file their annual report on Form 40-F and interim reports on Form 6-K, with XBRL | Yes, free, no key. The SEC asks for a User-Agent with a contact e-mail and at most 10 requests per second | `edgar` |
 | Documents you downloaded yourself | PDFs from the SEDAR+ website or an issuer's site | You transcribe; the tool checks | `local_pdf` |
 
+We asked the CSA in October 2026: bulk access to SEDAR+ filings is available only through DDS, a paid institutional subscription.
+
 The 40-F and 6-K carry the same annual report, interim report, MD&A and press releases that the banks file on SEDAR+, so EDGAR is the automated route for cross-listed issuers. Issuers listed only in Canada, such as Loblaw, Dollarama, Alimentation Couche-Tard and National Bank, are not on EDGAR. For those, use `local_pdf` with documents downloaded by hand.
 
 ## Filing sources
