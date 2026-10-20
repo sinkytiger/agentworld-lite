@@ -61,7 +61,9 @@ class OllamaClient:
             try:
                 return self._send(path, payload)
             except OllamaError as exc:
-                retryable = getattr(exc, "status", None) in self.RETRY_STATUS or getattr(exc, "timeout", False)
+                retryable = (not getattr(exc, "quota_exhausted", False)
+                             and (getattr(exc, "status", None) in self.RETRY_STATUS
+                                  or getattr(exc, "timeout", False)))
                 if not retryable or attempt == self.MAX_RETRIES:
                     raise
                 time.sleep(delay)
@@ -80,6 +82,7 @@ class OllamaClient:
             body = exc.read().decode("utf-8", "replace")[:300]
             err = OllamaError(f"Ollama returned HTTP {exc.code}: {body}")
             err.status = exc.code
+            err.quota_exhausted = exc.code == 429 and "free usage limit" in body.lower()
             raise err from exc
         except TimeoutError as exc:
             err = OllamaError(f"Ollama request timed out after {self.timeout}s")
@@ -194,6 +197,7 @@ class OllamaAgent(BaseAgent):
         text = ""
         for attempt in range(2):
             resp, usage = self.client.chat(messages, tools=tools)
+            usage_total["calls"] = usage_total.get("calls", 0) + 1
             for k, v in usage.items():
                 usage_total[k] = usage_total.get(k, 0) + v
             msg = resp.get("message") or {}

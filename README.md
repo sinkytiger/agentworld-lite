@@ -63,6 +63,14 @@ Measured on a laptop RTX 2060 (6 GB): `llama3.2:3b` answers a turn in about 2 s,
 
 Notes: the context window defaults to 8192 tokens (`--num-ctx`), since a turn is roughly 3k tokens of prompt plus 1.5k of tool schemas. Output is capped at 768 tokens per turn. Episodes run one at a time by default with Ollama. Cloud models do not support structured outputs, so the judges fall back to a schema-in-prompt request and extract the JSON from the reply. Small models that print a tool call as JSON text instead of a structured call are still executed and tagged `note: text_tool_call`.
 
+### Optional coordination controller
+
+`--coordination` wraps the same LLM with local feedback for repeated chats, stalled waits, and failed or ineffective actions. It reads only the agent's own visible observations and action results; it may make one extra model call to revise an action. Use a separate output directory when comparing it with the baseline. See [the coordination agent design](docs/coordination_agent.md).
+
+```bash
+python -m agentworld_lite run --tasks tasks/paired --agent llm --provider ollama --model gemma4:cloud --only p07007_private --coordination --out runs/p07007_coord
+```
+
 ## Run with Claude
 
 ```bash
@@ -88,6 +96,19 @@ python -m agentworld_lite gen --n 30 --seed 7 --out tasks/gym
 ```
 
 Generation parameters: recipe depth of the target (1–3), team structure (`chain` = one agent per crafting skill, `hub` = one central workshop), **distributed obfuscation** (0–1: how much of the plan moves from the shared document into individual agents' private briefs or out of the docs entirely), quantity, and extra gatherers. Each kept task records its parameters, ground-truth length, repairs, and capability-axis predicates (hand-offs, travel distance, information and permission asymmetry, station constraints). Sampling weights can be overridden with `--weights weights.json`. See [docs/autogym_integration.md](docs/autogym_integration.md) (Korean) for the full design, including the planned distractors, four-signal verifier, difficulty bands, and failure-driven curriculum.
+
+### Matched information-placement experiment
+
+`gen-pairs` creates shared-document and private-briefing variants of each *same* certified blueprint. The world, agents, objective, world guide, reference solution, and round budget stay fixed. The `relay` setting blocks agent chat but delivers each recipient's hand-off fact to the giver at round 0 as a diagnostic information-rescue control.
+
+```bash
+python -m agentworld_lite gen-pairs --n 20 --seed 7 --out tasks/paired
+python -m agentworld_lite validate --tasks tasks/paired
+python -m agentworld_lite run --tasks tasks/paired --agent llm --provider ollama --model gemma4:cloud --settings full no_comm relay --seeds 7 8 9 --shuffle-jobs --job-seed 7 --out runs/paired_gemma
+python -m agentworld_lite pair-report --runs runs/paired_gemma --out reports/paired_gemma.md
+```
+
+Eight example pairs are included in `tasks/paired`. See [docs/paired_experiment.md](docs/paired_experiment.md) for the protocol and limits.
 
 ## Results
 
@@ -122,7 +143,7 @@ Model: `gemma4:cloud`. By recipe depth (with / without chat): depth 1 100% / 100
 ### What we learned
 
 - **On the hand-built tasks, chat rarely changed the outcome.** `gemma4:cloud` solved 26/27 episodes with chat and 20/27 without. Blocking chat hurt in three tasks: the crystal plates (0/3 without chat), the stick hand-off in the staff task (1/3) and the coin pooling in the market task (1/3). Every task also gives the team a shared document that lays out the plan, so the `no_comm` setting measures what chat adds on top of that document. The AgentWorld paper also reports a large drop without communication, but scores from the two environments are not comparable.
-- **Information placement decides how much chat matters.** In the generated tasks with low obfuscation the model never sent a message and solved everything (15/15 with and 15/15 without chat). As information moves from the shared document into private briefs, the model sends more messages on its own (0.0 → 9.3 per episode) and losing chat costs more (max: 4/6 vs 0/6, from only 2 tasks).
+- **The earlier obfuscation sweep suggests that information constraints affect chat use.** In the generated tasks with low obfuscation the model never sent a message and solved everything (15/15 with and 15/15 without chat). At max obfuscation it sent 9.3 messages per episode and succeeded 4/6 with chat versus 0/6 without. These levels used different tasks and also changed the shared plan, objective wording, world guide, and round budget. The matched experiment above isolates information placement; the sweep alone cannot establish its causal effect.
 - **When both settings succeed, chat made the team leaner.** On the 20 task–seed pairs solved in both settings, CCE was higher with chat in 18 (0.580 vs 0.498 on average), with fewer rounds (10.2 vs 11.2) and fewer failed actions (0.5% vs 3.7%). Comparing only matched pairs avoids mixing in which episodes happened to succeed.
 - **The 3B local model did not reach collaborative behavior in this setup.** `llama3.2:3b` solved 0/27 and handed 0 items to teammates in 2,658 actions. It harvested successfully 33 times but never crafted anything (0/23), so it is not yet clear whether the bottleneck is collaboration or basic task execution. 48% of its actions were chat, and 82.5% of those messages were exact duplicates of an earlier message. That is an exact-repeat rate, not the paper's stale/redundant classification. In one staff-task episode, two agents sent 28 messages asking for an axe while the only agent holding one never cut a tree.
 - **The rule-based CCE judge is a promising cheap proxy, not a validated substitute.** Pooled over 1,853 actions from 46 successful `gemma4:cloud` episodes, the rule judge and the LLM judge (`gemma4:cloud`, paper procedure) agree on 80.9% of actions (Cohen's κ 0.62). The LLM judge labels more actions as contributing (216 LLM-only vs 138 rule-only disagreements) and is far more generous on the survival task (CCE 0.86–1.00 vs 0.50–0.60). The paper's figures (human vs GPT-4.1: 82%, κ 0.64 on 84 actions; two LLM judges: κ 0.66) come from different judges, samples and aggregation, so a human-labelled sample is needed before relying on the rule judge.

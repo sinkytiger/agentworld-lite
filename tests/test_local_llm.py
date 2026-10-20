@@ -78,6 +78,7 @@ def test_no_tool_call_is_nudged_then_waits():
     task.max_rounds = 1
     traj = run_episode(task, lambda t, n: OllamaAgent(n, client))
     assert all(a["tool"] == "wait" and a["note"] == "no_tool_call" for a in traj["actions"])
+    assert traj["usage"]["calls"] == 2 * len(traj["actions"])
     second = client.requests[1][1]["messages"]
     assert second[-1]["content"].startswith("You did not call a tool")
 
@@ -154,6 +155,28 @@ def test_rate_limit_is_retried_with_backoff(monkeypatch):
 
     with pytest.raises(OllamaError):
         Denied("gemma4:cloud").chat([{"role": "user", "content": "hi"}])
+
+
+def test_free_usage_limit_does_not_retry(monkeypatch):
+    import io
+    import urllib.error
+    import agentworld_lite.local_llm as ll
+
+    sleeps = []
+    monkeypatch.setattr(ll.time, "sleep", sleeps.append)
+    calls = []
+
+    def quota_response(req, timeout):
+        calls.append(req.full_url)
+        raise urllib.error.HTTPError(req.full_url, 429, "Too Many Requests", {},
+                                     io.BytesIO(b"You reached the Free usage limit"))
+
+    monkeypatch.setattr(ll.urllib.request, "urlopen", quota_response)
+
+    with pytest.raises(OllamaError, match="Free usage limit"):
+        OllamaClient("gemma4:cloud").chat([{"role": "user", "content": "hi"}])
+    assert calls == ["http://127.0.0.1:11434/api/chat"]
+    assert sleeps == []
 
 
 def test_check_reports_missing_model_and_unreachable_server():

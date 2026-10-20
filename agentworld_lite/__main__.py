@@ -83,7 +83,8 @@ def cmd_run(args) -> int:
     run_suite(args.tasks, args.out, agent=args.agent, model=args.model, effort=args.effort,
               settings=args.settings, seeds=args.seeds, workers=workers, verbose=args.verbose,
               strict_tools=not args.no_strict, use_fallbacks=not args.no_fallbacks, task_filter=args.only,
-              provider=args.provider, host=args.ollama_host, num_ctx=args.num_ctx, think=_think(args))
+              provider=args.provider, host=args.ollama_host, num_ctx=args.num_ctx, think=_think(args),
+              shuffle_jobs=args.shuffle_jobs, job_seed=args.job_seed, coordination=args.coordination)
     return 0
 
 
@@ -171,6 +172,31 @@ def cmd_gen(args) -> int:
     return 0
 
 
+def cmd_gen_pairs(args) -> int:
+    from .paired import generate_pairs
+
+    weights = json.loads(Path(args.weights).read_text(encoding="utf-8")) if args.weights else None
+    pairs, records = generate_pairs(args.n, seed=args.seed, out_dir=args.out, prefix=args.prefix,
+                                    weights=weights, max_attempts=args.max_attempts)
+    print(f"kept {len(pairs)}/{args.n} matched pairs from {len(records)} attempts; wrote {2 * len(pairs)} tasks to {args.out}")
+    return 0 if len(pairs) == args.n else 1
+
+
+def cmd_pair_report(args) -> int:
+    from .paired import compare_pairs
+    from .report import load_run
+
+    try:
+        md = compare_pairs([traj for run in args.runs for traj in load_run(run)])
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+    Path(args.out).write_text(md, encoding="utf-8")
+    print(f"wrote {args.out}")
+    return 0
+
+
 def cmd_show(args) -> int:
     traj = json.loads(Path(args.traj).read_text(encoding="utf-8"))
     r = traj["result"]
@@ -196,12 +222,16 @@ def main(argv=None) -> int:
     r.add_argument("--model", default=DEFAULT_MODEL)
     r.add_argument("--effort", choices=["low", "medium", "high", "xhigh", "max"], default=None)
     r.add_argument("--settings", nargs="+", default=["full"],
-                   choices=["full", "no_comm", "no_docs", "whitebox", "random_spawn"])
+                   choices=["full", "no_comm", "no_docs", "whitebox", "random_spawn", "relay"])
     r.add_argument("--seeds", nargs="+", type=int, default=[7])
     r.add_argument("--workers", type=int, default=None, help="episodes run in parallel (default 4; 1 with ollama)")
     r.add_argument("--only", nargs="+", help="task ids to run")
     r.add_argument("--out", required=True)
     r.add_argument("--verbose", action="store_true")
+    r.add_argument("--coordination", action="store_true",
+                   help="LLM-only local coordination feedback and duplicate-chat control")
+    r.add_argument("--shuffle-jobs", action="store_true", help="randomize episode order to balance time effects")
+    r.add_argument("--job-seed", type=int, default=0, help="fixed randomization seed for --shuffle-jobs")
     r.add_argument("--no-strict", action="store_true", help="disable strict tool schemas")
     r.add_argument("--no-fallbacks", action="store_true", help="disable server-side refusal fallbacks")
     add_provider_args(r)
@@ -244,6 +274,20 @@ def main(argv=None) -> int:
     g.add_argument("--prefix", default="g")
     g.add_argument("--weights", help="JSON file with sampling weights (see blueprint.DEFAULT_WEIGHTS)")
     g.set_defaults(fn=cmd_gen)
+
+    gp = sub.add_parser("gen-pairs", help="certified shared/private variants of the same blueprint")
+    gp.add_argument("--n", type=int, default=20, help="number of certified pairs")
+    gp.add_argument("--seed", type=int, default=0)
+    gp.add_argument("--out", default="tasks/paired")
+    gp.add_argument("--prefix", default="p")
+    gp.add_argument("--weights", help="JSON file with sampling weights")
+    gp.add_argument("--max-attempts", type=int, default=None)
+    gp.set_defaults(fn=cmd_gen_pairs)
+
+    pr = sub.add_parser("pair-report", help="within-blueprint information x chat comparison")
+    pr.add_argument("--runs", nargs="+", required=True)
+    pr.add_argument("--out", default="reports/paired.md")
+    pr.set_defaults(fn=cmd_pair_report)
 
     s = sub.add_parser("show", help="print a trajectory")
     s.add_argument("traj")

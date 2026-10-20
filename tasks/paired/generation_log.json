@@ -1,0 +1,151 @@
+[
+  {
+    "id": "p07000",
+    "params": {
+      "depth": 1,
+      "topology": "hub",
+      "obfuscation": 0.0,
+      "quantity": 1,
+      "extra_agents": 0,
+      "seed": 60816
+    },
+    "target": "bronze_bar",
+    "status": "kept",
+    "repairs": 1,
+    "gt_rounds": 9,
+    "budget": 20,
+    "agents": 3
+  },
+  {
+    "id": "p07001",
+    "params": {
+      "depth": 1,
+      "topology": "chain",
+      "obfuscation": 0.0,
+      "quantity": 1,
+      "extra_agents": 1,
+      "seed": 61981
+    },
+    "status": "rejected_blueprint",
+    "reason": "fewer than 3 agents; not a team task"
+  },
+  {
+    "id": "p07002",
+    "params": {
+      "depth": 1,
+      "topology": "chain",
+      "obfuscation": 0.0,
+      "quantity": 3,
+      "extra_agents": 1,
+      "seed": 415949
+    },
+    "target": "campfire",
+    "status": "kept",
+    "repairs": 0,
+    "gt_rounds": 7,
+    "budget": 20,
+    "agents": 3
+  },
+  {
+    "id": "p07003",
+    "params": {
+      "depth": 1,
+      "topology": "chain",
+      "obfuscation": 0.0,
+      "quantity": 1,
+      "extra_agents": 1,
+      "seed": 598646
+    },
+    "target": "cooked_shrimp",
+    "status": "kept",
+    "repairs": 1,
+    "gt_rounds": 6,
+    "budget": 20,
+    "agents": 3
+  },
+  {
+    "id": "p07004",
+    "params": {
+      "depth": 3,
+      "topology": "chain",
+      "obfuscation": 0.0,
+      "quantity": 2,
+      "extra_agents": 0,
+      "seed": 574351
+    },
+    "target": "watchtower",
+    "status": "kept",
+    "repairs": 0,
+    "gt_rounds": 18,
+    "budget": 36,
+    "agents": 4
+  },
+  {
+    "id": "p07005",
+    "params": {
+      "depth": 2,
+      "topology": "hub",
+      "obfuscation": 0.0,
+      "quantity": 1,
+      "extra_agents": 1,
+      "seed": 488218
+    },
+    "target": "leatherarmor",
+    "status": "kept",
+    "repairs": 0,
+    "gt_rounds": 8,
+    "budget": 20,
+    "agents": 3
+  },
+  {
+    "id": "p07006",
+    "params": {
+      "depth": 2,
+      "topology": "chain",
+      "obfuscation": 0.0,
+      "quantity": 2,
+      "extra_agents": 0,
+      "seed": 602326
+    },
+    "target": "nails",
+    "status": "kept",
+    "repairs": 0,
+    "gt_rounds": 12,
+    "budget": 24,
+    "agents": 3
+  },
+  {
+    "id": "p07007",
+    "params": {
+      "depth": 2,
+      "topology": "chain",
+      "obfuscation": 0.0,
+      "quantity": 2,
+      "extra_agents": 0,
+      "seed": 536800
+    },
+    "target": "iron_sword",
+    "status": "kept",
+    "repairs": 0,
+    "gt_rounds": 12,
+    "budget": 24,
+    "agents": 4
+  },
+  {
+    "id": "p07008",
+    "params": {
+      "depth": 3,
+      "topology": "chain",
+      "obfuscation": 0.0,
+      "quantity": 1,
+      "extra_agents": 1,
+      "seed": 801710
+    },
+    "target": "palisade_wall",
+    "status": "kept",
+    "repairs": 0,
+    "gt_rounds": 10,
+    "budget": 20,
+    "agents": 5
+  }
+]

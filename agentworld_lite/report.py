@@ -42,7 +42,14 @@ def repeated_chats(traj: dict) -> tuple[int, int]:
 def system_label(traj: dict) -> str:
     m = traj.get("meta") or {}
     label = m.get("model") or m.get("agent") or "?"
-    return f"{label} ({m['effort']})" if m.get("effort") else label
+    if m.get("effort"):
+        label = f"{label} ({m['effort']})"
+    if m.get("coordination"):
+        version = m.get("coordination_version", "legacy")
+        config = m.get("coordination_config")
+        detail = json.dumps(config, sort_keys=True, separators=(",", ":")) if config else "unrecorded config"
+        label += f" + coordination v{version} {detail}"
+    return label
 
 
 def _cce(traj: dict, judge: str | None) -> dict | None:

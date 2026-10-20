@@ -40,6 +40,8 @@ class TurnInput:
     # Domain hooks (default: the RPG domain). tool_specs(allowed, strict) -> Claude tool definitions.
     system_prompt: str | None = None
     tool_specs: Callable | None = None
+    # Detached copy of only the state exposed in this agent's observation.
+    visible_state: dict | None = None
 
 
 @dataclass
@@ -49,6 +51,7 @@ class Decision:
     reasoning: str = ""
     note: str = ""
     usage: dict = field(default_factory=dict)
+    decision_trace: dict = field(default_factory=dict)
 
 
 class BaseAgent:
@@ -92,6 +95,7 @@ class LLMAgent(BaseAgent):
                 tool_choice={"type": "auto", "disable_parallel_tool_use": True},
                 messages=messages,
             )
+            usage_total["calls"] = usage_total.get("calls", 0) + 1
             for k, v in usage.items():
                 usage_total[k] = usage_total.get(k, 0) + v
             if resp.stop_reason == "refusal":

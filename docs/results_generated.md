@@ -2,6 +2,8 @@
 
 17 tasks from `tasks/gym` (blueprint-first generator), sampled across obfuscation levels, run with `gemma4:cloud` on 2026-10-08. Seeds 7, 8 and 9 (three replicates on the same map), rule-based CCE.
 
+This sweep is descriptive: levels contain different tasks, and the generator also changes the shared plan, objective wording, world guide, and round budget. It does not isolate information placement. For within-blueprint controls, see [paired_experiment.md](paired_experiment.md).
+
 | Obfuscation | Tasks | Success with chat | Success without chat | Gap | Chats / episode (with chat) |
 |---|---|---|---|---|---|
 | low | 5 | 100.0% | 100.0% | 0.0 pp | 0.0 |

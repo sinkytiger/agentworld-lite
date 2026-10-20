@@ -80,6 +80,14 @@ python -m agentworld_lite evaluate --run runs/gemma_smoke --judge both --judge-p
 
 Ollama는 기본적으로 요청을 하나씩 처리하므로 `--provider ollama`일 때 병렬 실행 기본값은 1입니다. 작은 모델은 도구 호출을 JSON 텍스트로 쓰는 경우가 있는데, 이것도 해석해서 실행하고 `note: text_tool_call`로 표시합니다.
 
+### 선택형 협업 제어 모드
+
+`--coordination`은 같은 LLM을 감싸서 최근 중복 채팅, 연속 대기, 실패하거나 진전이 없던 행동을 스스로 재검토하게 합니다. 팀원의 비공개 상태는 읽지 않으며, 재판단에는 모델 호출이 추가될 수 있습니다. 기본 에이전트와 비교할 때는 서로 다른 출력 폴더를 쓰세요. 구현과 한계는 [협업 에이전트 문서](docs/coordination_agent.md)에 있습니다.
+
+```bash
+python -m agentworld_lite run --tasks tasks/paired --agent llm --provider ollama --model gemma4:cloud --only p07007_private --coordination --out runs/p07007_coord
+```
+
 ### Claude 에이전트로 실행
 
 `ANTHROPIC_API_KEY`를 설정하거나 `ant auth login`으로 로그인한 뒤 실행합니다. 기본 모델은 `claude-opus-5-5`입니다. 논문과 같은 모델로 비교하려면 `--model claude-haiku-4-5`를 씁니다.
@@ -141,7 +149,7 @@ python -m agentworld_lite report --runs runs/opus55 runs/random --out reports/op
 ### 알게 된 것
 
 - **직접 만든 과제에서는 채팅이 결과를 거의 바꾸지 않았습니다.** `gemma4:cloud`는 채팅 허용 시 26/27, 금지 시 20/27를 풀었습니다. 채팅을 막아 손해를 본 과제는 셋뿐입니다: 수정 발판(채팅 금지 시 0/3), 지팡이 과제의 막대 인계(1/3), 거래 과제의 코인 모으기(1/3). 모든 과제가 계획을 적은 공유 문서를 함께 주기 때문에, `no_comm` 설정은 "공유 문서 위에 채팅이 더해 주는 효과"를 잽니다. AgentWorld 논문에서도 소통을 막으면 성공률이 크게 떨어졌지만, 두 환경의 점수는 직접 비교할 수 없습니다.
-- **채팅이 얼마나 필요한지는 정보 배치가 정합니다.** 은닉이 low인 생성 과제에서는 모델이 메시지를 한 번도 보내지 않고 모두 풀었습니다(채팅 허용 15/15, 금지 15/15). 정보가 공유 문서에서 개인 브리핑으로 옮겨 갈수록 모델이 스스로 메시지를 늘리고(판당 0.0 → 9.3회), 채팅을 막았을 때의 손해도 커졌습니다(max: 4/6 대 0/6, 과제 2개 기준).
+- **기존 은닉 단계 실험에서는 정보 제약이 강할수록 채팅 사용이 늘었습니다.** low에서는 채팅 없이도 15/15를 풀었고, max에서는 채팅을 판당 9.3회 보내며 허용 시 4/6, 금지 시 0/6을 풀었습니다. 하지만 단계별 과제가 서로 다르고 공유 계획·목표 문구·월드 가이드·라운드 제한도 함께 바뀌므로, 이 차이를 정보 배치만의 효과로 볼 수는 없습니다. 아래 동일 과제 비교 실험으로 이를 분리합니다.
 - **두 설정이 모두 성공한 경우, 채팅이 있을 때 헛수고가 적었습니다.** 두 설정 모두 성공한 과제·시드 20쌍 중 18쌍에서 채팅이 있을 때 CCE가 더 높았고(평균 0.580 대 0.498), 라운드(10.2 대 11.2)와 실패한 행동(0.5% 대 3.7%)도 적었습니다. 같은 쌍끼리만 비교해 어떤 에피소드가 성공했는지의 차이를 걸러냈습니다.
 - **3B 로컬 모델은 이 설정에서 협업 행동으로 이어지지 않았습니다.** `llama3.2:3b`는 0/27였고, 2,658번 행동하는 동안 동료에게 건넨 아이템이 0개였습니다. 채집은 33번 성공했지만 제작은 한 번도 못 해서(0/23), 병목이 협업인지 기본 과제 수행인지는 아직 분리되지 않았습니다. 행동의 48%가 채팅이었고 그중 82.5%가 앞선 메시지와 문장까지 같은 반복이었습니다. 이는 문장 완전 중복률로, 논문의 '낡은·중복 메시지' 분류 비율과는 다른 지표입니다. 한 지팡이 과제 에피소드에서는 두 에이전트가 도끼를 달라는 메시지를 28번 보내는 동안, 도끼를 가진 유일한 에이전트는 나무를 한 번도 베지 않았습니다.
 - **규칙 기반 CCE 판정은 저비용 탐색 지표로 가능성을 보였지만, 검증된 대체재는 아닙니다.** `gemma4:cloud` 성공 에피소드 46개의 행동 1,853개를 합쳐 보면, 규칙 판정과 LLM 판정(`gemma4:cloud`, 논문 절차)은 80.9%에서 일치했습니다(Cohen's κ 0.62). LLM 판정이 기여로 더 많이 세고(한쪽만 기여로 본 경우 LLM 216건 대 규칙 138건), 생존 과제에서는 훨씬 너그러웠습니다(CCE 0.86~1.00 대 0.50~0.60). 논문의 수치(사람 대 GPT-4.1: 행동 84개에서 82%, κ 0.64 / LLM 판정자 둘: κ 0.66)는 판정자·표본·집계 방식이 달라, 규칙 판정에 기대려면 사람 판정 표본으로 추가 검증이 필요합니다.
@@ -172,6 +180,19 @@ python -m agentworld_lite gen --n 30 --seed 7 --out tasks/gym
 ```
 
 생성 파라미터(레시피 깊이, 팀 구조, 정보 은닉 정도, 수량, 팀 규모)의 샘플링 가중치는 `--weights` JSON으로 바꿀 수 있습니다. 생성된 과제는 다른 과제와 똑같이 `run --tasks tasks/gym`으로 실행합니다.
+
+### 동일 과제에서 정보 배치 비교
+
+`gen-pairs`는 같은 청사진으로 공유 문서형과 개인 브리핑형을 만듭니다. 월드·에이전트·목표·가이드·정답 시나리오·라운드 제한을 고정하고 정보 문장의 위치만 바꿉니다. `relay`는 채팅 도구를 막은 채 받는 사람의 인계 정보를 0라운드에 주는 사람에게 전달하는 진단 조건입니다.
+
+```bash
+python -m agentworld_lite gen-pairs --n 20 --seed 7 --out tasks/paired
+python -m agentworld_lite validate --tasks tasks/paired
+python -m agentworld_lite run --tasks tasks/paired --agent llm --provider ollama --model gemma4:cloud --settings full no_comm relay --seeds 7 8 9 --shuffle-jobs --job-seed 7 --out runs/paired_gemma
+python -m agentworld_lite pair-report --runs runs/paired_gemma --out reports/paired_gemma.md
+```
+
+저장소에는 예시 8쌍이 들어 있습니다. 실험 설계와 해석상 주의점은 [docs/paired_experiment.md](docs/paired_experiment.md)에 정리했습니다.
 
 ### 새 과제 추가하기
 

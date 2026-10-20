@@ -1,0 +1,221 @@
+id: p07005_shared
+name: 'Generated: leatherarmor (hub, depth 2)'
+category: crafting
+description: A generated hub supply chain of depth 2. Raw materials must be gathered,
+  processed by the right specialists and handed along until the goal is met.
+objectives:
+  primary: p07005_client (guard) must have a leatherarmor equipped.
+  secondary:
+  - Avoid wasted materials and redundant messages.
+max_rounds: 24
+agents:
+- username: p07005_artisan
+  role: artisan
+  spawn:
+  - 38
+  - 23
+  skills:
+    crafting: 15
+    health: 15
+  inventory:
+    apple: 3
+  equipment: []
+  restricted_tools:
+  - harvest_resource
+  role_brief: 'Your role cannot use: harvest_resource.'
+- username: p07005_forager
+  role: forager
+  spawn:
+  - 25
+  - 2
+  skills:
+    foraging: 12
+    health: 15
+  inventory:
+    apple: 3
+  equipment: []
+- username: p07005_client
+  role: client
+  spawn:
+  - 36
+  - 25
+  skills:
+    strength: 15
+    health: 15
+  inventory:
+    apple: 3
+    hide: 3
+  equipment: []
+  restricted_tools:
+  - harvest_resource
+  - craft_item
+  role_brief: 'You carry hides from an earlier hunt (3 hide); someone on the team
+    will need it. Your role cannot use: harvest_resource, craft_item.'
+extra_entities: []
+relevant_game_context: "Recipes:\n  leather: craft_item skill=crafting (lvl 5) | 1x\
+  \ hide -> 1x leather\n  string: craft_item skill=crafting (lvl 1) | 2x flax -> 1x\
+  \ string\n  leatherarmor: craft_item skill=crafting (lvl 15) | 3x leather + 1x string\
+  \ -> 1x leatherarmor\nTeam:\n  p07005_artisan (artisan; crafting 15) crafts/builds\
+  \ leather, string, leatherarmor\n  p07005_forager (forager; foraging 12) gathers\
+  \ flax\n  p07005_client (client; strength 15) is the person the result is for\n\
+  Plan:\n  p07005_artisan hands 1 leatherarmor to p07005_client (at (36, 25)).\n \
+  \ p07005_client hands 3 hide to p07005_artisan (at (38, 23)).\n  p07005_forager\
+  \ hands 2 flax to p07005_artisan (at (38, 23)).\nLocations:\n  flax_patch nodes\
+  \ (flax) are close to p07005_forager's start at (25, 2)."
+verifier:
+  success: all
+  checkpoints:
+  - name: leatherarmor equipped
+    type: equipped
+    agent: p07005_client
+    item: leatherarmor
+reference_solution:
+  p07005_artisan:
+  - - craft_item
+    - skill: crafting
+      item_key: leather
+      count: 3
+    - until_have:
+        leather: 3
+      retries: 80
+  - - craft_item
+    - skill: crafting
+      item_key: string
+      count: 1
+    - until_have:
+        string: 1
+      retries: 80
+  - - craft_item
+    - skill: crafting
+      item_key: leatherarmor
+      count: 1
+    - until_have:
+        leatherarmor: 1
+      retries: 80
+  - - move_to
+    - x: 36
+      y: 25
+    - until_near:
+      - 36
+      - 25
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: p07005_client
+      item: leatherarmor
+      count: 1
+    - retries: 80
+  p07005_forager:
+  - - harvest_resource
+    - target: flax_patch
+    - until_have:
+        flax: 2
+      retries: 80
+  - - move_to
+    - x: 38
+      y: 23
+    - until_near:
+      - 38
+      - 23
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: p07005_artisan
+      item: flax
+      count: 2
+    - retries: 80
+  p07005_client:
+  - - move_to
+    - x: 38
+      y: 23
+    - until_near:
+      - 38
+      - 23
+      - 2
+      retries: 80
+  - - transfer_items
+    - to_agent: p07005_artisan
+      item: hide
+      count: 3
+    - retries: 80
+  - - equip_item
+    - item: leatherarmor
+    - retries: 80
+world_guide: true
+generation:
+  params:
+    depth: 2
+    topology: hub
+    obfuscation: 0.0
+    quantity: 1
+    extra_agents: 1
+    seed: 488218
+  obfuscation_bucket: low
+  blueprint:
+    target: leatherarmor
+    goal: equip
+    goal_qty: 1
+    roles:
+      artisan:
+        kind: craft
+        skills:
+          crafting: 15
+        gathers: {}
+        crafts:
+        - - leather
+          - 3
+        - - string
+          - 1
+        - - leatherarmor
+          - 1
+      forager:
+        kind: gather
+        skills:
+          foraging: 12
+        gathers:
+          flax: 2
+        crafts: []
+      client:
+        kind: client
+        skills:
+          strength: 15
+        gathers: {}
+        crafts: []
+    deliveries:
+    - - artisan
+      - client
+      - leatherarmor
+      - 1
+    - - client
+      - artisan
+      - hide
+      - 3
+    - - forager
+      - artisan
+      - flax
+      - 2
+  ground_truth:
+    rounds: 8
+    actions: 24
+    useful_actions: 11
+    cce_rule: 0.458
+  repairs: []
+  axes:
+    handoffs: 3
+    max_handoff_distance: 21
+    rendezvous_travel: true
+    info_asymmetry: false
+    permission_asymmetry: true
+    station_constraint: false
+    team_size: 3
+    recipe_depth: 2
+    goal_quantity: 1
+  matched:
+    pair_id: p07005
+    placement: shared
+    fact_counts:
+      Recipes: 3
+      Team: 3
+      Plan: 3
+      Locations: 1
+    relay_messages: []

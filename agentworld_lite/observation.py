@@ -15,6 +15,35 @@ def _fmt_counter(d: dict) -> str:
     return ", ".join(items) if items else "(empty)"
 
 
+def visible_state(world: World, agent_name: str) -> dict:
+    """Detached controller input, limited to fields shown by render_observation.
+
+    Never include teammates' inventories, entity metadata, hidden entities, or
+    entities beyond the per-kind display limit. Round/history are omitted so a
+    fingerprint changes only when the visible situation changes.
+    """
+    a = world.agents[agent_name]
+    grouped: dict[str, list[str]] = {}
+    for entity in world.entities_near(a.pos, a.view_radius, viewer=a):
+        labels = grouped.setdefault(entity.kind, [])
+        if len(labels) < MAX_PER_KIND:
+            labels.append(entity.label())
+    return {
+        "self": {
+            "name": a.name, "position": list(a.pos), "hp": a.hp, "max_hp": a.max_hp,
+            "inventory": {k: v for k, v in a.inventory.items() if v},
+            "equipment": dict(a.equipment), "skills": dict(a.skills),
+            "restricted_tools": sorted(a.restricted_tools),
+        },
+        "nearby_entities": grouped,
+        "nearby_teammates": [
+            {"name": other.name, "position": list(other.pos), "knocked_out": other.knocked_out}
+            for other in world.agents.values()
+            if other is not a and chebyshev(a.pos, other.pos) <= a.view_radius
+        ],
+    }
+
+
 def render_observation(
     world: World,
     agent_name: str,

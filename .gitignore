@@ -10,3 +10,6 @@ reports/
 posts/
 *.log
 data/finance/cache/
+
+# finground plugin cache created with an unexpanded variable name
+${CLAUDE_PLUGIN_DATA}/
