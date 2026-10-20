@@ -19,7 +19,7 @@ A lightweight, pip-installable testbed for **long-horizon multi-agent LLM collab
 - **Blueprint-first task generator** (idea borrowed from AutoGym, adapted to multi-agent play): sample generation parameters, build the solution DAG (who gathers, crafts and hands what to whom), materialize a task, certify it by running the reference solution, repair failures, set the round budget. No LLM calls; **~93% yield**.
 - **Model backends**: Claude (Anthropic API) and **Ollama** (free local models, or Ollama cloud models such as `gemma4:cloud`).
 - **Finance domain**: the same protocol on a research desk that fetches filings, computes valuation metrics and submits cited answers. Korean DART disclosures and **real filings of Canada's Big 5 banks** (SEDAR+ annual and interim reports, read from their SEC EDGAR copies), with a cited sector note generated from a finished run (see below).
-- **178 tests**, none of which call an API.
+- **185 tests**, none of which call an API.
 
 ## Quick start (no API key)
 
@@ -195,6 +195,7 @@ The same desk on real filings of RBC, TD, Scotiabank, BMO and CIBC. Details: [do
 - **Dataset** `data/finance/edgar`: five fiscal periods per bank (fiscal 2025 Q3 and FY, fiscal 2026 Q1, H1, Q3), each figure with its form, accession number, filing date and XBRL concept, now including total assets and risk-weighted assets. The task inputs match the banks' own Q3 2026 releases, e.g. TD's reported efficiency ratio of 50.2% and all five CET1 ratios.
 - **Tasks** `tasks/finance_ca`, as shared / private pairs with a 0.1% tolerance: RBC trailing P/E at fiscal Q3 2026 (18.50x; basic EPS, year-to-date EPS or a stale fiscal year all miss), the fiscal Q3 2026 efficiency ratios of RBC and TD for the quarter alone (52.81% and 50.19%; the nine-month ratios miss), and a Big 5 comparison: each bank's fiscal Q3 2026 net income to common shareholders plus the average and spread of the five CET1 ratios (13.46% and 1.30 pp; year-to-date figures, other net income lines or another period's ratios all miss).
 - **Sector note** (`python -m agentworld_lite.finance note`): turns a finished trajectory into an English Markdown note without calling a model. Each figure is followed by its fact id, filing form and EDGAR accession number, and the note checks that no figure is left uncited.
+- **News sector risk digest** (`python -m agentworld_lite.finance news`): Financial Post and CBC headlines tagged by bank and by risk theme (credit, housing, trade, rates, capital, regulation, restructuring) with literal keyword rules, the Bank of Canada policy rate and 5-year yield, and each bank's themes set beside its cited filed figures. Only headlines, links, dates and feed summaries are kept; article pages are never opened.
 - **Demo** (`pip install -e ".[demo]"`, then `streamlit run demo/streamlit_app.py`): an offline Streamlit app that replays a run round by round, charts the Big 5 figures with the filing behind each one, and shows the sector note. `python demo/record_gif.py --out demo.gif` records a GIF of it.
 
 ```bash

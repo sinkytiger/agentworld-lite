@@ -4,6 +4,7 @@
   validate     replay reference solutions (must succeed) and idle teams (must fail)
   run          run episodes; trajectories work with `python -m agentworld_lite evaluate/report/pair-report`
   note         write an English Markdown sector note from a trajectory's submitted, cited facts (no LLM)
+  news         write a Big 5 sector risk digest from news feeds and the banks' filed figures (no LLM)
   fetch        build a company dataset from a filing source:
                  --source dart       DART OpenAPI (your own key in DART_API_KEY)
                  --source edgar      SEC EDGAR XBRL of 40-F / 6-K / 10-K / 10-Q (your contact in SEC_USER_AGENT)
@@ -75,6 +76,28 @@ def cmd_note(args) -> int:
     return 0
 
 
+def cmd_news(args) -> int:
+    from pathlib import Path
+    from .news import FEEDS, NewsError, build_digest
+    feeds = FEEDS
+    if args.feed:
+        feeds = dict(item.split("=", 1) for item in args.feed)
+    try:
+        md, items = build_digest(feeds, cache_dir=args.cache, as_of=args.as_of, days=args.days,
+                                 macro=not args.no_macro, offline=args.offline)
+    except NewsError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    if args.out:
+        Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+        with open(args.out, "w", encoding="utf-8", newline="\n") as f:
+            f.write(md)
+        print(f"wrote {args.out} ({len(items)} items in the window)")
+    else:
+        sys.stdout.write(md)
+    return 0
+
+
 def cmd_fetch(args) -> int:
     from .sources import SourceError, get_source
     prices = {}
@@ -139,6 +162,16 @@ def main(argv=None) -> int:
     n.add_argument("--out", help="Markdown file to write (default: print)")
     n.add_argument("--allow-failed", action="store_true", help="also write a note when some answers are wrong")
 
+    w = sub.add_parser("news", help="write a Big 5 sector risk digest from news feeds and filed figures (no LLM)")
+    w.add_argument("--out", help="Markdown file to write (default: print)")
+    w.add_argument("--cache", default="data/finance/cache/news",
+                   help="parsed feed items and Valet data (never raw feeds); keep it out of synced folders")
+    w.add_argument("--as-of", default=None, help="YYYY-MM-DD, default today")
+    w.add_argument("--days", type=int, default=14, help="news window ending on the as-of date")
+    w.add_argument("--offline", action="store_true", help="use the cache only; fetch nothing")
+    w.add_argument("--no-macro", action="store_true", help="skip the Bank of Canada Valet series")
+    w.add_argument("--feed", nargs="+", metavar="NAME=URL", help="replace the default feeds")
+
     f = sub.add_parser("fetch", help="build company datasets from DART, EDGAR or hand-checked local documents")
     f.add_argument("--source", choices=["dart", "edgar", "local_pdf", "sedar_dds"], default="dart")
     f.add_argument("--company", nargs="+", help="DART: stock code or exact name; EDGAR: ticker (RY), CIK or exact name")
@@ -161,7 +194,7 @@ def main(argv=None) -> int:
             ap.error("--model is required with --provider ollama (e.g. llama3.2:3b or gemma4:cloud)")
         args.model = DEFAULT_MODEL
     return {"make-tasks": cmd_make_tasks, "validate": cmd_validate, "run": cmd_run, "note": cmd_note,
-            "fetch": cmd_fetch}[args.cmd](args)
+            "news": cmd_news, "fetch": cmd_fetch}[args.cmd](args)
 
 
 if __name__ == "__main__":

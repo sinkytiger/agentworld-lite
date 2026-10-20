@@ -113,21 +113,36 @@ def figure(env: FinanceEnv, fid: str) -> str:
     return f"{fmt_figure(f.value, f.unit)} {cite(env, fid)}"
 
 
-_CITATION = re.compile(r"\[fact `[^`]+` from [^\]]*\]")
+def cite_facts(facts: list[Fact]) -> str:
+    """Citation for a figure computed outside a desk run from dataset facts (statement or price facts)."""
+    facts = list({f.id: f for f in facts}.values())
+    wheres = list(dict.fromkeys(_where(f) for f in facts))
+    ids = ", ".join(f"`{f.id}`" for f in facts)
+    return f"[{'fact' if len(facts) == 1 else 'facts'} {ids} from {'; '.join(wheres)}]"
+
+
+def cited(value: float, unit: str, facts: list[Fact]) -> str:
+    return f"{fmt_figure(value, unit)} {cite_facts(facts)}"
+
+
+_CITATION = re.compile(r"\[facts? `[^`]+`(?:, `[^`]+`)* from [^\]]*\]")
 _CODE = re.compile(r"`[^`]*`")
 _FIGURE = re.compile(r"(?<![\w.,$-])(-?)((?:US\$|[A-Z]{1,2}\$|\$)?)((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)"
                      r"(%|x\b| pp\b| million\b| billion\b| per share\b| shares\b)?")
 
 
-def uncited_figures(markdown: str) -> list[str]:
+def uncited_figures(markdown: str, extra: tuple[str, ...] = ()) -> list[str]:
     """Figures (numbers with a currency sign, a decimal point, a thousands separator or a unit) that are not
     immediately followed by a citation. Headings, code spans and the citations themselves are skipped, so years,
-    dates, period names and fact ids do not count."""
+    dates, period names and fact ids do not count. `extra` adds citation patterns (regexes) for other sources."""
+    citations = [_CITATION, *(re.compile(p) for p in extra)]
     bad = []
     for line in markdown.splitlines():
         if line.lstrip().startswith("#"):
             continue
-        text = _CODE.sub("\x01", _CITATION.sub("\x00", line))
+        for c in citations:
+            line = c.sub("\x00", line)
+        text = _CODE.sub("\x01", line)
         for m in _FIGURE.finditer(text):
             _, currency, number, unit = m.groups()
             if not (currency or unit or "," in number or "." in number):
@@ -161,7 +176,7 @@ def _period(env: FinanceEnv, fact: Fact) -> str:
     return f"fiscal {m['year']} {m['period']}{end}" if company.lang == "en" else f"{m['year']} {m['period']}"
 
 
-def _link(company, rcept_no: str) -> str:
+def filing_link(company, rcept_no: str) -> str:
     if company.source == "EDGAR" and company.data.get("cik"):
         return f"[{rcept_no}](https://www.sec.gov/Archives/edgar/data/{int(company.data['cik'])}/{rcept_no.replace('-', '')}/)"
     if company.source == "DART":
@@ -282,7 +297,7 @@ def sector_note(traj: dict, task: Task, *, require_success: bool = True) -> str:
         for (code, rcept_no), fact in rows:
             company = env.dataset.companies[code]
             out.append(f"| {company.name} | {_period(env, fact)} | {fact.meta.get('form') or company.source} | "
-                       f"{_link(company, rcept_no)} | {fact.meta.get('filed') or 'n/a'} |")
+                       f"{filing_link(company, rcept_no)} | {fact.meta.get('filed') or 'n/a'} |")
         out.append("")
     out += [SOURCE_NOTES[s] for s in sources if s in SOURCE_NOTES]
     note = "\n".join(out).rstrip() + "\n"

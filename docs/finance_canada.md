@@ -169,6 +169,33 @@ C$5,879 million [fact `calc.ry_q3_net_income_common` from 6-K 0001193125-26-3694
 
 The note has a comparison table (per-bank answers, plus inputs taken from every bank, such as the CET1 ratios), the sector-wide answers, the derivation of each answer down to the filed figures, and a sources table that links each accession number to its EDGAR folder. Before returning, it checks its own text: every figure (a number with a currency sign, decimal point, thousands separator or unit) must be followed by a citation. Notes are written only for successful runs unless `--allow-failed` is passed, in which case each answer is marked within or outside tolerance. `--reference TASK_ID` replays the task's scripted reference solution instead of a saved run.
 
+## Sector risk digest (news)
+
+```bash
+python -m agentworld_lite.finance news --cache C:/news_cache --out digest.md
+```
+
+`agentworld_lite/finance/news.py` reads public RSS feeds and writes an as-of-dated Markdown digest, with no model. The
+default feeds are the Financial Post main, banking and economy feeds and CBC Business. CBC refused scripted requests
+from the machine this was built on, and the digest's source table says so; it stays in the list for machines where it
+answers. BNN Bloomberg has no RSS feed and is not used.
+
+- **What is kept.** Per item only the headline, link, date, feed name and the feed's own short summary (at most 280
+  characters). Article pages are never opened. Article text that a feed carries (`content:encoded`) is dropped before
+  anything is cached, and the cache (`--cache`, default `data/finance/cache/news`, gitignored) holds parsed items, not
+  raw feeds. Requests name the project in their User-Agent and pause between feeds; `--offline` uses the cache only.
+- **Tagging.** Banks by name and alias from the dataset (RBC, TD, Scotiabank, BMO, CIBC; short upper-case names only
+  as whole words, so "Nova Scotia" is not Scotiabank), the banks as a group ("Canada's biggest banks", "Big Five
+  banks"), and seven risk themes by keyword: credit and loan losses, housing and mortgages, tariffs and trade, rates
+  and the Bank of Canada, capital and CET1, regulation (OSFI, AML, fines), and restructuring or layoffs. The digest
+  prints every rule.
+- **Output.** Sources with fetch status; the Bank of Canada policy rate and 5-year yield from the free Valet API,
+  cited by series and date; theme counts per bank; the latest headlines per theme with link and date; and a paragraph
+  per bank that sets its news themes beside its filed CET1 ratio, single-quarter efficiency ratio and quarterly net
+  income to common, each cited by fact id and accession. Provision for credit losses is not in the dataset, so credit
+  themes are set beside net income.
+- **Self-check.** A digest with a filed figure that lacks a citation is refused; headline text is quoted, not checked.
+
 ## Demo
 
 ```bash
