@@ -218,10 +218,11 @@ def view_valuation(start_bank: str | None) -> None:
         st.error(str(exc))
         return
     cols = st.columns(4)
-    cols[0].metric("P/E (TTM diluted)", f"{n['pe'][bank]:.2f}x")
-    cols[1].metric("Peer median P/E", f"{n['peer_pe']['median']:.2f}x")
-    cols[2].metric("Implied by peer P/Es (C$)", f"{n['implied']['low']:.0f} to {n['implied']['high']:.0f}")
-    cols[3].metric("Close on 2026-07-31 (C$)", f"{n['price']:.2f}")
+    cols[0].metric("P/E (TTM)", f"{n['pe'][bank]:.2f}x", help="Close / trailing twelve-month diluted EPS")
+    cols[1].metric("Peer median P/E", f"{n['peer_pe']['median']:.2f}x", help="Median P/E of the other four banks")
+    cols[2].metric("Peer range (C$)", f"{n['implied']['low']:.0f}-{n['implied']['high']:.0f}",
+                   help="TTM diluted EPS times the lowest and highest P/E of the other four banks")
+    cols[3].metric("Close (C$)", f"{n['price']:.2f}", help="Closing share price on 2026-07-31, the fiscal Q3 end")
     st.caption("Educational sample, not investment advice: no rating and no target price. Every figure below cites "
                "its filing.")
     st.download_button("Download the snapshot (Markdown)", md, file_name=f"{bank.lower()}_valuation.md",
@@ -290,7 +291,8 @@ def main() -> None:
         source = st.radio("Run", ("Scripted reference", "Upload a trajectory"), horizontal=True)
         upload = st.file_uploader("Trajectory JSON from `finance run`", type="json") if source != "Scripted reference" else None
         view = st.radio("View", VIEWS, index=VIEWS.index(start_view) if start_view in VIEWS else 0)
-        st.caption("Offline: no model and no network. Data: XBRL of each bank's 40-F and 6-K on SEC EDGAR.")
+        st.caption("No model and no API key. Every view works offline except News digest, which fetches public "
+                   "headlines when asked. Data: XBRL of each bank's 40-F and 6-K on SEC EDGAR.")
 
     task, traj = all_tasks[task_id], None
     if upload is not None:

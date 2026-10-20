@@ -99,7 +99,7 @@ class Item:
 
 
 # ---------------------------------------------------------------------- feeds
-def http_get(url: str, timeout: float = 30.0) -> bytes:
+def http_get(url: str, timeout: float = 10.0) -> bytes:
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT,
                                                "Accept": "application/rss+xml, application/xml, application/json"})
     with urllib.request.urlopen(req, timeout=timeout) as resp:
