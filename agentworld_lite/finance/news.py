@@ -36,8 +36,10 @@ FEEDS = {
     "Financial Post": "https://financialpost.com/feed",
     "Financial Post Banking": "https://financialpost.com/category/fp-finance/banking/feed",
     "Financial Post Economy": "https://financialpost.com/category/news/economy/feed",
-    "CBC Business": "https://www.cbc.ca/webfeed/rss/rss-business",
 }
+# CBC Business (https://www.cbc.ca/webfeed/rss/rss-business) is not a default feed: its server answers ordinary
+# clients but lets requests that carry this tool's declared bot User-Agent time out (checked 2026-10-21). The tool
+# does not disguise its User-Agent, so CBC is left out. Pass it with --feed to try it from another machine.
 USER_AGENT = "agentworld-lite-news-digest/0.1 (+https://github.com/sinkytiger/agentworld-lite)"
 VALET_URL = "https://www.bankofcanada.ca/valet/observations/{series}/json?recent=1"
 VALET_SERIES = {"V39079": "Bank of Canada target for the overnight rate",

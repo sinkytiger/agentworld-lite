@@ -141,4 +141,4 @@ def test_news_cli_writes_a_digest_offline(tmp_path):
                          "--feed", *feeds, "--out", str(out)]) == 0
     raw = out.read_bytes()
     assert b"\r\n" not in raw and b"# Big 5 Canadian banks: sector risk digest, 2026-10-20" in raw
-    assert set(FEEDS) >= {"Financial Post", "CBC Business"}
+    assert "Financial Post" in FEEDS and "CBC Business" not in FEEDS  # CBC ignores the declared bot User-Agent

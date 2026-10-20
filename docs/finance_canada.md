@@ -178,9 +178,10 @@ python -m agentworld_lite.finance news --cache C:/news_cache --out digest.md
 ```
 
 `agentworld_lite/finance/news.py` reads public RSS feeds and writes an as-of-dated Markdown digest, with no model. The
-default feeds are the Financial Post main, banking and economy feeds and CBC Business. CBC refused scripted requests
-from the machine this was built on, and the digest's source table says so; it stays in the list for machines where it
-answers. BNN Bloomberg has no RSS feed and is not used.
+default feeds are the Financial Post main, banking and economy feeds. CBC Business is not a default: its server
+answers ordinary clients but lets requests that carry this tool's declared bot User-Agent time out (checked
+2026-10-21), and the tool does not disguise its User-Agent. It can still be tried with `--feed`. BNN Bloomberg has no
+RSS feed and is not used.
 
 - **What is kept.** Per item only the headline, link, date, feed name and the feed's own short summary (at most 280
   characters). Article pages are never opened. Article text that a feed carries (`content:encoded`) is dropped before

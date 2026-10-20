@@ -237,7 +237,7 @@ def live_digest(as_of: str) -> str:
 
 
 def view_news() -> None:
-    st.markdown("A sector risk digest built by fixed rules from public RSS headlines (Financial Post, CBC Business) "
+    st.markdown("A sector risk digest built by fixed rules from public RSS headlines (Financial Post) "
                 "and the Bank of Canada Valet API, set beside each bank's filed figures. Only the headline, link, "
                 "date and the feed's short summary are read; article pages are never opened. Results are cached for "
                 "an hour.")
