@@ -386,8 +386,8 @@ FHC_H1 = {"105560": (3_884_590, 1_892_401, 60_890_838, 4_206_721), "055550": (3_
 FHC_COST = {"055550": ((1_545_405, 2_154_453, 520_112), (3_216_096, 4_630_734, 976_425)),
             "316140": ((1_422_809, 808_155, 526_782), (2_632_856, 2_123_827, 966_025))}
 KB_TTM = 5_833_162 - 3_435_693 + 3_884_590          # FY 2025 - H1 2025 + H1 2026 net income to owners
-KB_SHARES = 354_687_734                               # issued common shares at 2026-06-30 (treasury 1,300,000)
-KB_PRICE_DATE = "2026-06-30"
+KB_CE_PREV = 59_069_434 - 5_162_483                   # common equity at 2025-06-30 (owners' equity - hybrid capital)
+KB_SHARES = (354_687_734, 1_300_000)                  # issued common and treasury common shares at 2026-06-30
 
 
 def _cir(code: str) -> float:
@@ -403,43 +403,46 @@ def _kr_inputs(code: str, *names: str) -> list[str]:
     return [f"{code}.{n}" for n in names]
 
 
-def _k01(price: float) -> dict:
+# k01 is built from filings alone. The Korean desk uses no market prices: DART has none, and the KRX Open API's terms
+# forbid passing its data to third parties, so PER and PBR are left out; BPS and ROE need no price.
+def _k01() -> dict:
     kb = FHC["kb"]
-    mcap = price * KB_SHARES
+    ce = _common_equity(kb)
     return {
-        "pair": "k01", "slug": "kb_per_pbr", "max_rounds": 18, "market": "kr_fhc",
+        "pair": "k01", "slug": "kb_bps_roe", "max_rounds": 18, "market": "kr_fhc",
         "company": "KB금융",
-        "name": "Trailing PER and PBR of KB금융 at the end of 2026 H1",
-        "name_ko": "KB금융 TTM PER·PBR (2026년 상반기 말)",
-        "description_ko": ("KB금융(105560)의 2026년 상반기 말(2026-06-30) 기준 TTM PER과 PBR을 2026-10-15까지 접수된 "
-                           "보고서만으로 구합니다. collector가 공시를 모으고 analyst가 계산하며 reporter가 제출합니다."),
-        "description": ("The desk needs the trailing twelve-month (TTM) PER and the PBR of KB금융 (KB Financial Group, stock "
-                        "code 105560) at the end of 2026 H1 (2026-06-30), using only reports filed by 2026-10-15. The "
-                        "collector pulls filings, the analyst computes, the reporter submits."),
+        "name": "BPS and trailing ROE of KB금융 at the end of 2026 H1",
+        "name_ko": "KB금융 BPS·TTM ROE (2026년 상반기 말)",
+        "description_ko": ("KB금융(105560)의 2026년 상반기 말(2026-06-30) 기준 주당순자산(BPS)과 TTM ROE를 2026-10-15까지 "
+                           "접수된 보고서만으로 구합니다. collector가 공시를 모으고 analyst가 계산하며 reporter가 제출합니다."),
+        "description": ("The desk needs the book value per share (BPS) and the trailing twelve-month (TTM) return on equity "
+                        "of KB금융 (KB Financial Group, stock code 105560) at the end of 2026 H1 (2026-06-30), using only "
+                        "reports filed by 2026-10-15. The collector pulls filings, the analyst computes, the reporter submits."),
         "primary": ("Submit three answers: ttm_net_income_owners (TTM net income attributable to owners of the parent, in "
-                    "KRW), per (market capitalization divided by ttm_net_income_owners, as a multiple such as 6.5) and pbr "
-                    "(market capitalization divided by common equity at 2026-06-30, as a multiple such as 0.65)."),
+                    "KRW), bps (common equity per common share outstanding at 2026-06-30, in KRW) and ttm_roe "
+                    "(ttm_net_income_owners divided by average common equity, in percent, e.g. 9.5 for 9.5%)."),
         "facts": {
             "analyst": [
                 "TTM = latest fiscal-year (FY) figure - prior-year cumulative figure for the same period as the latest "
                 "report + latest cumulative figure. For an H1 report: FY(2025) - H1(2025) + H1(2026).",
                 "Net income means net_income_owners (attributable to owners of the parent) from consolidated (CFS) statements.",
-                "Market capitalization = closing price x issued common shares from the latest report (do not subtract "
-                "treasury shares; KB금융 has no preferred shares).",
-                "PBR = market capitalization / common equity, where common equity = equity_owners - hybrid_capital "
-                "(hybrid capital securities, 신종자본증권, are not common shareholders' equity), both from the 2026 H1 "
-                "CFS balance sheet.",
+                "Common equity = equity_owners - hybrid_capital (hybrid capital securities, 신종자본증권, are part of "
+                "owners' equity but not common shareholders' equity), from the CFS balance sheet.",
+                "BPS = common equity at 2026-06-30 / common shares outstanding, where shares outstanding = issued common "
+                "shares - treasury common shares from the 2026 H1 report (KB금융 has no preferred shares).",
+                "TTM ROE (%) = TTM net income / average common equity x 100, where average common equity = (common equity "
+                "at 2025-06-30 + common equity at 2026-06-30) / 2. Do not annualize half-year or quarterly figures.",
                 "The latest report filed by 2026-10-15 is the 2026 H1 report, so the inputs are the 2025 FY, 2025 H1 and "
                 "2026 H1 CFS reports and the 2026 H1 share counts.",
             ],
-            "reporter": ["The reporter holds KB금융's KRX closing price of 2026-06-30 from the market-data desk."],
         },
-        "initial": {"reporter": [{"price_of": kb, "date": KB_PRICE_DATE}]},
+        "initial": {},
         "checkpoints": [
             {"type": "answer", "name": "ttm_net_income_owners", "field": "ttm_net_income_owners", "expected": KB_TTM * M,
              "rel_tol": 0.001},
-            {"type": "answer", "name": "per", "field": "per", "expected": round(mcap / (KB_TTM * M), 6), "rel_tol": 0.001},
-            {"type": "answer", "name": "pbr", "field": "pbr", "expected": round(mcap / (_common_equity(kb) * M), 6),
+            {"type": "answer", "name": "bps", "field": "bps", "expected": round(ce * M / (KB_SHARES[0] - KB_SHARES[1]), 6),
+             "rel_tol": 0.001},
+            {"type": "answer", "name": "ttm_roe", "field": "ttm_roe", "expected": round(KB_TTM / ((KB_CE_PREV + ce) / 2) * 100, 6),
              "rel_tol": 0.001},
         ],
         "reference": {
@@ -450,32 +453,34 @@ def _k01(price: float) -> dict:
                 ["fetch_shares", {"company": kb, "year": 2026, "period": "H1"}],
                 ["share_facts", {"to_agent": "analyst", "fact_ids": _kr_inputs(
                     kb, "2025FY.CFS.net_income_owners", "2025H1.CFS.net_income_owners", "2026H1.CFS.net_income_owners",
-                    "2026H1.CFS.equity_owners", "2026H1.CFS.hybrid_capital", "2026H1.shares_common")}],
+                    "2025H1.CFS.equity_owners", "2025H1.CFS.hybrid_capital", "2026H1.CFS.equity_owners",
+                    "2026H1.CFS.hybrid_capital", "2026H1.shares_common", "2026H1.shares_treasury_common")}],
             ],
             "analyst": [
                 ["wait", {"reason": "waiting for inputs"},
-                 {"until_have": {f"{kb}.2026H1.shares_common": 1, f"{kb}.price.{KB_PRICE_DATE}": 1}, "retries": 30}],
+                 {"until_have": {f"{kb}.2026H1.shares_treasury_common": 1}, "retries": 30}],
                 ["calculate", {"name": "ttm_net_income_owners", "formula": "fy - h1_prev + h1", "unit": "KRW",
                                "inputs": _inputs(fy=f"{kb}.2025FY.CFS.net_income_owners",
                                                  h1_prev=f"{kb}.2025H1.CFS.net_income_owners",
                                                  h1=f"{kb}.2026H1.CFS.net_income_owners")}],
-                ["calculate", {"name": "market_cap", "formula": "p * s", "unit": "KRW",
-                               "inputs": _inputs(p=f"{kb}.price.{KB_PRICE_DATE}", s=f"{kb}.2026H1.shares_common")}],
-                ["calculate", {"name": "per", "formula": "m / n", "unit": "x",
-                               "inputs": _inputs(m="calc.market_cap", n="calc.ttm_net_income_owners")}],
                 ["calculate", {"name": "common_equity", "formula": "e - h", "unit": "KRW",
                                "inputs": _inputs(e=f"{kb}.2026H1.CFS.equity_owners", h=f"{kb}.2026H1.CFS.hybrid_capital")}],
-                ["calculate", {"name": "pbr", "formula": "m / e", "unit": "x",
-                               "inputs": _inputs(m="calc.market_cap", e="calc.common_equity")}],
-                ["share_facts", {"to_agent": "reporter", "fact_ids": ["calc.ttm_net_income_owners", "calc.per", "calc.pbr"]}],
+                ["calculate", {"name": "common_equity_prev", "formula": "e - h", "unit": "KRW",
+                               "inputs": _inputs(e=f"{kb}.2025H1.CFS.equity_owners", h=f"{kb}.2025H1.CFS.hybrid_capital")}],
+                ["calculate", {"name": "bps", "formula": "c / (s - t)", "unit": "KRW",
+                               "inputs": _inputs(c="calc.common_equity", s=f"{kb}.2026H1.shares_common",
+                                                 t=f"{kb}.2026H1.shares_treasury_common")}],
+                ["calculate", {"name": "ttm_roe", "formula": "n / ((c0 + c1) / 2) * 100", "unit": "%",
+                               "inputs": _inputs(n="calc.ttm_net_income_owners", c0="calc.common_equity_prev",
+                                                 c1="calc.common_equity")}],
+                ["share_facts", {"to_agent": "reporter", "fact_ids": ["calc.ttm_net_income_owners", "calc.bps", "calc.ttm_roe"]}],
             ],
             "reporter": [
-                ["share_facts", {"to_agent": "analyst", "fact_ids": [f"{kb}.price.{KB_PRICE_DATE}"]}],
                 ["wait", {"reason": "waiting for results"},
-                 {"until_have": {"calc.per": 1, "calc.pbr": 1, "calc.ttm_net_income_owners": 1}, "retries": 30}],
+                 {"until_have": {"calc.bps": 1, "calc.ttm_roe": 1, "calc.ttm_net_income_owners": 1}, "retries": 30}],
                 ["submit_answer", {"answers": [{"field": "ttm_net_income_owners", "fact_id": "calc.ttm_net_income_owners"},
-                                               {"field": "per", "fact_id": "calc.per"},
-                                               {"field": "pbr", "fact_id": "calc.pbr"}]}],
+                                               {"field": "bps", "fact_id": "calc.bps"},
+                                               {"field": "ttm_roe", "fact_id": "calc.ttm_roe"}]}],
             ],
         },
     }
@@ -627,20 +632,7 @@ K03 = {
 }
 
 
-def kb_close(data_dir: str | Path | None = None) -> float | None:
-    """KB금융's KRX close on 2026-06-30 from the dataset, if it was added with its source (fetch --price/--price-source)."""
-    path = Path(data_dir) if data_dir else Path(__file__).resolve().parents[2] / "data" / "finance" / "dart_fhc"
-    f = path / f"{FHC['kb']}.json"
-    if not f.exists():
-        return None
-    import json
-    data = json.loads(f.read_text(encoding="utf-8"))
-    price = (data.get("prices") or {}).get(KB_PRICE_DATE)
-    return price if price is not None and (data.get("price_sources") or {}).get(KB_PRICE_DATE) else None
-
-
-# k01 needs KB금융's closing price, which is not in DART; it is built only when the dataset carries a sourced price.
-SPECS_KR_FHC = [*([_k01(kb_close())] if kb_close() else []), K02, K03]
+SPECS_KR_FHC = [_k01(), K02, K03]
 
 
 MARKETS = {

@@ -9,6 +9,10 @@ a simple ROE (TTM net income to owners / period-end common equity) and the cost-
 banks are compared on P/B against ROE, so the subject's common equity times the peers' lowest, median and highest PBR
 gives the market-capitalization range those multiples imply. Every number cites its fact ids and DART receipt numbers.
 An educational sample (교육용 예시·투자 권유 아님): no rating, no target price, not investment advice.
+
+The Korean desk is DART-only and the repository ships no prices: DART has no market data, and the KRX Open API's terms
+forbid passing its data to third parties. So the snapshot is off by default and refuses to run until a close with its
+source is in the dataset for every group; `prices_ready` tells callers (the demo) whether it can run.
 """
 
 from __future__ import annotations
@@ -42,7 +46,8 @@ def group_metrics(ds: Dataset, code: str, as_of: str, year: int = 2026, price_da
         raise ValuationError(f"{code}: no {year} H1 share count filed by {as_of}")
     price = price_fact(c, price_date)
     if price is None or not (c.data.get("price_sources") or {}).get(price_date):
-        raise ValuationError(f"{code}: no KRX close for {price_date} with its source; add it with "
+        raise ValuationError(f"{code}: no KRX close for {price_date} with its source. The Korean desk uses DART filings "
+                             "only and ships no prices, so this snapshot is off until you add one: "
                              f"fetch --source dart --profile fhc --company {code} --price {code}@{price_date}=<close> "
                              "--price-source \"<where it comes from>\"")
     fy, prev, q1, h1 = facts[(year - 1, "FY")], facts[(year - 1, "H1")], facts[(year, "Q1")], facts[(year, "H1")]
@@ -68,6 +73,13 @@ def group_metrics(ds: Dataset, code: str, as_of: str, year: int = 2026, price_da
         "roe": (ttm / ce * 100, "%", [*ni, *eq]),
         "cir": (q2["general_admin_expense"] / sum(q2.values()) * 100, "%", cost),
     }
+
+
+def prices_ready(data_dir: str | Path | None = None, price_date: str = PRICE_DATE) -> bool:
+    """True when every group has a close for `price_date` with its source, so snapshot_ko can run."""
+    ds = Dataset(Path(data_dir) if data_dir else REPO_ROOT / "data" / "finance" / "dart_fhc")
+    return all(c in ds.companies and ds.companies[c].price(price_date) is not None
+               and (ds.companies[c].data.get("price_sources") or {}).get(price_date) for c in CODES)
 
 
 def _median(rows: list[tuple]) -> tuple:
