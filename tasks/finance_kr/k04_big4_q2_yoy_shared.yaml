@@ -1,0 +1,316 @@
+id: k04_big4_q2_yoy_shared
+name: 'Korea''s four financial holding companies: year-on-year growth of Q2 2026 earnings'
+name_ko: 4대 금융지주 2026년 2분기 지배주주순이익 전년 대비 증가율
+description_ko: 4대 금융지주(KB금융 105560, 신한지주 055550, 하나금융지주 086790, 우리금융지주 316140)의 2026년 2분기(4~6월) 단독 지배주주순이익이 2025년 같은 분기보다
+  얼마나 늘었는지, 네 그룹을 합치면 얼마나 늘었는지를 2026-10-15까지 접수된 보고서만으로 구합니다. 보고서 16개가 필요한 긴 과제입니다.
+category: finance
+domain: finance
+world_guide: false
+description: The desk measures how much each of Korea's four largest financial holding companies, KB금융 (105560), 신한지주 (055550),
+  하나금융지주 (086790) and 우리금융지주 (316140), grew its earnings in the second quarter of 2026 alone (April-June) against the same
+  quarter of 2025, and how much the four grew together, using only reports filed by 2026-10-15. The collector pulls filings,
+  the analyst computes, the reporter submits.
+objectives:
+  primary: 'Submit five answers: kb_q2_yoy_growth, shinhan_q2_yoy_growth, hana_q2_yoy_growth and woori_q2_yoy_growth (each
+    group''s year-on-year growth of net income attributable to owners for that single quarter, in percent, e.g. 12.5 for +12.5%),
+    and sector_q2_yoy_growth (the same growth for the four groups together, in percent).'
+  secondary:
+  - Use as few rounds as possible.
+max_rounds: 28
+inputs:
+  as_of: '2026-10-15'
+  company: KB금융; 신한지주; 하나금융지주; 우리금융지주
+data:
+  dir: data/finance/dart_fhc
+matched:
+  pair_id: k04
+  placement: shared
+  fact_counts:
+    analyst: 5
+relevant_game_context: '- Common traps: consolidated (CFS) vs separate (OFS) statements, net income vs net income attributable
+  to owners, equity attributable to owners vs common equity (hybrid capital securities, 신종자본증권, sit in owners'' equity), cumulative
+  vs single-quarter figures, issued vs treasury shares, and reports filed after the as-of date (for an amended report DART
+  serves the amended version, with its later filing date).
+
+  - Report figures are cumulative from January, so a standalone Q2 figure = H1 cumulative - Q1 cumulative, for 2025 and for
+  2026.
+
+  - Net income means net_income_owners (attributable to owners of the parent) from consolidated (CFS) statements.
+
+  - Year-on-year growth (%) = (Q2 2026 / Q2 2025 - 1) x 100.
+
+  - sector_q2_yoy_growth treats the four groups as one combined group.
+
+  - The inputs are each group''s 2025 Q1, 2025 H1, 2026 Q1 and 2026 H1 CFS reports.'
+agents:
+- username: collector
+  role: data collector
+  restricted_tools:
+  - calculate
+  - submit_answer
+- username: analyst
+  role: analyst
+  restricted_tools:
+  - fetch_financials
+  - fetch_shares
+  - submit_answer
+- username: reporter
+  role: reporter
+  restricted_tools:
+  - fetch_financials
+  - fetch_shares
+  - calculate
+verifier:
+  checkpoints:
+  - type: answer
+    name: kb_q2_yoy_growth
+    field: kb_q2_yoy_growth
+    expected: 14.597549
+    rel_tol: 0.001
+  - type: answer
+    name: shinhan_q2_yoy_growth
+    field: shinhan_q2_yoy_growth
+    expected: 17.499853
+    rel_tol: 0.001
+  - type: answer
+    name: hana_q2_yoy_growth
+    field: hana_q2_yoy_growth
+    expected: 1.665152
+    rel_tol: 0.001
+  - type: answer
+    name: woori_q2_yoy_growth
+    field: woori_q2_yoy_growth
+    expected: 7.40382
+    rel_tol: 0.001
+  - type: answer
+    name: sector_q2_yoy_growth
+    field: sector_q2_yoy_growth
+    expected: 11.371866
+    rel_tol: 0.001
+reference_solution:
+  collector:
+  - - fetch_financials
+    - company: '105560'
+      year: 2025
+      period: Q1
+      basis: CFS
+  - - fetch_financials
+    - company: '105560'
+      year: 2025
+      period: H1
+      basis: CFS
+  - - fetch_financials
+    - company: '105560'
+      year: 2026
+      period: Q1
+      basis: CFS
+  - - fetch_financials
+    - company: '105560'
+      year: 2026
+      period: H1
+      basis: CFS
+  - - fetch_financials
+    - company: '055550'
+      year: 2025
+      period: Q1
+      basis: CFS
+  - - fetch_financials
+    - company: '055550'
+      year: 2025
+      period: H1
+      basis: CFS
+  - - fetch_financials
+    - company: '055550'
+      year: 2026
+      period: Q1
+      basis: CFS
+  - - fetch_financials
+    - company: '055550'
+      year: 2026
+      period: H1
+      basis: CFS
+  - - fetch_financials
+    - company: 086790
+      year: 2025
+      period: Q1
+      basis: CFS
+  - - fetch_financials
+    - company: 086790
+      year: 2025
+      period: H1
+      basis: CFS
+  - - fetch_financials
+    - company: 086790
+      year: 2026
+      period: Q1
+      basis: CFS
+  - - fetch_financials
+    - company: 086790
+      year: 2026
+      period: H1
+      basis: CFS
+  - - fetch_financials
+    - company: '316140'
+      year: 2025
+      period: Q1
+      basis: CFS
+  - - fetch_financials
+    - company: '316140'
+      year: 2025
+      period: H1
+      basis: CFS
+  - - fetch_financials
+    - company: '316140'
+      year: 2026
+      period: Q1
+      basis: CFS
+  - - fetch_financials
+    - company: '316140'
+      year: 2026
+      period: H1
+      basis: CFS
+  - - share_facts
+    - to_agent: analyst
+      fact_ids:
+      - 105560.2025Q1.CFS.net_income_owners
+      - 105560.2025H1.CFS.net_income_owners
+      - 105560.2026Q1.CFS.net_income_owners
+      - 105560.2026H1.CFS.net_income_owners
+      - 055550.2025Q1.CFS.net_income_owners
+      - 055550.2025H1.CFS.net_income_owners
+      - 055550.2026Q1.CFS.net_income_owners
+      - 055550.2026H1.CFS.net_income_owners
+      - 086790.2025Q1.CFS.net_income_owners
+      - 086790.2025H1.CFS.net_income_owners
+      - 086790.2026Q1.CFS.net_income_owners
+      - 086790.2026H1.CFS.net_income_owners
+      - 316140.2025Q1.CFS.net_income_owners
+      - 316140.2025H1.CFS.net_income_owners
+      - 316140.2026Q1.CFS.net_income_owners
+      - 316140.2026H1.CFS.net_income_owners
+  analyst:
+  - - wait
+    - reason: waiting for inputs
+    - until_have:
+        316140.2026H1.CFS.net_income_owners: 1
+      retries: 40
+  - - calculate
+    - name: kb_q2_yoy_growth
+      formula: ((h26 - q26) / (h25 - q25) - 1) * 100
+      unit: '%'
+      inputs:
+      - var: q25
+        fact_id: 105560.2025Q1.CFS.net_income_owners
+      - var: h25
+        fact_id: 105560.2025H1.CFS.net_income_owners
+      - var: q26
+        fact_id: 105560.2026Q1.CFS.net_income_owners
+      - var: h26
+        fact_id: 105560.2026H1.CFS.net_income_owners
+  - - calculate
+    - name: shinhan_q2_yoy_growth
+      formula: ((h26 - q26) / (h25 - q25) - 1) * 100
+      unit: '%'
+      inputs:
+      - var: q25
+        fact_id: 055550.2025Q1.CFS.net_income_owners
+      - var: h25
+        fact_id: 055550.2025H1.CFS.net_income_owners
+      - var: q26
+        fact_id: 055550.2026Q1.CFS.net_income_owners
+      - var: h26
+        fact_id: 055550.2026H1.CFS.net_income_owners
+  - - calculate
+    - name: hana_q2_yoy_growth
+      formula: ((h26 - q26) / (h25 - q25) - 1) * 100
+      unit: '%'
+      inputs:
+      - var: q25
+        fact_id: 086790.2025Q1.CFS.net_income_owners
+      - var: h25
+        fact_id: 086790.2025H1.CFS.net_income_owners
+      - var: q26
+        fact_id: 086790.2026Q1.CFS.net_income_owners
+      - var: h26
+        fact_id: 086790.2026H1.CFS.net_income_owners
+  - - calculate
+    - name: woori_q2_yoy_growth
+      formula: ((h26 - q26) / (h25 - q25) - 1) * 100
+      unit: '%'
+      inputs:
+      - var: q25
+        fact_id: 316140.2025Q1.CFS.net_income_owners
+      - var: h25
+        fact_id: 316140.2025H1.CFS.net_income_owners
+      - var: q26
+        fact_id: 316140.2026Q1.CFS.net_income_owners
+      - var: h26
+        fact_id: 316140.2026H1.CFS.net_income_owners
+  - - calculate
+    - name: sector_q2_yoy_growth
+      formula: ((kb_h26 - kb_q26 + shinhan_h26 - shinhan_q26 + hana_h26 - hana_q26 + woori_h26 - woori_q26) / (kb_h25 - kb_q25
+        + shinhan_h25 - shinhan_q25 + hana_h25 - hana_q25 + woori_h25 - woori_q25) - 1) * 100
+      unit: '%'
+      inputs:
+      - var: kb_q25
+        fact_id: 105560.2025Q1.CFS.net_income_owners
+      - var: kb_h25
+        fact_id: 105560.2025H1.CFS.net_income_owners
+      - var: kb_q26
+        fact_id: 105560.2026Q1.CFS.net_income_owners
+      - var: kb_h26
+        fact_id: 105560.2026H1.CFS.net_income_owners
+      - var: shinhan_q25
+        fact_id: 055550.2025Q1.CFS.net_income_owners
+      - var: shinhan_h25
+        fact_id: 055550.2025H1.CFS.net_income_owners
+      - var: shinhan_q26
+        fact_id: 055550.2026Q1.CFS.net_income_owners
+      - var: shinhan_h26
+        fact_id: 055550.2026H1.CFS.net_income_owners
+      - var: hana_q25
+        fact_id: 086790.2025Q1.CFS.net_income_owners
+      - var: hana_h25
+        fact_id: 086790.2025H1.CFS.net_income_owners
+      - var: hana_q26
+        fact_id: 086790.2026Q1.CFS.net_income_owners
+      - var: hana_h26
+        fact_id: 086790.2026H1.CFS.net_income_owners
+      - var: woori_q25
+        fact_id: 316140.2025Q1.CFS.net_income_owners
+      - var: woori_h25
+        fact_id: 316140.2025H1.CFS.net_income_owners
+      - var: woori_q26
+        fact_id: 316140.2026Q1.CFS.net_income_owners
+      - var: woori_h26
+        fact_id: 316140.2026H1.CFS.net_income_owners
+  - - share_facts
+    - to_agent: reporter
+      fact_ids:
+      - calc.kb_q2_yoy_growth
+      - calc.shinhan_q2_yoy_growth
+      - calc.hana_q2_yoy_growth
+      - calc.woori_q2_yoy_growth
+      - calc.sector_q2_yoy_growth
+  reporter:
+  - - wait
+    - reason: waiting for results
+    - until_have:
+        calc.sector_q2_yoy_growth: 1
+        calc.kb_q2_yoy_growth: 1
+        calc.shinhan_q2_yoy_growth: 1
+        calc.hana_q2_yoy_growth: 1
+        calc.woori_q2_yoy_growth: 1
+      retries: 40
+  - - submit_answer
+    - answers:
+      - field: kb_q2_yoy_growth
+        fact_id: calc.kb_q2_yoy_growth
+      - field: shinhan_q2_yoy_growth
+        fact_id: calc.shinhan_q2_yoy_growth
+      - field: hana_q2_yoy_growth
+        fact_id: calc.hana_q2_yoy_growth
+      - field: woori_q2_yoy_growth
+        fact_id: calc.woori_q2_yoy_growth
+      - field: sector_q2_yoy_growth
+        fact_id: calc.sector_q2_yoy_growth

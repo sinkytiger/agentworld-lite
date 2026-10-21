@@ -15,6 +15,7 @@ PRICING = {
     "claude-opus-5": (5.0, 25.0, 0.50),
     "claude-sonnet-5-5": (2.0, 10.0, 0.20),
     "claude-sonnet-5": (2.0, 10.0, 0.20),
+    "claude-haiku-5-5": (0.10, 0.50, 0.01),  # prompts up to 100K tokens; cache reads assumed at 0.1x input
     "claude-haiku-4-5": (1.0, 5.0, 0.10),
 }
 
@@ -25,6 +26,7 @@ MODEL_CAPS = {
     "claude-opus-5": {"effort": True, "fallbacks": True},
     "claude-sonnet-5-5": {"effort": True, "fallbacks": True},
     "claude-sonnet-5": {"effort": True, "fallbacks": False},
+    "claude-haiku-5-5": {"effort": True, "fallbacks": False},  # no server-side refusal fallback
     "claude-haiku-4-5": {"effort": False, "fallbacks": False},
 }
 FALLBACK_BETA = "server-side-fallback-2026-07-01"

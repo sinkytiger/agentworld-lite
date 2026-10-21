@@ -1,0 +1,217 @@
+id: k05_big4_combined_cir_shared
+name: 'Korea''s four financial holding companies: combined cost-to-income ratio'
+name_ko: 4대 금융지주 합산 영업이익경비율(CIR)과 그룹 간 격차
+description_ko: 4대 금융지주를 하나로 합친 영업이익경비율(CIR)과, 가장 효율적인 그룹과 가장 비효율적인 그룹의 CIR 차이를 2026-10-15에 볼 수 있는 가장 최근 보고 기간으로 구합니다. 어떤
+  보고서를 쓸지는 알려 주지 않습니다.
+category: finance
+domain: finance
+world_guide: false
+description: The desk needs the cost-to-income ratio of Korea's four largest financial holding companies, KB금융 (105560), 신한지주
+  (055550), 하나금융지주 (086790) and 우리금융지주 (316140), taken together, and the gap between the most and the least efficient of them,
+  for the latest reporting period available on 2026-10-15. The collector pulls filings, the analyst computes, the reporter
+  submits.
+objectives:
+  primary: 'Submit two answers: sector_cost_income_ratio (the cost-to-income ratio of the four groups as one, in percent,
+    e.g. 40.0 for 40.0%) and cost_income_spread_pp (the highest of the four groups'' ratios minus the lowest, in percentage
+    points, e.g. 5.0).'
+  secondary:
+  - Use as few rounds as possible.
+max_rounds: 14
+inputs:
+  as_of: '2026-10-15'
+  company: KB금융; 신한지주; 하나금융지주; 우리금융지주
+data:
+  dir: data/finance/dart_fhc
+matched:
+  pair_id: k05
+  placement: shared
+  fact_counts:
+    analyst: 3
+relevant_game_context: '- Common traps: consolidated (CFS) vs separate (OFS) statements, net income vs net income attributable
+  to owners, equity attributable to owners vs common equity (hybrid capital securities, 신종자본증권, sit in owners'' equity), cumulative
+  vs single-quarter figures, issued vs treasury shares, and reports filed after the as-of date (for an amended report DART
+  serves the amended version, with its later filing date).
+
+  - Cost-to-income ratio (%) = general_admin_expense / operating revenue x 100, where operating revenue (총영업이익, income before
+  G&A and credit-loss provisions) = operating_income + general_admin_expense + credit_loss_provision, all from consolidated
+  (CFS) statements.
+
+  - Use the latest reporting period whose reports were filed by the as-of date, with the figures as reported (cumulative from
+  January).
+
+  - sector_cost_income_ratio treats the four groups as one combined group; cost_income_spread_pp is the highest of the four
+  groups'' ratios minus the lowest.'
+agents:
+- username: collector
+  role: data collector
+  restricted_tools:
+  - calculate
+  - submit_answer
+- username: analyst
+  role: analyst
+  restricted_tools:
+  - fetch_financials
+  - fetch_shares
+  - submit_answer
+- username: reporter
+  role: reporter
+  restricted_tools:
+  - fetch_financials
+  - fetch_shares
+  - calculate
+verifier:
+  checkpoints:
+  - type: answer
+    name: sector_cost_income_ratio
+    field: sector_cost_income_ratio
+    expected: 38.617413
+    rel_tol: 0.001
+  - type: answer
+    name: cost_income_spread_pp
+    field: cost_income_spread_pp
+    expected: 9.851934
+    rel_tol: 0.001
+reference_solution:
+  collector:
+  - - fetch_financials
+    - company: '105560'
+      year: 2026
+      period: H1
+      basis: CFS
+  - - fetch_financials
+    - company: '055550'
+      year: 2026
+      period: H1
+      basis: CFS
+  - - fetch_financials
+    - company: 086790
+      year: 2026
+      period: H1
+      basis: CFS
+  - - fetch_financials
+    - company: '316140'
+      year: 2026
+      period: H1
+      basis: CFS
+  - - share_facts
+    - to_agent: analyst
+      fact_ids:
+      - 105560.2026H1.CFS.general_admin_expense
+      - 105560.2026H1.CFS.operating_income
+      - 105560.2026H1.CFS.credit_loss_provision
+      - 055550.2026H1.CFS.general_admin_expense
+      - 055550.2026H1.CFS.operating_income
+      - 055550.2026H1.CFS.credit_loss_provision
+      - 086790.2026H1.CFS.general_admin_expense
+      - 086790.2026H1.CFS.operating_income
+      - 086790.2026H1.CFS.credit_loss_provision
+      - 316140.2026H1.CFS.general_admin_expense
+      - 316140.2026H1.CFS.operating_income
+      - 316140.2026H1.CFS.credit_loss_provision
+  analyst:
+  - - wait
+    - reason: waiting for inputs
+    - until_have:
+        316140.2026H1.CFS.credit_loss_provision: 1
+      retries: 30
+  - - calculate
+    - name: kb_cost_income_ratio
+      formula: g / (o + g + p) * 100
+      unit: '%'
+      inputs:
+      - var: g
+        fact_id: 105560.2026H1.CFS.general_admin_expense
+      - var: o
+        fact_id: 105560.2026H1.CFS.operating_income
+      - var: p
+        fact_id: 105560.2026H1.CFS.credit_loss_provision
+  - - calculate
+    - name: shinhan_cost_income_ratio
+      formula: g / (o + g + p) * 100
+      unit: '%'
+      inputs:
+      - var: g
+        fact_id: 055550.2026H1.CFS.general_admin_expense
+      - var: o
+        fact_id: 055550.2026H1.CFS.operating_income
+      - var: p
+        fact_id: 055550.2026H1.CFS.credit_loss_provision
+  - - calculate
+    - name: hana_cost_income_ratio
+      formula: g / (o + g + p) * 100
+      unit: '%'
+      inputs:
+      - var: g
+        fact_id: 086790.2026H1.CFS.general_admin_expense
+      - var: o
+        fact_id: 086790.2026H1.CFS.operating_income
+      - var: p
+        fact_id: 086790.2026H1.CFS.credit_loss_provision
+  - - calculate
+    - name: woori_cost_income_ratio
+      formula: g / (o + g + p) * 100
+      unit: '%'
+      inputs:
+      - var: g
+        fact_id: 316140.2026H1.CFS.general_admin_expense
+      - var: o
+        fact_id: 316140.2026H1.CFS.operating_income
+      - var: p
+        fact_id: 316140.2026H1.CFS.credit_loss_provision
+  - - calculate
+    - name: sector_cost_income_ratio
+      formula: (kb_g + shinhan_g + hana_g + woori_g) / (kb_o + kb_g + kb_p + shinhan_o + shinhan_g + shinhan_p + hana_o +
+        hana_g + hana_p + woori_o + woori_g + woori_p) * 100
+      unit: '%'
+      inputs:
+      - var: kb_g
+        fact_id: 105560.2026H1.CFS.general_admin_expense
+      - var: kb_o
+        fact_id: 105560.2026H1.CFS.operating_income
+      - var: kb_p
+        fact_id: 105560.2026H1.CFS.credit_loss_provision
+      - var: shinhan_g
+        fact_id: 055550.2026H1.CFS.general_admin_expense
+      - var: shinhan_o
+        fact_id: 055550.2026H1.CFS.operating_income
+      - var: shinhan_p
+        fact_id: 055550.2026H1.CFS.credit_loss_provision
+      - var: hana_g
+        fact_id: 086790.2026H1.CFS.general_admin_expense
+      - var: hana_o
+        fact_id: 086790.2026H1.CFS.operating_income
+      - var: hana_p
+        fact_id: 086790.2026H1.CFS.credit_loss_provision
+      - var: woori_g
+        fact_id: 316140.2026H1.CFS.general_admin_expense
+      - var: woori_o
+        fact_id: 316140.2026H1.CFS.operating_income
+      - var: woori_p
+        fact_id: 316140.2026H1.CFS.credit_loss_provision
+  - - calculate
+    - name: cost_income_spread_pp
+      formula: w - k
+      unit: pp
+      inputs:
+      - var: w
+        fact_id: calc.woori_cost_income_ratio
+      - var: k
+        fact_id: calc.kb_cost_income_ratio
+  - - share_facts
+    - to_agent: reporter
+      fact_ids:
+      - calc.sector_cost_income_ratio
+      - calc.cost_income_spread_pp
+  reporter:
+  - - wait
+    - reason: waiting for results
+    - until_have:
+        calc.sector_cost_income_ratio: 1
+        calc.cost_income_spread_pp: 1
+      retries: 30
+  - - submit_answer
+    - answers:
+      - field: sector_cost_income_ratio
+        fact_id: calc.sector_cost_income_ratio
+      - field: cost_income_spread_pp
+        fact_id: calc.cost_income_spread_pp

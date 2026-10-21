@@ -388,6 +388,12 @@ FHC_COST = {"055550": ((1_545_405, 2_154_453, 520_112), (3_216_096, 4_630_734, 9
 KB_TTM = 5_833_162 - 3_435_693 + 3_884_590          # FY 2025 - H1 2025 + H1 2026 net income to owners
 KB_CE_PREV = 59_069_434 - 5_162_483                   # common equity at 2025-06-30 (owners' equity - hybrid capital)
 KB_SHARES = (354_687_734, 1_300_000)                  # issued common and treasury common shares at 2026-06-30
+# k04: net income to owners, (H1, Q1) cumulative, for 2025 (the 2026 figures are in FHC_H1)
+FHC_2025 = {"105560": (3_435_693, 1_697_271), "055550": (3_037_399, 1_488_346), "086790": (2_301_028, 1_127_742),
+            "316140": (1_552_019, 616_691)}
+# k05: (general_admin_expense, operating_income, credit_loss_provision), 2026 H1 cumulative
+FHC_H1_COST = {"105560": (3_654_401, 5_440_114, 1_013_014), "055550": (3_216_096, 4_630_734, 976_425),
+               "086790": (2_489_027, 3_247_984, 663_830), "316140": (2_632_856, 2_123_827, 966_025)}
 
 
 def _cir(code: str) -> float:
@@ -632,7 +638,163 @@ K03 = {
 }
 
 
-SPECS_KR_FHC = [_k01(), K02, K03]
+# ---------------------------------------------------------------------- harder Korean tasks
+# k04 is long: sixteen reports, five answers, and a combined-group growth rate that the average of the four growth
+# rates misses by 9.5%. k05 states no data plan (the team must find the latest period itself) and asks for a combined
+# ratio (the average of the four ratios misses by 2.0%). Both have tighter round budgets than k01-k03.
+def _q2(code: str, year: int) -> int:
+    h1, q1 = (FHC_H1[code][0], FHC_H1[code][1]) if year == 2026 else FHC_2025[code]
+    return h1 - q1
+
+
+def _h1_cir(code: str) -> float:
+    g, o, p = FHC_H1_COST[code]
+    return g / (o + g + p) * 100
+
+
+K04 = {
+    "pair": "k04", "slug": "big4_q2_yoy", "max_rounds": 28, "market": "kr_fhc",
+    "company": "KB금융; 신한지주; 하나금융지주; 우리금융지주",
+    "name": "Korea's four financial holding companies: year-on-year growth of Q2 2026 earnings",
+    "name_ko": "4대 금융지주 2026년 2분기 지배주주순이익 전년 대비 증가율",
+    "description": ("The desk measures how much each of Korea's four largest financial holding companies, KB금융 (105560), "
+                    "신한지주 (055550), 하나금융지주 (086790) and 우리금융지주 (316140), grew its earnings in the second "
+                    "quarter of 2026 alone (April-June) against the same quarter of 2025, and how much the four grew "
+                    "together, using only reports filed by 2026-10-15. The collector pulls filings, the analyst computes, "
+                    "the reporter submits."),
+    "description_ko": ("4대 금융지주(KB금융 105560, 신한지주 055550, 하나금융지주 086790, 우리금융지주 316140)의 2026년 2분기(4~6월) "
+                       "단독 지배주주순이익이 2025년 같은 분기보다 얼마나 늘었는지, 네 그룹을 합치면 얼마나 늘었는지를 "
+                       "2026-10-15까지 접수된 보고서만으로 구합니다. 보고서 16개가 필요한 긴 과제입니다."),
+    "primary": ("Submit five answers: kb_q2_yoy_growth, shinhan_q2_yoy_growth, hana_q2_yoy_growth and woori_q2_yoy_growth "
+                "(each group's year-on-year growth of net income attributable to owners for that single quarter, in "
+                "percent, e.g. 12.5 for +12.5%), and sector_q2_yoy_growth (the same growth for the four groups together, in "
+                "percent)."),
+    "facts": {
+        "analyst": [
+            "Report figures are cumulative from January, so a standalone Q2 figure = H1 cumulative - Q1 cumulative, for "
+            "2025 and for 2026.",
+            "Net income means net_income_owners (attributable to owners of the parent) from consolidated (CFS) statements.",
+            "Year-on-year growth (%) = (Q2 2026 / Q2 2025 - 1) x 100.",
+            "sector_q2_yoy_growth treats the four groups as one combined group.",
+            "The inputs are each group's 2025 Q1, 2025 H1, 2026 Q1 and 2026 H1 CFS reports.",
+        ],
+    },
+    "initial": {},
+    "checkpoints": [
+        *[{"type": "answer", "name": f"{g}_q2_yoy_growth", "field": f"{g}_q2_yoy_growth",
+           "expected": round((_q2(code, 2026) / _q2(code, 2025) - 1) * 100, 6), "rel_tol": 0.001}
+          for g, code in FHC.items()],
+        {"type": "answer", "name": "sector_q2_yoy_growth", "field": "sector_q2_yoy_growth",
+         "expected": round((sum(_q2(c, 2026) for c in FHC.values()) / sum(_q2(c, 2025) for c in FHC.values()) - 1) * 100, 6),
+         "rel_tol": 0.001},
+    ],
+    "reference": {
+        "collector": [
+            *[["fetch_financials", {"company": code, "year": y, "period": p, "basis": "CFS"}]
+              for code in FHC.values() for y in (2025, 2026) for p in ("Q1", "H1")],
+            ["share_facts", {"to_agent": "analyst", "fact_ids": [
+                f"{code}.{y}{p}.CFS.net_income_owners" for code in FHC.values() for y in (2025, 2026) for p in ("Q1", "H1")]}],
+        ],
+        "analyst": [
+            ["wait", {"reason": "waiting for inputs"},
+             {"until_have": {f"{FHC['woori']}.2026H1.CFS.net_income_owners": 1}, "retries": 40}],
+            *[["calculate", {"name": f"{g}_q2_yoy_growth", "formula": "((h26 - q26) / (h25 - q25) - 1) * 100", "unit": "%",
+                             "inputs": _inputs(**{f"{p[0].lower()}{str(y)[2:]}": f"{code}.{y}{p}.CFS.net_income_owners"
+                                                  for y in (2025, 2026) for p in ("Q1", "H1")})}]
+              for g, code in FHC.items()],
+            ["calculate", {"name": "sector_q2_yoy_growth",
+                           "formula": "((kb_h26 - kb_q26 + shinhan_h26 - shinhan_q26 + hana_h26 - hana_q26 + woori_h26 - woori_q26)"
+                                      " / (kb_h25 - kb_q25 + shinhan_h25 - shinhan_q25 + hana_h25 - hana_q25 + woori_h25 - woori_q25)"
+                                      " - 1) * 100",
+                           "unit": "%",
+                           "inputs": _inputs(**{f"{g}_{p[0].lower()}{str(y)[2:]}": f"{code}.{y}{p}.CFS.net_income_owners"
+                                                for g, code in FHC.items() for y in (2025, 2026) for p in ("Q1", "H1")})}],
+            ["share_facts", {"to_agent": "reporter", "fact_ids": [
+                *[f"calc.{g}_q2_yoy_growth" for g in FHC], "calc.sector_q2_yoy_growth"]}],
+        ],
+        "reporter": [
+            ["wait", {"reason": "waiting for results"},
+             {"until_have": {"calc.sector_q2_yoy_growth": 1, **{f"calc.{g}_q2_yoy_growth": 1 for g in FHC}}, "retries": 40}],
+            ["submit_answer", {"answers": [
+                *[{"field": f"{g}_q2_yoy_growth", "fact_id": f"calc.{g}_q2_yoy_growth"} for g in FHC],
+                {"field": "sector_q2_yoy_growth", "fact_id": "calc.sector_q2_yoy_growth"}]}],
+        ],
+    },
+}
+
+K05 = {
+    "pair": "k05", "slug": "big4_combined_cir", "max_rounds": 14, "market": "kr_fhc",
+    "company": "KB금융; 신한지주; 하나금융지주; 우리금융지주",
+    "name": "Korea's four financial holding companies: combined cost-to-income ratio",
+    "name_ko": "4대 금융지주 합산 영업이익경비율(CIR)과 그룹 간 격차",
+    "description": ("The desk needs the cost-to-income ratio of Korea's four largest financial holding companies, KB금융 "
+                    "(105560), 신한지주 (055550), 하나금융지주 (086790) and 우리금융지주 (316140), taken together, and the "
+                    "gap between the most and the least efficient of them, for the latest reporting period available on "
+                    "2026-10-15. The collector pulls filings, the analyst computes, the reporter submits."),
+    "description_ko": ("4대 금융지주를 하나로 합친 영업이익경비율(CIR)과, 가장 효율적인 그룹과 가장 비효율적인 그룹의 CIR 차이를 "
+                       "2026-10-15에 볼 수 있는 가장 최근 보고 기간으로 구합니다. 어떤 보고서를 쓸지는 알려 주지 않습니다."),
+    "primary": ("Submit two answers: sector_cost_income_ratio (the cost-to-income ratio of the four groups as one, in "
+                "percent, e.g. 40.0 for 40.0%) and cost_income_spread_pp (the highest of the four groups' ratios minus the "
+                "lowest, in percentage points, e.g. 5.0)."),
+    "facts": {
+        "analyst": [
+            "Cost-to-income ratio (%) = general_admin_expense / operating revenue x 100, where operating revenue "
+            "(총영업이익, income before G&A and credit-loss provisions) = operating_income + general_admin_expense + "
+            "credit_loss_provision, all from consolidated (CFS) statements.",
+            "Use the latest reporting period whose reports were filed by the as-of date, with the figures as reported "
+            "(cumulative from January).",
+            "sector_cost_income_ratio treats the four groups as one combined group; cost_income_spread_pp is the highest "
+            "of the four groups' ratios minus the lowest.",
+        ],
+    },
+    "initial": {},
+    "checkpoints": [
+        {"type": "answer", "name": "sector_cost_income_ratio", "field": "sector_cost_income_ratio",
+         "expected": round(sum(v[0] for v in FHC_H1_COST.values()) / sum(sum(v) for v in FHC_H1_COST.values()) * 100, 6),
+         "rel_tol": 0.001},
+        {"type": "answer", "name": "cost_income_spread_pp", "field": "cost_income_spread_pp",
+         "expected": round(max(_h1_cir(c) for c in FHC.values()) - min(_h1_cir(c) for c in FHC.values()), 6),
+         "rel_tol": 0.001},
+    ],
+    "reference": {
+        "collector": [
+            *[["fetch_financials", {"company": code, "year": 2026, "period": "H1", "basis": "CFS"}] for code in FHC.values()],
+            ["share_facts", {"to_agent": "analyst", "fact_ids": [
+                f"{code}.2026H1.CFS.{a}" for code in FHC.values()
+                for a in ("general_admin_expense", "operating_income", "credit_loss_provision")]}],
+        ],
+        "analyst": [
+            ["wait", {"reason": "waiting for inputs"},
+             {"until_have": {f"{FHC['woori']}.2026H1.CFS.credit_loss_provision": 1}, "retries": 30}],
+            *[["calculate", {"name": f"{g}_cost_income_ratio", "formula": "g / (o + g + p) * 100", "unit": "%",
+                             "inputs": _inputs(g=f"{code}.2026H1.CFS.general_admin_expense",
+                                               o=f"{code}.2026H1.CFS.operating_income",
+                                               p=f"{code}.2026H1.CFS.credit_loss_provision")}]
+              for g, code in FHC.items()],
+            ["calculate", {"name": "sector_cost_income_ratio",
+                           "formula": "(kb_g + shinhan_g + hana_g + woori_g) / (kb_o + kb_g + kb_p + shinhan_o + shinhan_g"
+                                      " + shinhan_p + hana_o + hana_g + hana_p + woori_o + woori_g + woori_p) * 100",
+                           "unit": "%",
+                           "inputs": _inputs(**{f"{g}_{v}": f"{code}.2026H1.CFS.{a}" for g, code in FHC.items()
+                                                for v, a in (("g", "general_admin_expense"), ("o", "operating_income"),
+                                                             ("p", "credit_loss_provision"))})}],
+            ["calculate", {"name": "cost_income_spread_pp", "formula": "w - k", "unit": "pp",
+                           "inputs": _inputs(w="calc.woori_cost_income_ratio", k="calc.kb_cost_income_ratio")}],
+            ["share_facts", {"to_agent": "reporter",
+                             "fact_ids": ["calc.sector_cost_income_ratio", "calc.cost_income_spread_pp"]}],
+        ],
+        "reporter": [
+            ["wait", {"reason": "waiting for results"},
+             {"until_have": {"calc.sector_cost_income_ratio": 1, "calc.cost_income_spread_pp": 1}, "retries": 30}],
+            ["submit_answer", {"answers": [
+                {"field": "sector_cost_income_ratio", "fact_id": "calc.sector_cost_income_ratio"},
+                {"field": "cost_income_spread_pp", "fact_id": "calc.cost_income_spread_pp"}]}],
+        ],
+    },
+}
+
+
+SPECS_KR_FHC = [_k01(), K02, K03, K04, K05]
 
 
 MARKETS = {

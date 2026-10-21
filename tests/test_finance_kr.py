@@ -227,12 +227,15 @@ def test_committed_kr_tasks_match_the_catalog():
 
 def test_kr_reference_solves_and_idle_team_fails():
     tasks = load_tasks(str(KR_DIR))
-    assert len(tasks) == 2 * len(SPECS_KR_FHC) == 6
+    assert len(tasks) == 2 * len(SPECS_KR_FHC) == 10
     for t in tasks:
         assert validate_task(t) == [], t.id
         assert not any(f.get("price_of") for a in t.agents for f in a.get("initial_facts") or [])  # DART only, no prices
     rounds = {t.id.rsplit("_", 1)[0]: run_episode(t, make_factory("scripted"))["result"]["rounds_used"] for t in tasks}
-    assert rounds == {"k01_kb_bps_roe": 10, "k02_q2_cost_income": 11, "k03_big4_q2_sector": 15}
+    assert rounds == {"k01_kb_bps_roe": 10, "k02_q2_cost_income": 11, "k03_big4_q2_sector": 15,
+                      "k04_big4_q2_yoy": 22, "k05_big4_combined_cir": 11}
+    budget = {t.id.rsplit("_", 1)[0]: t.max_rounds for t in tasks}
+    assert all(budget[k] / rounds[k] < 1.3 for k in ("k04_big4_q2_yoy", "k05_big4_combined_cir"))  # tighter budgets
 
 
 def test_kr_pairs_differ_only_in_where_the_sentences_are():
@@ -330,6 +333,57 @@ def test_k03_mistakes_are_wrong_answers():
         assert _off(statistics.mean(v), avg) and _off(max(v) - min(v), spread)
     assert _off(statistics.median(now), avg)                                          # median, not mean
     assert _off(statistics.mean(now[:3]), avg)                                        # a group left out
+
+
+def test_k04_mistakes_are_wrong_answers():
+    cps = {cp["field"]: cp for cp in _specs()["k04"]["checkpoints"]}
+    q2 = lambda code, y, a="net_income_owners": _st(code)[f"{y}:H1:CFS"][a] - _st(code)[f"{y}:Q1:CFS"][a]
+    growth = lambda now, before: (now / before - 1) * 100
+    right = {}
+    for g, code in FHC.items():
+        st, cp = _st(code), cps[f"{g}_q2_yoy_growth"]
+        right[g] = growth(q2(code, 2026), q2(code, 2025))
+        assert not _off(right[g], cp)
+        assert _off(growth(st["2026:H1:CFS"]["net_income_owners"], st["2025:H1:CFS"]["net_income_owners"]), cp)  # H1
+        assert _off(growth(st["2026:Q1:CFS"]["net_income_owners"], st["2025:Q1:CFS"]["net_income_owners"]), cp)  # Q1
+        assert _off(growth(q2(code, 2026), st["2026:Q1:CFS"]["net_income_owners"]), cp)      # quarter on quarter
+        assert _off(growth(q2(code, 2026, "net_income"), q2(code, 2025, "net_income")), cp)  # incl. NCI
+        assert _off(q2(code, 2026) / q2(code, 2025) * 100, cp)                                # ratio, not growth
+        assert _off(right[g] / 100, cp)                                                        # fraction
+    assert round(right["kb"], 1) == 14.6 and round(right["hana"], 2) == 1.67  # KB +14.6%, Hana +1.66% in their releases
+    sec = cps["sector_q2_yoy_growth"]
+    combined = lambda y, a="net_income_owners": sum(q2(c, y, a) for c in FHC.values())
+    assert not _off(growth(combined(2026), combined(2025)), sec)
+    assert _off(statistics.mean(right.values()), sec)                                         # mean of the four rates
+    assert _off(statistics.median(right.values()), sec)
+    assert _off(growth(combined(2026, "net_income"), combined(2025, "net_income")), sec)
+    h1 = lambda y: sum(_st(c)[f"{y}:H1:CFS"]["net_income_owners"] for c in FHC.values())
+    assert _off(growth(h1(2026), h1(2025)), sec)                                              # H1, not Q2
+
+
+def test_k05_mistakes_are_wrong_answers():
+    cps = {cp["field"]: cp for cp in _specs()["k05"]["checkpoints"]}
+    rev = lambda s: s["operating_income"] + s["general_admin_expense"] + s["credit_loss_provision"]
+    at = lambda key: [_st(c)[key] for c in FHC.values()]
+    ratio = lambda s: s["general_admin_expense"] / rev(s) * 100
+    combined = lambda sts: sum(s["general_admin_expense"] for s in sts) / sum(rev(s) for s in sts) * 100
+    spread = lambda rs: max(rs) - min(rs)
+    sec, gap = cps["sector_cost_income_ratio"], cps["cost_income_spread_pp"]
+    h1 = at("2026:H1:CFS")
+    assert not _off(combined(h1), sec) and not _off(spread([ratio(s) for s in h1]), gap)
+    assert _off(statistics.mean(ratio(s) for s in h1), sec)                                    # mean of the four ratios
+    assert _off(statistics.median(ratio(s) for s in h1), sec)
+    assert _off(sum(s["general_admin_expense"] for s in h1)
+                / sum(s["net_interest_income"] + s["net_fee_income"] for s in h1) * 100, sec)  # narrower denominator
+    assert _off(combined(h1) / 100, sec)                                                       # fraction
+    q1 = at("2026:Q1:CFS")
+    q2 = [{k: a[k] - b[k] for k in ("general_admin_expense", "operating_income", "credit_loss_provision")}
+          for a, b in zip(h1, q1)]
+    for other in (q2, q1, at("2025:FY:CFS")):                                                  # another period
+        assert _off(combined(other), sec) and _off(spread([ratio(s) for s in other]), gap)
+    rs = [ratio(s) for s in h1]
+    assert _off((max(rs) / min(rs) - 1) * 100, gap)                                            # relative spread
+    assert _off(max(rs) - statistics.mean(rs), gap)
 
 
 def test_as_of_guard_blocks_reports_amended_after_the_as_of_date():
