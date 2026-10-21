@@ -1,0 +1,113 @@
+{
+"status": "000",
+"message": "정상",
+"list": [
+{
+"rcept_no": "20260814003800",
+"sj_div": "BS",
+"account_id": "ifrs-full_Assets",
+"account_nm": "자산총계",
+"thstrm_amount": "713462782000000"
+},
+{
+"rcept_no": "20260814003800",
+"sj_div": "BS",
+"account_id": "ifrs-full_Equity",
+"account_nm": "자본총계",
+"thstrm_amount": "48447154000000"
+},
+{
+"rcept_no": "20260814003800",
+"sj_div": "BS",
+"account_id": "ifrs-full_EquityAttributableToOwnersOfParent",
+"account_nm": "지배기업소유주지분",
+"thstrm_amount": "46876523000000"
+},
+{
+"rcept_no": "20260814003800",
+"sj_div": "BS",
+"account_id": "dart_HybridBonds",
+"account_nm": "신종자본증권",
+"thstrm_amount": "4399244000000"
+},
+{
+"rcept_no": "20260814003800",
+"sj_div": "CIS",
+"account_id": "ifrs-full_ComprehensiveIncomeAttributableToNoncontrollingInterests",
+"account_nm": "비지배지분",
+"thstrm_amount": "2353000000",
+"thstrm_add_amount": "33909000000"
+},
+{
+"rcept_no": "20260814003800",
+"sj_div": "CIS",
+"account_id": "ifrs-full_ComprehensiveIncomeAttributableToOwnersOfParent",
+"account_nm": "지배기업소유주지분",
+"thstrm_amount": "2030556000000",
+"thstrm_add_amount": "3320187000000"
+},
+{
+"rcept_no": "20260814003800",
+"sj_div": "CIS",
+"account_id": "ifrs-full_FeeAndCommissionIncomeExpense",
+"account_nm": "순수수료이익",
+"thstrm_amount": "893536000000",
+"thstrm_add_amount": "1664760000000"
+},
+{
+"rcept_no": "20260814003800",
+"sj_div": "CIS",
+"account_id": "ifrs-full_ImpairmentLossImpairmentGainAndReversalOfImpairmentLossDeterminedInAccordanceWithIFRS9",
+"account_nm": "신용손실충당금 전입액",
+"thstrm_amount": "433762000000",
+"thstrm_add_amount": "663830000000"
+},
+{
+"rcept_no": "20260814003800",
+"sj_div": "CIS",
+"account_id": "ifrs-full_InterestRevenueExpense",
+"account_nm": "순이자이익",
+"thstrm_amount": "2302917000000",
+"thstrm_add_amount": "4808256000000"
+},
+{
+"rcept_no": "20260814003800",
+"sj_div": "CIS",
+"account_id": "ifrs-full_ProfitLoss",
+"account_nm": "연결반기순이익",
+"thstrm_amount": "1206086000000",
+"thstrm_add_amount": "2436746000000"
+},
+{
+"rcept_no": "20260814003800",
+"sj_div": "CIS",
+"account_id": "ifrs-full_ProfitLossAttributableToOwnersOfParent",
+"account_nm": "반기순이익(손실)",
+"thstrm_amount": "1192823000000",
+"thstrm_add_amount": "2402868000000"
+},
+{
+"rcept_no": "20260814003800",
+"sj_div": "CIS",
+"account_id": "ifrs-full_ProfitLossFromOperatingActivities",
+"account_nm": "영업이익",
+"thstrm_amount": "1594384000000",
+"thstrm_add_amount": "3247984000000"
+},
+{
+"rcept_no": "20260814003800",
+"sj_div": "CIS",
+"account_id": "ifrs-full_SellingGeneralAndAdministrativeExpense",
+"account_nm": "일반관리비",
+"thstrm_amount": "1290676000000",
+"thstrm_add_amount": "2489027000000"
+},
+{
+"rcept_no": "20260814003800",
+"sj_div": "CF",
+"account_id": "ifrs-full_ProfitLoss",
+"account_nm": "연결반기순이익",
+"thstrm_amount": "1206086000000"
+}
+]
+}

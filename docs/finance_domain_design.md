@@ -92,7 +92,7 @@ python -m agentworld_lite.finance fetch --company 005930 --periods 2024:FY 2024:
 - 손익 항목은 IS에서 찾고, 단일 포괄손익계산서만 있는 회사는 CIS에서 찾습니다. 계정은 XBRL `account_id`로 먼저 찾고, 없으면 한글 계정명으로 찾습니다.
 - 분기·반기 보고서의 `thstrm_amount`는 3개월 실적이고 `thstrm_add_amount`가 누적입니다. 데이터셋에는 **누적**을 저장합니다. 사업보고서는 `thstrm_amount`가 연간입니다.
 - 제출일은 접수번호(`rcept_no`) 앞 8자리입니다. 정정 보고서가 있으면 DART는 정정본을 돌려주므로 제출일이 원래보다 늦게 잡힐 수 있습니다(가드가 보수적으로 동작).
-- 한계: 은행·보험 등 금융업은 매출 계정 체계가 달라 `revenue`가 비거나 다른 의미일 수 있습니다. 실제 과제를 만들 때는 정답값을 공시 원문과 대조해야 합니다.
+- 한계: 은행·보험 등 금융업은 매출 계정 체계가 달라 `revenue`가 비거나 다른 의미일 수 있습니다. 금융지주는 `--profile fhc`로 은행 형식 계정(순이자이익, 일반관리비, 신종자본증권 등)을 읽습니다. 실제 과제를 만들 때는 정답값을 공시 원문과 대조해야 합니다.
 
 ## 실행
 
@@ -134,8 +134,12 @@ python -m agentworld_lite pair-report --runs runs/finance_llama32_3b --out repor
 
 같은 데스크를 캐나다 5대 은행의 실제 공시(SEC EDGAR에 함께 제출된 40-F·6-K의 XBRL)에 적용했습니다. 공시 소스 인터페이스(`dart`, `edgar`, `local_pdf`, `sedar_dds`), 데이터 정규화, 은행 발표치와의 대조, 과제 c01~c03, 섹터 노트 생성기는 [finance_canada.md](finance_canada.md)(영문)에 정리했습니다.
 
+## 4대 금융지주 데스크
+
+같은 데스크를 KB금융, 신한지주, 하나금융지주, 우리금융지주의 실제 DART 공시에 적용했습니다. 금융지주 계정 규칙(`--profile fhc`), 정정 보고서 처리, 실적 발표와의 대조, 과제 k01~k03, 한국어 섹터 노트·밸류에이션 스냅샷, 한국어 데모는 [finance_korea_fhc.md](finance_korea_fhc.md)에 정리했습니다.
+
 ## 다음 단계
 
-- DART 실데이터 기반 과제(정답값을 공시 원문과 대조해 고정).
+- 가상 회사 과제(f01, f02)도 실데이터 과제로 바꾸기. 금융지주 실데이터 과제는 [finance_korea_fhc.md](finance_korea_fhc.md)에 있습니다.
 - AutoGym식 과제 생성기: 회사·기간·지표·함정·정보 배치를 파라미터로 뽑고 정답 시나리오로 인증.
 - 더 큰 모델(gemma4:cloud, Claude)로 공유형/개인형 × 채팅 허용/금지 비교.

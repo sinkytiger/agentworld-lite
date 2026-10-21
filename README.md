@@ -18,7 +18,7 @@ A lightweight, pip-installable testbed for **long-horizon multi-agent LLM collab
 - **Metrics**: success rate, partial success rate, **CCE / per-agent contribution (PAC)** with two judges (the paper's backward-tracing LLM judge, plus a deterministic rule-based judge for free runs and judge-agreement checks), and the paper's 6-way **communication failure taxonomy**.
 - **Blueprint-first task generator** (idea borrowed from AutoGym, adapted to multi-agent play): sample generation parameters, build the solution DAG (who gathers, crafts and hands what to whom), materialize a task, certify it by running the reference solution, repair failures, set the round budget. No LLM calls; **~93% yield**.
 - **Model backends**: Claude (Anthropic API) and **Ollama** (free local models, or Ollama cloud models such as `gemma4:cloud`).
-- **Finance domain**: the same protocol on a research desk that fetches filings, computes valuation metrics and submits cited answers. Korean DART disclosures and **real filings of Canada's Big 5 banks** (SEDAR+ annual and interim reports, read from their SEC EDGAR copies), with a cited sector note generated from a finished run (see below).
+- **Finance domain**: the same protocol on a research desk that fetches filings, computes valuation metrics and submits cited answers. Korean DART disclosures (a synthetic company and **real filings of Korea's four financial holding companies**) and **real filings of Canada's Big 5 banks** (SEDAR+ annual and interim reports, read from their SEC EDGAR copies), with a cited sector note generated from a finished run (see below).
 - **191 tests**, none of which call an API.
 
 ## Quick start (no API key)
@@ -210,6 +210,22 @@ python -m agentworld_lite.finance news --cache C:/news_cache --out reports/diges
 
 **First model run** (2026-10-20): Claude Opus 5.5 solved all 36 episodes (6 tasks, chat allowed and blocked, 3 seeds) with no failed tool call, in as few rounds as the scripted reference or fewer, for US$18.13 in total. Blocking chat did not change success but lowered rule CCE on every task, so these tasks are too easy to separate frontier models; see [docs/finance_canada.md](docs/finance_canada.md#results-claude-opus-55).
 
+### Korean desk (four financial holding companies)
+
+The same desk on real DART filings of KB금융, 신한지주, 하나금융지주 and 우리금융지주. Details, in Korean with an English summary: [docs/finance_korea_fhc.md](docs/finance_korea_fhc.md).
+
+- **Dataset** `data/finance/dart_fhc`, built by `fetch --source dart --profile fhc`: bank-format accounts (net interest and fee income, G&A, credit-loss provisions, net income to owners, owners' equity and hybrid capital) read by XBRL `account_id` with per-group fallbacks, share counts, and the original filing of every amended report (DART serves the amended version). The figures match each group's 2Q 2026 earnings release.
+- **Tasks** `tasks/finance_kr`, shared / private pairs with a 0.1% tolerance: the Q2 2026 cost-to-income ratios of Shinhan and Woori (36.29% and 40.81%; H1 ratios, a Q1 ratio or a narrower denominator all miss), and a four-group comparison of Q2 2026 net income to owners plus the average and spread of common equity (owners' equity minus hybrid capital). KB's trailing PER and PBR (k01) is built once sourced closing prices are in the dataset; KRX prices are not in DART, and the KRX Open API's terms forbid passing its data on, so they are supplied with `--price` and `--price-source`.
+- **Korean outputs**: `note` writes a Korean sector note for these tasks, and `valuation --market kr` a Korean valuation snapshot (P/B against ROE, the peers' PBR range). Every figure cites its DART receipt number (접수번호); the snapshot is marked 교육용 예시·투자 권유 아님 and has no rating and no target price.
+- **Demo**: `streamlit run demo/streamlit_app_kr.py`, with Korean labels: replay, the four groups' charts, the note and the valuation, offline and not deployed.
+
+```bash
+python -m agentworld_lite.finance fetch --source dart --profile fhc --company 105560 055550 086790 316140 --periods 2025:Q1 2025:H1 2025:Q3 2025:FY 2026:Q1 2026:H1 --cache C:/dart_cache
+python -m agentworld_lite.finance validate --tasks tasks/finance_kr
+python -m agentworld_lite.finance note --reference k03_big4_q2_sector_shared --out reports/k03_note_ko.md
+python -m agentworld_lite.finance valuation --market kr --bank KB금융 --out reports/kb_valuation_ko.md
+```
+
 ## Metrics
 
 | Metric | Definition |
@@ -246,12 +262,13 @@ agentworld_lite/
   report.py       Markdown report
   finance/        finance domain: dataset, environment and tools, task catalog, runner, CLI
     sources/      filing sources: dart, edgar, local_pdf, sedar_dds (placeholder)
-demo/            Streamlit demo of the Canadian desk and a GIF recorder
+demo/            Streamlit demos of the Canadian and Korean desks, and a GIF recorder
 tasks/main/       9 hand-built tasks
 tasks/gym/        28 generated tasks (example output of `gen`)
 tasks/finance/    4 Korean finance tasks (2 shared/private pairs, synthetic company)
 tasks/finance_ca/ 6 Canadian finance tasks (3 shared/private pairs, real bank filings)
-data/finance/     sample/ synthetic companies (DART format), edgar/ Big 5 Canadian banks
+tasks/finance_kr/ Korean finance tasks on real DART filings of the four financial holding companies
+data/finance/     sample/ synthetic companies (DART format), edgar/ Big 5 Canadian banks, dart_fhc/ four Korean financial holding companies
 docs/             paper analysis and AutoGym integration design (Korean)
 ```
 

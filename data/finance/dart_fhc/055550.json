@@ -1,0 +1,435 @@
+{
+ "name": "신한지주",
+ "stock_code": "055550",
+ "corp_code": "00382199",
+ "currency": "KRW",
+ "source": "DART OpenAPI (fnlttSinglAcntAll, stockTotqySttus, list.json)",
+ "market": "kr_fhc",
+ "profile": "fhc",
+ "fiscal_year_end": "12-31",
+ "accounts": {
+  "net_interest_income": {
+   "label": "순이자이익",
+   "unit": "money"
+  },
+  "net_fee_income": {
+   "label": "순수수료이익",
+   "unit": "money"
+  },
+  "general_admin_expense": {
+   "label": "일반관리비",
+   "unit": "money"
+  },
+  "credit_loss_provision": {
+   "label": "신용손실충당금 전입액",
+   "unit": "money"
+  },
+  "operating_income": {
+   "label": "영업이익",
+   "unit": "money"
+  },
+  "net_income": {
+   "label": "당기순이익(비지배지분 포함)",
+   "unit": "money"
+  },
+  "net_income_owners": {
+   "label": "지배주주순이익(신종자본증권 배당 몫 포함)",
+   "unit": "money"
+  },
+  "equity_owners": {
+   "label": "지배주주지분(신종자본증권 포함)",
+   "unit": "money"
+  },
+  "hybrid_capital": {
+   "label": "신종자본증권",
+   "unit": "money"
+  },
+  "equity_total": {
+   "label": "자본총계(비지배지분 포함)",
+   "unit": "money"
+  },
+  "total_assets": {
+   "label": "자산총계",
+   "unit": "money"
+  }
+ },
+ "aliases": [
+  "Shinhan",
+  "Shinhan Financial Group",
+  "신한금융",
+  "신한금융지주",
+  "신한지주"
+ ],
+ "statements": {
+  "2025:Q1:CFS": {
+   "filed": "2025-05-15",
+   "rcept_no": "20250515002546",
+   "net_interest_income": 2854888000000,
+   "net_fee_income": 678146000000,
+   "general_admin_expense": 1413958000000,
+   "credit_loss_provision": 439351000000,
+   "operating_income": 1944214000000,
+   "net_income": 1517046000000,
+   "net_income_owners": 1488346000000,
+   "equity_owners": 56817885000000,
+   "hybrid_capital": 4998956000000,
+   "equity_total": 59347586000000,
+   "total_assets": 746222327000000,
+   "concepts": {
+    "net_interest_income": "ifrs-full_InterestRevenueExpense",
+    "net_fee_income": "ifrs-full_FeeAndCommissionIncomeExpense",
+    "general_admin_expense": "ifrs-full_GeneralAndAdministrativeExpense",
+    "credit_loss_provision": "dart_AdditionReversalOfCreditLossFinancialAssets",
+    "operating_income": "ifrs-full_ProfitLossFromOperatingActivities",
+    "net_income": "ifrs-full_ProfitLoss",
+    "net_income_owners": "ifrs-full_ProfitLossAttributableToOwnersOfParent",
+    "equity_owners": "ifrs-full_EquityAttributableToOwnersOfParent",
+    "hybrid_capital": "dart_HybridBonds",
+    "equity_total": "ifrs-full_Equity",
+    "total_assets": "ifrs-full_Assets"
+   },
+   "form": "분기보고서"
+  },
+  "2025:Q1:OFS": {
+   "filed": "2025-05-15",
+   "rcept_no": "20250515002546",
+   "net_interest_income": -61737000000,
+   "net_fee_income": 17612000000,
+   "general_admin_expense": 29687000000,
+   "credit_loss_provision": 73000000,
+   "operating_income": 2503975000000,
+   "net_income": 2499281000000,
+   "hybrid_capital": 4998956000000,
+   "equity_total": 28659683000000,
+   "total_assets": 39643823000000,
+   "concepts": {
+    "net_interest_income": "ifrs-full_InterestRevenueExpense",
+    "net_fee_income": "ifrs-full_FeeAndCommissionIncomeExpense",
+    "general_admin_expense": "ifrs-full_GeneralAndAdministrativeExpense",
+    "credit_loss_provision": "dart_AdditionReversalOfCreditLossFinancialAssets",
+    "operating_income": "ifrs-full_ProfitLossFromOperatingActivities",
+    "net_income": "ifrs-full_ProfitLoss",
+    "hybrid_capital": "dart_HybridBonds",
+    "equity_total": "ifrs-full_Equity",
+    "total_assets": "ifrs-full_Assets"
+   },
+   "form": "분기보고서"
+  },
+  "2025:H1:CFS": {
+   "filed": "2025-08-14",
+   "rcept_no": "20250814002920",
+   "net_interest_income": 5718840000000,
+   "net_fee_income": 1440121000000,
+   "general_admin_expense": 2900058000000,
+   "credit_loss_provision": 1057204000000,
+   "operating_income": 3958471000000,
+   "net_income": 3094280000000,
+   "net_income_owners": 3037399000000,
+   "equity_owners": 57189893000000,
+   "hybrid_capital": 4799501000000,
+   "equity_total": 60195864000000,
+   "total_assets": 752691462000000,
+   "concepts": {
+    "net_interest_income": "ifrs-full_InterestRevenueExpense",
+    "net_fee_income": "ifrs-full_FeeAndCommissionIncomeExpense",
+    "general_admin_expense": "ifrs-full_GeneralAndAdministrativeExpense",
+    "credit_loss_provision": "ifrs-full_ImpairmentLossImpairmentGainAndReversalOfImpairmentLossDeterminedInAccordanceWithIFRS9",
+    "operating_income": "ifrs-full_ProfitLossFromOperatingActivities",
+    "net_income": "ifrs-full_ProfitLoss",
+    "net_income_owners": "ifrs-full_ProfitLossAttributableToOwnersOfParent",
+    "equity_owners": "ifrs-full_EquityAttributableToOwnersOfParent",
+    "hybrid_capital": "dart_HybridBonds",
+    "equity_total": "ifrs-full_Equity",
+    "total_assets": "ifrs-full_Assets"
+   },
+   "form": "반기보고서"
+  },
+  "2025:H1:OFS": {
+   "filed": "2025-08-14",
+   "rcept_no": "20250814002920",
+   "net_interest_income": -122128000000,
+   "net_fee_income": 34939000000,
+   "general_admin_expense": 68052000000,
+   "credit_loss_provision": -368000000,
+   "operating_income": 2455055000000,
+   "net_income": 2451570000000,
+   "hybrid_capital": 4799501000000,
+   "equity_total": 27701385000000,
+   "total_assets": 37978137000000,
+   "concepts": {
+    "net_interest_income": "ifrs-full_InterestRevenueExpense",
+    "net_fee_income": "ifrs-full_FeeAndCommissionIncomeExpense",
+    "general_admin_expense": "ifrs-full_GeneralAndAdministrativeExpense",
+    "credit_loss_provision": "ifrs-full_ImpairmentLossImpairmentGainAndReversalOfImpairmentLossDeterminedInAccordanceWithIFRS9",
+    "operating_income": "ifrs-full_ProfitLossFromOperatingActivities",
+    "net_income": "ifrs-full_ProfitLoss",
+    "hybrid_capital": "dart_HybridBonds",
+    "equity_total": "ifrs-full_Equity",
+    "total_assets": "ifrs-full_Assets"
+   },
+   "form": "반기보고서"
+  },
+  "2025:Q3:CFS": {
+   "filed": "2025-11-14",
+   "rcept_no": "20251114002208",
+   "net_interest_income": 8666393000000,
+   "net_fee_income": 2208181000000,
+   "general_admin_expense": 4418280000000,
+   "credit_loss_provision": 1488103000000,
+   "operating_income": 5913094000000,
+   "net_income": 4546470000000,
+   "net_income_owners": 4460943000000,
+   "equity_owners": 57870562000000,
+   "hybrid_capital": 4749837000000,
+   "equity_total": 60577617000000,
+   "total_assets": 782940313000000,
+   "concepts": {
+    "net_interest_income": "ifrs-full_InterestRevenueExpense",
+    "net_fee_income": "ifrs-full_FeeAndCommissionIncomeExpense",
+    "general_admin_expense": "ifrs-full_GeneralAndAdministrativeExpense",
+    "credit_loss_provision": "ifrs-full_ImpairmentLossImpairmentGainAndReversalOfImpairmentLossDeterminedInAccordanceWithIFRS9",
+    "operating_income": "ifrs-full_ProfitLossFromOperatingActivities",
+    "net_income": "ifrs-full_ProfitLoss",
+    "net_income_owners": "ifrs-full_ProfitLossAttributableToOwnersOfParent",
+    "equity_owners": "ifrs-full_EquityAttributableToOwnersOfParent",
+    "hybrid_capital": "dart_HybridBonds",
+    "equity_total": "ifrs-full_Equity",
+    "total_assets": "ifrs-full_Assets"
+   },
+   "form": "분기보고서"
+  },
+  "2025:Q3:OFS": {
+   "filed": "2025-11-14",
+   "rcept_no": "20251114002208",
+   "net_interest_income": -183382000000,
+   "net_fee_income": 52581000000,
+   "general_admin_expense": 107447000000,
+   "credit_loss_provision": -132000000,
+   "operating_income": 2408340000000,
+   "net_income": 2430160000000,
+   "hybrid_capital": 4749837000000,
+   "equity_total": 27044082000000,
+   "total_assets": 38422977000000,
+   "concepts": {
+    "net_interest_income": "ifrs-full_InterestRevenueExpense",
+    "net_fee_income": "ifrs-full_FeeAndCommissionIncomeExpense",
+    "general_admin_expense": "ifrs-full_GeneralAndAdministrativeExpense",
+    "credit_loss_provision": "ifrs-full_ImpairmentLossImpairmentGainAndReversalOfImpairmentLossDeterminedInAccordanceWithIFRS9",
+    "operating_income": "ifrs-full_ProfitLossFromOperatingActivities",
+    "net_income": "ifrs-full_ProfitLoss",
+    "hybrid_capital": "dart_HybridBonds",
+    "equity_total": "ifrs-full_Equity",
+    "total_assets": "ifrs-full_Assets"
+   },
+   "form": "분기보고서"
+  },
+  "2025:FY:CFS": {
+   "filed": "2026-10-07",
+   "rcept_no": "20261007000218",
+   "net_interest_income": 11694456000000,
+   "net_fee_income": 2921211000000,
+   "general_admin_expense": 6402500000000,
+   "credit_loss_provision": 2002965000000,
+   "operating_income": 7023357000000,
+   "net_income": 5084519000000,
+   "net_income_owners": 4971561000000,
+   "equity_owners": 57959272000000,
+   "hybrid_capital": 4749837000000,
+   "equity_total": 60372324000000,
+   "total_assets": 786013485000000,
+   "concepts": {
+    "net_interest_income": "ifrs-full_InterestRevenueExpense",
+    "net_fee_income": "ifrs-full_FeeAndCommissionIncomeExpense",
+    "general_admin_expense": "ifrs-full_GeneralAndAdministrativeExpense",
+    "credit_loss_provision": "ifrs-full_ImpairmentLossImpairmentGainAndReversalOfImpairmentLossDeterminedInAccordanceWithIFRS9",
+    "operating_income": "ifrs-full_ProfitLossFromOperatingActivities",
+    "net_income": "ifrs-full_ProfitLoss",
+    "net_income_owners": "ifrs-full_ProfitLossAttributableToOwnersOfParent",
+    "equity_owners": "ifrs-full_EquityAttributableToOwnersOfParent",
+    "hybrid_capital": "dart_HybridBonds",
+    "equity_total": "ifrs-full_Equity",
+    "total_assets": "ifrs-full_Assets"
+   },
+   "form": "[기재정정]사업보고서",
+   "first_rcept_no": "20260318000826",
+   "first_filed": "2026-03-18"
+  },
+  "2025:FY:OFS": {
+   "filed": "2026-10-07",
+   "rcept_no": "20261007000218",
+   "net_interest_income": -246422000000,
+   "net_fee_income": 70228000000,
+   "general_admin_expense": 155536000000,
+   "credit_loss_provision": -266000000,
+   "operating_income": 2364316000000,
+   "net_income": 2385457000000,
+   "hybrid_capital": 4749837000000,
+   "equity_total": 26335460000000,
+   "total_assets": 37793827000000,
+   "concepts": {
+    "net_interest_income": "ifrs-full_InterestRevenueExpense",
+    "net_fee_income": "ifrs-full_FeeAndCommissionIncomeExpense",
+    "general_admin_expense": "ifrs-full_GeneralAndAdministrativeExpense",
+    "credit_loss_provision": "ifrs-full_ImpairmentLossImpairmentGainAndReversalOfImpairmentLossDeterminedInAccordanceWithIFRS9",
+    "operating_income": "ifrs-full_ProfitLossFromOperatingActivities",
+    "net_income": "ifrs-full_ProfitLoss",
+    "hybrid_capital": "dart_HybridBonds",
+    "equity_total": "ifrs-full_Equity",
+    "total_assets": "ifrs-full_Assets"
+   },
+   "form": "[기재정정]사업보고서",
+   "first_rcept_no": "20260318000826",
+   "first_filed": "2026-03-18"
+  },
+  "2026:Q1:CFS": {
+   "filed": "2026-05-15",
+   "rcept_no": "20260515002273",
+   "net_interest_income": 3024143000000,
+   "net_fee_income": 940826000000,
+   "general_admin_expense": 1545405000000,
+   "credit_loss_provision": 520112000000,
+   "operating_income": 2154453000000,
+   "net_income": 1649148000000,
+   "net_income_owners": 1622594000000,
+   "equity_owners": 59059079000000,
+   "hybrid_capital": 4719886000000,
+   "equity_total": 61474363000000,
+   "total_assets": 816718546000000,
+   "concepts": {
+    "net_interest_income": "ifrs-full_InterestRevenueExpense",
+    "net_fee_income": "ifrs-full_FeeAndCommissionIncomeExpense",
+    "general_admin_expense": "ifrs-full_GeneralAndAdministrativeExpense",
+    "credit_loss_provision": "ifrs-full_ImpairmentLossImpairmentGainAndReversalOfImpairmentLossDeterminedInAccordanceWithIFRS9",
+    "operating_income": "ifrs-full_ProfitLossFromOperatingActivities",
+    "net_income": "ifrs-full_ProfitLoss",
+    "net_income_owners": "ifrs-full_ProfitLossAttributableToOwnersOfParent",
+    "equity_owners": "ifrs-full_EquityAttributableToOwnersOfParent",
+    "hybrid_capital": "dart_HybridBonds",
+    "equity_total": "ifrs-full_Equity",
+    "total_assets": "ifrs-full_Assets"
+   },
+   "form": "분기보고서"
+  },
+  "2026:Q1:OFS": {
+   "filed": "2026-05-15",
+   "rcept_no": "20260515002273",
+   "net_interest_income": -61331000000,
+   "net_fee_income": 17528000000,
+   "general_admin_expense": 33773000000,
+   "credit_loss_provision": -77000000,
+   "operating_income": 2386516000000,
+   "net_income": 2360316000000,
+   "hybrid_capital": 4719886000000,
+   "equity_total": 27807663000000,
+   "total_assets": 39147801000000,
+   "concepts": {
+    "net_interest_income": "ifrs-full_InterestRevenueExpense",
+    "net_fee_income": "ifrs-full_FeeAndCommissionIncomeExpense",
+    "general_admin_expense": "ifrs-full_GeneralAndAdministrativeExpense",
+    "credit_loss_provision": "ifrs-full_ImpairmentLossImpairmentGainAndReversalOfImpairmentLossDeterminedInAccordanceWithIFRS9",
+    "operating_income": "ifrs-full_ProfitLossFromOperatingActivities",
+    "net_income": "ifrs-full_ProfitLoss",
+    "hybrid_capital": "dart_HybridBonds",
+    "equity_total": "ifrs-full_Equity",
+    "total_assets": "ifrs-full_Assets"
+   },
+   "form": "분기보고서"
+  },
+  "2026:H1:CFS": {
+   "filed": "2026-10-07",
+   "rcept_no": "20261007000223",
+   "net_interest_income": 6158504000000,
+   "net_fee_income": 2129755000000,
+   "general_admin_expense": 3216096000000,
+   "credit_loss_provision": 976425000000,
+   "operating_income": 4630734000000,
+   "net_income": 3495799000000,
+   "net_income_owners": 3442729000000,
+   "equity_owners": 60100749000000,
+   "hybrid_capital": 4163879000000,
+   "equity_total": 62519770000000,
+   "total_assets": 840894337000000,
+   "concepts": {
+    "net_interest_income": "ifrs-full_InterestRevenueExpense",
+    "net_fee_income": "ifrs-full_FeeAndCommissionIncomeExpense",
+    "general_admin_expense": "ifrs-full_GeneralAndAdministrativeExpense",
+    "credit_loss_provision": "ifrs-full_ImpairmentLossImpairmentGainAndReversalOfImpairmentLossDeterminedInAccordanceWithIFRS9",
+    "operating_income": "ifrs-full_ProfitLossFromOperatingActivities",
+    "net_income": "ifrs-full_ProfitLoss",
+    "net_income_owners": "ifrs-full_ProfitLossAttributableToOwnersOfParent",
+    "equity_owners": "ifrs-full_EquityAttributableToOwnersOfParent",
+    "hybrid_capital": "dart_HybridBonds",
+    "equity_total": "ifrs-full_Equity",
+    "total_assets": "ifrs-full_Assets"
+   },
+   "form": "[기재정정]반기보고서",
+   "first_rcept_no": "20260814003306",
+   "first_filed": "2026-08-14"
+  },
+  "2026:H1:OFS": {
+   "filed": "2026-10-07",
+   "rcept_no": "20261007000223",
+   "net_interest_income": -124756000000,
+   "net_fee_income": 36638000000,
+   "general_admin_expense": 70661000000,
+   "credit_loss_provision": -351000000,
+   "operating_income": 2310877000000,
+   "net_income": 2343149000000,
+   "hybrid_capital": 4163879000000,
+   "equity_total": 26346879000000,
+   "total_assets": 36988546000000,
+   "concepts": {
+    "net_interest_income": "ifrs-full_InterestRevenueExpense",
+    "net_fee_income": "ifrs-full_FeeAndCommissionIncomeExpense",
+    "general_admin_expense": "ifrs-full_GeneralAndAdministrativeExpense",
+    "credit_loss_provision": "ifrs-full_ImpairmentLossImpairmentGainAndReversalOfImpairmentLossDeterminedInAccordanceWithIFRS9",
+    "operating_income": "ifrs-full_ProfitLossFromOperatingActivities",
+    "net_income": "ifrs-full_ProfitLoss",
+    "hybrid_capital": "dart_HybridBonds",
+    "equity_total": "ifrs-full_Equity",
+    "total_assets": "ifrs-full_Assets"
+   },
+   "form": "[기재정정]반기보고서",
+   "first_rcept_no": "20260814003306",
+   "first_filed": "2026-08-14"
+  }
+ },
+ "shares": {
+  "2025:Q1": {
+   "filed": "2025-05-15",
+   "rcept_no": "20250515002546",
+   "common": 503445325,
+   "preferred": 0,
+   "treasury_common": 10503261
+  },
+  "2025:H1": {
+   "filed": "2025-08-14",
+   "rcept_no": "20250814002920",
+   "common": 485494934,
+   "preferred": 0,
+   "treasury_common": 1
+  },
+  "2025:Q3": {
+   "filed": "2025-11-14",
+   "rcept_no": "20251114002208",
+   "common": 485494934,
+   "preferred": 0,
+   "treasury_common": 3900001
+  },
+  "2025:FY": {
+   "filed": "2026-10-07",
+   "rcept_no": "20261007000218",
+   "common": 485494934,
+   "preferred": 0,
+   "treasury_common": 8337535
+  },
+  "2026:H1": {
+   "filed": "2026-10-07",
+   "rcept_no": "20261007000223",
+   "common": 474654361,
+   "preferred": 0,
+   "treasury_common": 5204123
+  }
+ },
+ "prices": {}
+}

@@ -1,0 +1,38 @@
+{
+"status": "000",
+"message": "정상",
+"list": [
+{
+"rcept_no": "20260814004200",
+"se": "보통주",
+"istc_totqy": "354,687,734",
+"tesstk_co": "1,300,000",
+"distb_stock_co": "353,387,734",
+"stlm_dt": "2026-06-30"
+},
+{
+"rcept_no": "20260814004200",
+"se": "우선주",
+"istc_totqy": "-",
+"tesstk_co": "-",
+"distb_stock_co": "-",
+"stlm_dt": "2026-06-30"
+},
+{
+"rcept_no": "20260814004200",
+"se": "합계",
+"istc_totqy": "354,687,734",
+"tesstk_co": "1,300,000",
+"distb_stock_co": "353,387,734",
+"stlm_dt": "2026-06-30"
+},
+{
+"rcept_no": "20260814004200",
+"se": "비고",
+"istc_totqy": "-",
+"tesstk_co": "-",
+"distb_stock_co": "-",
+"stlm_dt": "2026-06-30"
+}
+]
+}

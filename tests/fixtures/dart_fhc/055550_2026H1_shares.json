@@ -1,0 +1,38 @@
+{
+"status": "000",
+"message": "정상",
+"list": [
+{
+"rcept_no": "20261007000223",
+"se": "의결권 있는\n보통주",
+"istc_totqy": "474,654,361",
+"tesstk_co": "5,204,123",
+"distb_stock_co": "469,450,238",
+"stlm_dt": "2026-06-30"
+},
+{
+"rcept_no": "20261007000223",
+"se": "의결권 없는\n우선주",
+"istc_totqy": "-",
+"tesstk_co": "-",
+"distb_stock_co": "-",
+"stlm_dt": "2026-06-30"
+},
+{
+"rcept_no": "20261007000223",
+"se": "합계",
+"istc_totqy": "474,654,361",
+"tesstk_co": "5,204,123",
+"distb_stock_co": "469,450,238",
+"stlm_dt": "2026-06-30"
+},
+{
+"rcept_no": "20261007000223",
+"se": "비고",
+"istc_totqy": "-",
+"tesstk_co": "(주6)",
+"distb_stock_co": "-",
+"stlm_dt": "2026-06-30"
+}
+]
+}
