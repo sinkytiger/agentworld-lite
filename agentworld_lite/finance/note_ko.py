@@ -33,6 +33,10 @@ METRIC_KO = {
     "common_equity_spread": "보통주자본 최대-최소 차",
     "bps": "BPS(주당 보통주자본)",
     "ttm_roe": "TTM ROE",
+    "q2_yoy_growth": "2분기 지배주주순이익 전년 대비 증가율",
+    "sector_q2_yoy_growth": "4개 그룹 합산 2분기 증가율",
+    "sector_cost_income_ratio": "4개 그룹 합산 CIR",
+    "cost_income_spread_pp": "그룹별 CIR 최고-최저 차",
 }
 ID_NOTE = ("모든 수치 뒤에 사실 ID와 그 수치가 나온 DART 접수번호를 붙였습니다. 계산한 수치는 계산에 들어간 보고서의 "
            "접수번호를 모두 적습니다. 금액은 억원 미만에서 반올림했습니다.")
