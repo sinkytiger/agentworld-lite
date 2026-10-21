@@ -179,7 +179,8 @@ def share_facts(company: Company, year: int, period: str) -> list[Fact]:
     names = {"common": "발행주식 총수(보통주)", "preferred": "발행주식 총수(우선주)", "treasury_common": "자기주식수(보통주)"}
     return [Fact(f"{company.stock_code}.{year}{period}.shares_{k}", f"{company.name} {year} {PERIOD_LABEL[period]} {v}",
                  float(sh[k]), "shares",
-                 {"source": "DART", "rcept_no": sh.get("rcept_no"), "filed": sh.get("filed"), "company": company.stock_code})
+                 {"source": "DART", "rcept_no": sh.get("rcept_no"), "filed": sh.get("filed"), "company": company.stock_code,
+                  "share_period": f"{year}:{period}"})
             for k, v in names.items() if sh.get(k) is not None]
 
 
@@ -194,4 +195,5 @@ def price_fact(company: Company, date: str) -> Fact | None:
                 "company": company.stock_code, "date": date}
         return Fact(f"{company.stock_code}.price.{date}", label, float(px), company.currency, meta)
     return Fact(f"{company.stock_code}.price.{date}", f"{company.name} 종가 ({date}, KRX)", float(px), "KRW",
-                {"source": "KRX", "company": company.stock_code, "date": date})
+                {"source": (company.data.get("price_sources") or {}).get(date, "KRX"), "company": company.stock_code,
+                 "date": date})

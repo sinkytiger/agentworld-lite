@@ -1,0 +1,196 @@
+id: k02_q2_cost_income_private
+name: Second-quarter 2026 cost-to-income ratios of 신한지주 and 우리금융지주
+name_ko: 신한지주·우리금융지주 2026년 2분기 영업이익경비율(CIR)
+description_ko: 신한지주(055550)와 우리금융지주(316140)의 2026년 2분기(4~6월) 단독 영업이익경비율을 2026-10-15까지 접수된 보고서만으로 비교합니다. collector가 공시를 모으고
+  analyst가 계산하며 reporter가 제출합니다.
+category: finance
+domain: finance
+world_guide: false
+description: The desk compares the cost-to-income ratios of 신한지주 (Shinhan Financial Group, stock code 055550) and 우리금융지주 (Woori
+  Financial Group, stock code 316140) for the second quarter of 2026 alone (April-June 2026), using only reports filed by
+  2026-10-15. The collector pulls filings, the analyst computes, the reporter submits.
+objectives:
+  primary: 'Submit two answers: shinhan_q2_cost_income_ratio and woori_q2_cost_income_ratio (general and administrative expenses
+    divided by operating revenue for that single quarter, in percent, e.g. 45.0 for 45.0%).'
+  secondary:
+  - Use as few rounds as possible.
+max_rounds: 20
+inputs:
+  as_of: '2026-10-15'
+  company: 신한지주; 우리금융지주
+data:
+  dir: data/finance/dart_fhc
+matched:
+  pair_id: k02
+  placement: private
+  fact_counts:
+    analyst: 3
+relevant_game_context: '- Common traps: consolidated (CFS) vs separate (OFS) statements, net income vs net income attributable
+  to owners, equity attributable to owners vs common equity (hybrid capital securities, 신종자본증권, sit in owners'' equity), cumulative
+  vs single-quarter figures, issued vs treasury shares, and reports filed after the as-of date (for an amended report DART
+  serves the amended version, with its later filing date).'
+agents:
+- username: collector
+  role: data collector
+  restricted_tools:
+  - calculate
+  - submit_answer
+- username: analyst
+  role: analyst
+  restricted_tools:
+  - fetch_financials
+  - fetch_shares
+  - submit_answer
+  role_brief: Report figures are cumulative from January, so a standalone Q2 figure = H1 cumulative - Q1 cumulative. Cost-to-income
+    ratio (%) = general_admin_expense / operating revenue x 100, where operating revenue (총영업이익, income before G&A and credit-loss
+    provisions) = operating_income + general_admin_expense + credit_loss_provision, all for the same single quarter from consolidated
+    (CFS) statements. The inputs are each group's 2026 Q1 CFS and 2026 H1 CFS reports.
+- username: reporter
+  role: reporter
+  restricted_tools:
+  - fetch_financials
+  - fetch_shares
+  - calculate
+verifier:
+  checkpoints:
+  - type: answer
+    name: shinhan_q2_cost_income_ratio
+    field: shinhan_q2_cost_income_ratio
+    expected: 36.293451
+    rel_tol: 0.001
+  - type: answer
+    name: woori_q2_cost_income_ratio
+    field: woori_q2_cost_income_ratio
+    expected: 40.811552
+    rel_tol: 0.001
+reference_solution:
+  collector:
+  - - fetch_financials
+    - company: '055550'
+      year: 2026
+      period: Q1
+      basis: CFS
+  - - fetch_financials
+    - company: '055550'
+      year: 2026
+      period: H1
+      basis: CFS
+  - - fetch_financials
+    - company: '316140'
+      year: 2026
+      period: Q1
+      basis: CFS
+  - - fetch_financials
+    - company: '316140'
+      year: 2026
+      period: H1
+      basis: CFS
+  - - share_facts
+    - to_agent: analyst
+      fact_ids:
+      - 055550.2026Q1.CFS.general_admin_expense
+      - 055550.2026Q1.CFS.operating_income
+      - 055550.2026Q1.CFS.credit_loss_provision
+      - 055550.2026H1.CFS.general_admin_expense
+      - 055550.2026H1.CFS.operating_income
+      - 055550.2026H1.CFS.credit_loss_provision
+      - 316140.2026Q1.CFS.general_admin_expense
+      - 316140.2026Q1.CFS.operating_income
+      - 316140.2026Q1.CFS.credit_loss_provision
+      - 316140.2026H1.CFS.general_admin_expense
+      - 316140.2026H1.CFS.operating_income
+      - 316140.2026H1.CFS.credit_loss_provision
+  analyst:
+  - - wait
+    - reason: waiting for inputs
+    - until_have:
+        316140.2026H1.CFS.credit_loss_provision: 1
+      retries: 30
+  - - calculate
+    - name: shinhan_q2_general_admin_expense
+      formula: h1 - q1
+      unit: KRW
+      inputs:
+      - var: h1
+        fact_id: 055550.2026H1.CFS.general_admin_expense
+      - var: q1
+        fact_id: 055550.2026Q1.CFS.general_admin_expense
+  - - calculate
+    - name: shinhan_q2_operating_revenue
+      formula: (h1_oi + h1_ga + h1_pv) - (q1_oi + q1_ga + q1_pv)
+      unit: KRW
+      inputs:
+      - var: h1_oi
+        fact_id: 055550.2026H1.CFS.operating_income
+      - var: h1_ga
+        fact_id: 055550.2026H1.CFS.general_admin_expense
+      - var: h1_pv
+        fact_id: 055550.2026H1.CFS.credit_loss_provision
+      - var: q1_oi
+        fact_id: 055550.2026Q1.CFS.operating_income
+      - var: q1_ga
+        fact_id: 055550.2026Q1.CFS.general_admin_expense
+      - var: q1_pv
+        fact_id: 055550.2026Q1.CFS.credit_loss_provision
+  - - calculate
+    - name: shinhan_q2_cost_income_ratio
+      formula: g / r * 100
+      unit: '%'
+      inputs:
+      - var: g
+        fact_id: calc.shinhan_q2_general_admin_expense
+      - var: r
+        fact_id: calc.shinhan_q2_operating_revenue
+  - - calculate
+    - name: woori_q2_general_admin_expense
+      formula: h1 - q1
+      unit: KRW
+      inputs:
+      - var: h1
+        fact_id: 316140.2026H1.CFS.general_admin_expense
+      - var: q1
+        fact_id: 316140.2026Q1.CFS.general_admin_expense
+  - - calculate
+    - name: woori_q2_operating_revenue
+      formula: (h1_oi + h1_ga + h1_pv) - (q1_oi + q1_ga + q1_pv)
+      unit: KRW
+      inputs:
+      - var: h1_oi
+        fact_id: 316140.2026H1.CFS.operating_income
+      - var: h1_ga
+        fact_id: 316140.2026H1.CFS.general_admin_expense
+      - var: h1_pv
+        fact_id: 316140.2026H1.CFS.credit_loss_provision
+      - var: q1_oi
+        fact_id: 316140.2026Q1.CFS.operating_income
+      - var: q1_ga
+        fact_id: 316140.2026Q1.CFS.general_admin_expense
+      - var: q1_pv
+        fact_id: 316140.2026Q1.CFS.credit_loss_provision
+  - - calculate
+    - name: woori_q2_cost_income_ratio
+      formula: g / r * 100
+      unit: '%'
+      inputs:
+      - var: g
+        fact_id: calc.woori_q2_general_admin_expense
+      - var: r
+        fact_id: calc.woori_q2_operating_revenue
+  - - share_facts
+    - to_agent: reporter
+      fact_ids:
+      - calc.shinhan_q2_cost_income_ratio
+      - calc.woori_q2_cost_income_ratio
+  reporter:
+  - - wait
+    - reason: waiting for results
+    - until_have:
+        calc.shinhan_q2_cost_income_ratio: 1
+        calc.woori_q2_cost_income_ratio: 1
+      retries: 30
+  - - submit_answer
+    - answers:
+      - field: shinhan_q2_cost_income_ratio
+        fact_id: calc.shinhan_q2_cost_income_ratio
+      - field: woori_q2_cost_income_ratio
+        fact_id: calc.woori_q2_cost_income_ratio

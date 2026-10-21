@@ -125,23 +125,59 @@ How the desk works:
 - Keep any text before your tool call to at most two short sentences."""
 
 
+# ---------------------------------------------------------------------- Korean financial holding companies (DART)
+KR_FHC_OVERRIDES: dict[str, dict] = {
+    "fetch_financials": {
+        "description": ("Fetch key figures from a DART periodic report of a Korean financial holding company (금융지주) into "
+                        "your notebook: net_interest_income, net_fee_income, general_admin_expense (일반관리비), "
+                        "credit_loss_provision (신용손실충당금 전입액), operating_income, net_income (incl. non-controlling "
+                        "interests), net_income_owners (attributable to owners of the parent, incl. the part paid to "
+                        "hybrid-capital holders), equity_owners (attributable to owners of the parent, INCLUDING hybrid "
+                        "capital securities), hybrid_capital (신종자본증권), equity_total (incl. non-controlling interests), "
+                        "total_assets. period: Q1 / H1 / Q3 / FY of the calendar year. Income-statement figures are "
+                        "CUMULATIVE from January (H1 = Jan-Jun). basis: CFS = consolidated, OFS = separate (the holding "
+                        "company alone). Reports filed after the as-of date are not available; for an amended report DART "
+                        "serves the amended version and its filing date. company = name or 6-digit stock code."),
+        "input_schema": TOOL_DEFS["fetch_financials"]["input_schema"],
+    },
+    "fetch_shares": {
+        "description": ("Fetch the number of issued shares (common, preferred) and treasury shares from a DART half-year (H1) "
+                        "or annual (FY) report into your notebook; quarterly reports usually leave this table empty."),
+        "input_schema": TOOL_DEFS["fetch_shares"]["input_schema"],
+    },
+}
+
+SYSTEM_PROMPT_KR_FHC = """You are an AI analyst on a small equity-research desk. Your team answers a question about Korea's listed financial holding companies (KB금융, 신한지주, 하나금융지주, 우리금융지주) using public DART disclosures.
+
+CRITICAL RESPONSE RULE: You MUST call exactly ONE tool function in every response. Never respond without calling a tool function.
+
+How the desk works:
+- The desk is turn-based. Each round every teammate acts once, in a fixed order. One tool call is your whole turn.
+- Every number lives in a notebook as a fact with an id. You can only use facts in YOUR notebook; teammates must share_facts to you.
+- Roles are limited: check which tools your role cannot use, and ask the teammate who can.
+- You only see your own notebook and the team chat. Coordinate through send_chat.
+- Watch for traps: consolidated (CFS) vs separate (OFS), net income vs net income attributable to owners, equity attributable to owners vs common equity (hybrid capital securities, 신종자본증권, are part of owners' equity), cumulative vs single-quarter figures, issued vs treasury shares, ratios as fractions vs percent, and the as-of date.
+- Answers must cite fact ids; you cannot type numbers in. The round budget is limited, so act efficiently and do not send redundant messages.
+- Keep any text before your tool call to at most two short sentences."""
+
+
 def tool_names_for(market: str) -> tuple[str, ...]:
     return CA_TOOL_NAMES if market == "ca" else TOOL_NAMES
 
 
 def system_prompt_for(market: str) -> str:
-    return SYSTEM_PROMPT_CA if market == "ca" else SYSTEM_PROMPT
+    return {"ca": SYSTEM_PROMPT_CA, "kr_fhc": SYSTEM_PROMPT_KR_FHC}.get(market, SYSTEM_PROMPT)
 
 
 def tool_specs_for(market: str):
     """A tool_specs(allowed, strict) function for one market (the agents call it with their allowed tools)."""
-    if market != "ca":
+    if market not in ("ca", "kr_fhc"):
         return tool_specs
-    defs = {**TOOL_DEFS, **CA_OVERRIDES}
+    defs = {**TOOL_DEFS, **(CA_OVERRIDES if market == "ca" else KR_FHC_OVERRIDES)}
 
     def specs(allowed=None, strict: bool = True) -> list[dict]:
         out = []
-        for n in CA_TOOL_NAMES:
+        for n in tool_names_for(market):
             if allowed is not None and n not in allowed:
                 continue
             spec = {"name": n, "description": defs[n]["description"], "input_schema": defs[n]["input_schema"]}
