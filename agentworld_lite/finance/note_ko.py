@@ -37,6 +37,7 @@ METRIC_KO = {
     "sector_q2_yoy_growth": "4개 그룹 합산 2분기 증가율",
     "sector_cost_income_ratio": "4개 그룹 합산 CIR",
     "cost_income_spread_pp": "그룹별 CIR 최고-최저 차",
+    "roe_gap_pp": "ROE 목표까지 남은 격차",
 }
 ID_NOTE = ("모든 수치 뒤에 사실 ID와 그 수치가 나온 DART 접수번호를 붙였습니다. 계산한 수치는 계산에 들어간 보고서의 "
            "접수번호를 모두 적습니다. 금액은 억원 미만에서 반올림했습니다.")
@@ -105,14 +106,20 @@ _FIGURE_KO = re.compile(r"(?<![\w.,])-?(?:\d+조(?: \d{1,3}(?:,\d{3})*억)?원"
                         rf"|\d{{1,3}}(?:,\d{{3}})+(?:\.\d+)?{_UNIT}?|\d+\.\d+{_UNIT}?|\d+{_UNIT})")
 
 
+_QUOTE = re.compile(r"“[^”]*”")
+
+
 def uncited_figures_ko(markdown: str) -> list[str]:
     """Figures not immediately followed by a citation. Headings, code spans (fact ids, formulas) and the citations
-    themselves are skipped, so years, dates, 접수번호 and period names such as 2분기 do not count."""
+    themselves are skipped, so years, dates, 접수번호 and period names such as 2분기 do not count. Wording quoted from a
+    filing in “curly quotes” is not checked figure by figure, but the quote itself must be followed by a citation."""
     bad = []
     for line in markdown.splitlines():
         if line.lstrip().startswith("#"):
             continue
-        text = _CODE.sub("\x01", CITATION_KO.sub("\x00", line))
+        text = CITATION_KO.sub("\x00", line)
+        bad += [q.group(0)[:40] for q in _QUOTE.finditer(text) if not text[q.end():].startswith(" \x00")]
+        text = _CODE.sub("\x01", _QUOTE.sub("\x01", text))
         for m in _FIGURE_KO.finditer(text):
             if not text[m.end():].lstrip("*").startswith(" \x00"):
                 bad.append(m.group(0))

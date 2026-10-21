@@ -121,7 +121,10 @@ class FinanceEnv:
             if fact is None:
                 raise ValueError(f"no price for {f['price_of']} on {f['date']}")
             return fact
-        return Fact(f["id"], f["label"], float(f["value"]), f.get("unit", ""), {"source": f.get("source", "task")})
+        meta = {"source": f.get("source", "task")}
+        if f.get("rcept_no"):  # a task input quoted from a filing (e.g. a value-up target) keeps its receipt number
+            meta.update(rcept_no=str(f["rcept_no"]), filed=f.get("filed"), company=f.get("company"))
+        return Fact(f["id"], f["label"], float(f["value"]), f.get("unit", ""), meta)
 
     # ------------------------------------------------------------------ dispatch
     def execute(self, agent_name: str, tool: str, args: dict | None) -> ActionResult:

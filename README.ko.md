@@ -256,14 +256,16 @@ python -m agentworld_lite.finance valuation --bank RY --out reports/ry_valuation
 
 - **데이터셋** `data/finance/dart_fhc` (`fetch --source dart --profile fhc`): 은행 형식 계정(순이자이익, 순수수료이익, 일반관리비, 신용손실충당금 전입액, 지배주주순이익, 지배주주지분, 신종자본증권)을 XBRL `account_id`로 읽고 그룹별 예비 id를 둡니다. 주식 수와, 정정 보고서마다 처음 접수된 보고서도 저장합니다(DART는 정정본을 돌려줌). 수치는 각 그룹의 2026년 2분기 실적 발표와 일치합니다.
 - **DART만 씀**: DART에는 주가가 없고, KRX Open API 약관은 데이터를 제3자에게 넘기는 것을 금지하며, 모든 답을 공시만으로 검증할 수 있어야 하므로 저장소에 주가를 싣지 않았습니다.
-- **과제** `tasks/finance_kr`, 공유형/개인형 쌍, 허용 오차 0.1%: KB금융의 2026년 상반기 말 BPS와 TTM ROE(160,402원, 11.36%. 자기주식·신종자본증권을 빼지 않거나, 평균 대신 기말 자본을 쓰거나, 상반기 순이익을 연환산하면 오답), 신한지주·우리금융지주의 2026년 2분기 단독 CIR(36.29%, 40.81%. 상반기 누적·1분기 비율이나 좁은 분모는 오답), 4대 금융지주의 2분기 단독 지배주주순이익과 보통주자본(지배주주지분 − 신종자본증권)의 평균·최대-최소 차.
+- **과제** `tasks/finance_kr`, 공유형/개인형 쌍, 허용 오차 0.1%: KB금융의 2026년 상반기 말 BPS와 TTM ROE(160,402원, 11.36%. 자기주식·신종자본증권을 빼지 않거나, 평균 대신 기말 자본을 쓰거나, 상반기 순이익을 연환산하면 오답), 신한지주·우리금융지주의 2026년 2분기 단독 CIR(36.29%, 40.81%. 상반기 누적·1분기 비율이나 좁은 분모는 오답), 4대 금융지주의 2분기 단독 지배주주순이익과 보통주자본(지배주주지분 − 신종자본증권)의 평균·최대-최소 차. 더 어려운 쌍: 그룹별·합산 2분기 지배주주순이익 전년 대비 증가율(보고서 16개, 네 증가율의 평균은 오답), 어떤 보고서를 쓸지 알려 주지 않는 합산 CIR, 신한지주·하나금융지주의 ROE와 밸류업 목표까지 남은 격차(k06).
+- **밸류업 점검**: `valueup`은 각 그룹의 기업가치 제고 계획 목표를 접수번호와 함께 원문 그대로 인용하고(`--build`는 공시 원문을 받아 문구가 모두 있을 때만 파일을 씀), 진척을 공시만으로 잽니다. ROE, 각 그룹이 반기보고서에 적은 CET1 비율, 배당·자기주식 결정 API로 구한 주주환원율, 신한지주 발행주식 수. 목표마다 달성·순항·지연·미달(기한 미명시)로 판정하고, 신한지주가 스스로 밝힌 ROE·주주환원율과 대조합니다.
 - **한국어 산출물**: `note`는 이 과제들의 한국어 섹터 노트를 쓰고, 숫자마다 DART 접수번호를 붙입니다. 한국어 밸류에이션 스냅샷(`valuation --market kr`: P/B와 ROE, 교육용 예시·투자 권유 아님, 투자의견·목표주가 없음)은 사용자가 `--price`와 `--price-source`로 출처가 있는 종가를 넣기 전까지 꺼져 있습니다.
-- **데모**: `streamlit run demo/streamlit_app_kr.py`. 한국어 화면으로 실행 재생, 4대 금융지주 차트, 노트, 과제를 보여 줍니다. 오프라인으로 동작하고 배포하지 않았습니다. 밸류에이션 화면은 출처가 있는 종가가 있을 때만 나타납니다.
+- **데모**: `streamlit run demo/streamlit_app_kr.py`. 한국어 화면으로 실행 재생, 4대 금융지주 차트, 밸류업 점검, 노트, 과제를 보여 줍니다. 오프라인으로 동작하고 배포하지 않았습니다. 밸류에이션 화면은 출처가 있는 종가가 있을 때만 나타납니다.
 
 ```bash
 python -m agentworld_lite.finance fetch --source dart --profile fhc --company 105560 055550 086790 316140 --periods 2025:Q1 2025:H1 2025:Q3 2025:FY 2026:Q1 2026:H1 --cache C:/dart_cache
 python -m agentworld_lite.finance validate --tasks tasks/finance_kr
 python -m agentworld_lite.finance note --reference k03_big4_q2_sector_shared --out reports/k03_note_ko.md
+python -m agentworld_lite.finance valueup --out reports/valueup_ko.md
 ```
 
 **첫 모델 실행** (2026-10-21): Claude Opus 5.5가 시드 7의 12판(과제 6개 × 채팅 허용·차단)을 모두 풀었습니다. 실패한 도구 호출도, 허용 오차 밖의 답도 없었고 비용은 5.57달러였습니다. 캐나다 데스크처럼 채팅을 막아도 성공률은 같았고 규칙 기반 CCE만 낮아졌습니다. 자세한 내용은 [docs/finance_korea_fhc.md](docs/finance_korea_fhc.md)에 있습니다.
@@ -333,7 +335,7 @@ tasks/gym/        자동 생성 과제 (gen 산출물)
 tasks/finance/    한국 금융 과제 4개 (공유형/개인형 2쌍, 가상 회사)
 tasks/finance_ca/ 캐나다 금융 과제 6개 (공유형/개인형 3쌍, 실제 은행 공시)
 tasks/finance_kr/ 한국 금융 과제 (4대 금융지주 실제 DART 공시)
-data/finance/     sample/ 가상 회사(DART 형식), edgar/ 캐나다 5대 은행, dart_fhc/ 4대 금융지주
+data/finance/     sample/ 가상 회사(DART 형식), edgar/ 캐나다 5대 은행, dart_fhc/ 4대 금융지주, valueup/ 밸류업 목표와 근거
 tests/            엔진·과제·CCE·생성기·Claude/Ollama 요청 형식 테스트 (API 호출 없음)
 ```
 

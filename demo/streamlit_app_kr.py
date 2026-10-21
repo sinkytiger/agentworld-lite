@@ -1,13 +1,15 @@
-"""Streamlit demo of the Korean research desk (4대 금융지주): replay a run, compare the four groups' DART figures, and
-read the cited Korean sector note. The desk uses DART filings only and the repository ships no prices, so the valuation
-view appears only after sourced closing prices are added to the dataset (fetch --price ... --price-source ...).
+"""Streamlit demo of the Korean research desk (4대 금융지주): replay a run, compare the four groups' DART figures,
+check their value-up targets against the filings, and read the cited Korean sector note. The desk uses DART filings
+only and the repository ships no prices, so the valuation view appears only after sourced closing prices are added to
+the dataset (fetch --price ... --price-source ...).
 
     pip install streamlit
     streamlit run demo/streamlit_app_kr.py
 
-No model, no API key and no network: every view reads the committed dataset (data/finance/dart_fhc) and tasks
-(tasks/finance_kr). A run is either a task's scripted reference solution, replayed here, or a trajectory JSON written by
-`python -m agentworld_lite.finance run` (upload it in the sidebar). Query parameters open a given state:
+No model, no API key and no network: every view reads the committed dataset (data/finance/dart_fhc), value-up file
+(data/finance/valueup) and tasks (tasks/finance_kr). A run is either a task's scripted reference solution, replayed
+here, or a trajectory JSON written by `python -m agentworld_lite.finance run` (upload it in the sidebar). Query
+parameters open a given state:
 ?task=<task id>&view=<view>&round=<n>&group=<stock code>
 """
 
@@ -32,11 +34,12 @@ from agentworld_lite.finance.note_ko import sector_note_ko  # noqa: E402
 from agentworld_lite.finance.run import make_factory, run_episode  # noqa: E402
 from agentworld_lite.finance.valuation import ValuationError  # noqa: E402
 from agentworld_lite.finance.valuation_ko import NOTICE, prices_ready, snapshot_ko  # noqa: E402
+from agentworld_lite.finance import valueup  # noqa: E402
 from agentworld_lite.task import load_tasks  # noqa: E402
 
 TASK_DIR = ROOT / "tasks" / "finance_kr"
 DATA_DIR = ROOT / "data" / "finance" / "dart_fhc"
-BASE_VIEWS = ("데스크 재생", "4대 금융지주 데이터", "섹터 노트", "과제")
+BASE_VIEWS = ("데스크 재생", "4대 금융지주 데이터", "밸류업 점검", "섹터 노트", "과제")
 VALUATION = "밸류에이션"  # listed only when every group has a sourced closing price
 DEFAULT_TASK = "k03_big4_q2_sector_shared"
 CODES = tuple(FHC.values())
@@ -59,6 +62,11 @@ def kr_tasks() -> dict:
 @st.cache_resource
 def kr_dataset() -> Dataset:
     return Dataset(DATA_DIR)
+
+
+@st.cache_data
+def kr_scorecard() -> str:
+    return valueup.render_scorecard()
 
 
 @st.cache_data
@@ -213,6 +221,67 @@ def view_groups() -> None:
     st.dataframe(df, hide_index=True, column_config=config)
 
 
+def valueup_frame() -> pd.DataFrame:
+    rows = []
+    for r in valueup.scorecard_rows():
+        t = r["target"]
+        shares = t.metric == "shares"
+        scale = 1e6 if shares else 1  # shares in millions, the unit of Shinhan's own target
+        rows.append({
+            "금융지주": valueup.NAMES[t.code], "지표": valueup.METRIC_KO[t.metric] + (" (백만주)" if shares else " (%)"),
+            "목표": None if t.threshold is None else t.threshold / scale,
+            "방향": {">=": "이상", "<=": "이하"}.get(t.direction, "방식"),
+            "기한": t.deadline[:4] if t.deadline else "명시 없음",
+            "현재": r["now"][0] / scale if r["now"] else None,
+            "1년 전": r["prev"][0] / scale if r["prev"] else None,
+            "남은 격차": (r["gap"] / scale) if r["gap"] else None,
+            "판정": r["status"], "목표 공시": t.rcept_no, "metric": t.metric,
+        })
+    return pd.DataFrame(rows)
+
+
+def progress_chart(df: pd.DataFrame, metric: str, title: str) -> alt.Chart:
+    """Now (filled), a year earlier (hollow) and the target (tick) per group, on a zoomed axis."""
+    d = df[df["metric"] == metric]
+    vals = pd.concat([d["현재"], d["1년 전"].dropna(), d["목표"]])
+    x = alt.X("v:Q", title=None, scale=alt.Scale(domain=[vals.min() - 0.8, vals.max() + 0.8], zero=False),
+              axis=alt.Axis(grid=True, gridOpacity=0.25, tickCount=5, domain=False, ticks=False))
+    y = alt.Y("금융지주:N", title=None, sort=list(d["금융지주"]))
+    long = d.melt(id_vars=["금융지주"], value_vars=["현재", "1년 전", "목표"], var_name="값", value_name="v").dropna()
+    tip = [alt.Tooltip("금융지주:N"), alt.Tooltip("값:N"), alt.Tooltip("v:Q", format=".2f")]
+    base = alt.Chart(long, title=title).encode(y=y, x=x, tooltip=tip)
+    target = base.transform_filter(alt.datum["값"] == "목표").mark_tick(thickness=2, size=22, color=ink())
+    prev = base.transform_filter(alt.datum["값"] == "1년 전").mark_point(size=110, filled=False, color=series_color())
+    now = base.transform_filter(alt.datum["값"] == "현재").mark_circle(size=140, opacity=1, color=series_color())
+    label = base.transform_filter(alt.datum["값"] == "현재").mark_text(align="left", dx=10, dy=-10, color=ink()).encode(
+        text=alt.Text("v:Q", format=".2f"))
+    return (target + prev + now + label).properties(height=60 + 40 * len(d))
+
+
+def view_valueup() -> None:
+    df = valueup_frame()
+    st.markdown("각 그룹이 낸 **기업가치 제고 계획**의 목표를 원문 그대로 인용하고, 2026년 6월 말 공시 값과 비교합니다. "
+                "ROE = TTM 지배주주순이익 / 평균 지배주주지분(전년 6월 말, 올해 6월 말). CET1 비율은 반기보고서 본문의 표. "
+                "주주환원율 = (현금배당 총액 + 그 해 이사회가 결정한 자기주식 취득·신탁 금액) / 지배주주순이익.")
+    counts = df["판정"].value_counts()
+    cols = st.columns(4)
+    for col, label in zip(cols, ("달성", "순항", "지연", "미달(기한 미명시)")):
+        col.metric(label, f"{counts.get(label, 0)}개")
+    left, right = st.columns(2)
+    left.altair_chart(progress_chart(df, "roe", "ROE: 현재(●)·1년 전(○)·목표(|) (%)"), width="stretch")
+    right.altair_chart(progress_chart(df, "cet1", "CET1 비율: 2026-06-30(●)·목표(|) (%)"), width="stretch")
+    st.caption(f"{valueup.NOTICE}. 우리금융지주는 수치 목표가 첨부 PDF에만 있어 인용하지 않았습니다. 판정은 기한이 있으면 "
+               "남은 격차를 메우는 데 필요한 연간 개선폭과 최근 1년 개선폭을 비교합니다.")
+    st.markdown("**표: 목표별 진척과 판정**")
+    num = st.column_config.NumberColumn(format="%.2f")
+    st.dataframe(df.drop(columns="metric"), hide_index=True,
+                 column_config={"목표": num, "현재": num, "1년 전": num, "남은 격차": num})
+    md = kr_scorecard()
+    st.download_button("점검표 내려받기 (Markdown)", md, file_name="valueup_scorecard_ko.md", mime="text/markdown")
+    with st.expander("점검표 전문 (목표 원문, 접수번호, 측정 방법)"):
+        show_markdown(md)
+
+
 def show_markdown(md: str) -> None:
     body = md.split("\n", 1)[1] if md.startswith("# ") else md  # the page header already shows a title
     with st.container(border=True):
@@ -274,7 +343,7 @@ def view_task(task) -> None:
 def main() -> None:
     st.set_page_config(page_title="한국 리서치 데스크: 4대 금융지주", layout="wide")
     qp = st.query_params
-    views = BASE_VIEWS[:3] + ((VALUATION,) if prices_ready(DATA_DIR) else ()) + BASE_VIEWS[3:]
+    views = BASE_VIEWS[:4] + ((VALUATION,) if prices_ready(DATA_DIR) else ()) + BASE_VIEWS[4:]
     all_tasks = kr_tasks()
     ids = list(all_tasks)
     start_task = qp.get("task", DEFAULT_TASK)
@@ -312,6 +381,11 @@ def main() -> None:
     elif source == "정답 시나리오":
         traj = kr_reference_run(task_id)
 
+    if view == "밸류업 점검":  # not about the selected task
+        st.header("밸류업 약속 점검: 4대 금융지주")
+        st.caption(f"기준일 {valueup.AS_OF} · 진척은 2026년 6월 말 공시 기준 · 규칙으로 판정(모델 없음)")
+        view_valueup()
+        return
     st.header(title_of(task))
     run = (f"실행: {(traj.get('meta') or {}).get('model', 'uploaded')}" if traj else "궤적을 올리면 재생합니다")
     st.caption(f"`{task.id}` · 기준일 {(task.meta.get('inputs') or {}).get('as_of')} · {run}")

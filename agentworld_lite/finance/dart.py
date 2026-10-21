@@ -321,11 +321,12 @@ class DartClient:
         rows = self._json("stockTotqySttus.json", corp_code=corp_code, bsns_year=str(year), reprt_code=REPORT_CODES[period])
         return normalize_shares(rows) if rows else None
 
-    def filing_list(self, corp_code: str, bgn_de: str, end_de: str) -> list[dict]:
-        """Periodic filings (사업·반기·분기보고서, including amendments) received between two dates (YYYYMMDD)."""
+    def filing_list(self, corp_code: str, bgn_de: str, end_de: str, kind: str = "A") -> list[dict]:
+        """Filings of one kind received between two dates (YYYYMMDD), all pages. kind is list.json's pblntf_ty:
+        A periodic reports (사업·반기·분기보고서, including amendments), I exchange filings (거래소공시)."""
         rows, page = [], 1
         while True:
-            data = self._data("list.json", corp_code=corp_code, bgn_de=bgn_de, end_de=end_de, pblntf_ty="A",
+            data = self._data("list.json", corp_code=corp_code, bgn_de=bgn_de, end_de=end_de, pblntf_ty=kind,
                               page_no=str(page), page_count="100")
             if data is None:
                 return rows

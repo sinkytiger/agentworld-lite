@@ -48,7 +48,22 @@ def test_note_and_task_views_and_no_valuation_without_prices():
     at = _open(view="과제", task="k01_kb_bps_roe_private")
     assert at.header[0].value == "KB금융 BPS·TTM ROE (2026년 상반기 말)"
     views = next(r for r in at.radio if r.label == "화면").options
-    assert views == ["데스크 재생", "4대 금융지주 데이터", "섹터 노트", "과제"]       # DART only: no valuation view
+    assert views == ["데스크 재생", "4대 금융지주 데이터", "밸류업 점검", "섹터 노트", "과제"]  # DART only: no valuation
     assert "주가를 싣지 않았으므로" in " ".join(c.value for c in at.caption)
     at = _open(view="밸류에이션")                                                      # an old link falls back
     assert next(r for r in at.radio if r.label == "화면").value == "데스크 재생"
+
+
+def test_valueup_view_shows_verdicts_and_receipt_numbers():
+    at = _open(view="밸류업 점검")
+    assert {m.label: m.value for m in at.metric} == {"달성": "5개", "순항": "1개", "지연": "1개", "미달(기한 미명시)": "2개"}
+    df = at.dataframe[0].value
+    row = lambda g, metric: df[(df["금융지주"] == g) & (df["지표"].str.startswith(metric))].iloc[0]
+    assert row("KB금융", "ROE")["판정"] == "달성" and round(row("KB금융", "ROE")["현재"], 2) == 10.47
+    assert row("신한지주", "ROE")["판정"] == "순항" and row("신한지주", "ROE")["목표 공시"] == "20260423800235"
+    shares = row("신한지주", "발행주식 수")
+    assert shares["판정"] == "지연" and shares["목표"] == 450 and round(shares["현재"], 2) == 474.65
+    assert row("하나금융지주", "ROE")["기한"] == "명시 없음" and round(row("하나금융지주", "CET1")["현재"], 2) == 13.27
+    assert "우리금융지주" not in set(df["금융지주"])
+    full = " ".join(m.value for m in at.markdown)
+    assert "“목표 1) ROE 12%” [사실 `086790.target.roe` · 접수번호 20260724800373]" in full

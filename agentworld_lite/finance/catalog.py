@@ -794,7 +794,95 @@ K05 = {
 }
 
 
-SPECS_KR_FHC = [_k01(), K02, K03, K04, K05]
+# ---------------------------------------------------------------------- value-up check
+# k06 measures two groups against the ROE targets in their 기업가치 제고 계획 (agentworld_lite/finance/valueup.py quotes
+# them): Shinhan "ROE 10%" by 2027 (20260423800235) and Hana "ROE 12%" (20260724800373). The targets reach the analyst
+# as task inputs that keep their receipt numbers. ROE = TTM net income to owners / average owners' equity at
+# 2025-06-30 and 2026-06-30 (KRW millions below: FY 2025, H1 2025 and H1 2026 net income; equity at the two ends).
+VALUEUP_ROE = {"055550": (4_971_561, 3_037_399, 3_442_729, 57_189_893, 60_100_749, 10.0, "20260423800235"),
+               "086790": (4_002_882, 2_301_028, 2_402_868, 43_194_737, 46_876_523, 12.0, "20260724800373")}
+
+
+def _vu_roe(code: str) -> float:
+    fy, h1p, h1, e0, e1, *_ = VALUEUP_ROE[code]
+    return (fy - h1p + h1) / ((e0 + e1) / 2) * 100
+
+
+def _k06() -> dict:
+    groups = {"shinhan": FHC["shinhan"], "hana": FHC["hana"]}
+    return {
+        "pair": "k06", "slug": "valueup_roe_gap", "max_rounds": 20, "market": "kr_fhc",
+        "company": "신한지주; 하나금융지주",
+        "name": "Value-up check: ROE of 신한지주 and 하나금융지주 against their stated targets",
+        "name_ko": "밸류업 점검: 신한지주·하나금융지주 ROE와 목표까지 남은 격차",
+        "description": ("The desk checks two groups' return on equity against the targets in their value-up plans "
+                        "(기업가치 제고 계획): 신한지주 (055550) and 하나금융지주 (086790), at the end of 2026 H1, using only "
+                        "reports filed by 2026-10-15. The analyst holds both targets, quoted from the plans. The collector "
+                        "pulls filings, the analyst computes, the reporter submits."),
+        "description_ko": ("신한지주(055550)와 하나금융지주(086790)의 2026년 상반기 말 TTM ROE를 구하고, 각 그룹이 기업가치 제고 "
+                           "계획에서 밝힌 ROE 목표까지 남은 격차를 2026-10-15까지 접수된 보고서만으로 계산합니다. 목표는 계획 "
+                           "공시의 접수번호가 붙은 사실로 analyst에게 주어집니다."),
+        "primary": ("Submit four answers: shinhan_ttm_roe and hana_ttm_roe (TTM return on equity at 2026-06-30, in percent, "
+                    "e.g. 9.5 for 9.5%), and shinhan_roe_gap_pp and hana_roe_gap_pp (the group's ROE target minus its TTM "
+                    "ROE, in percentage points; positive when the group is short of its target)."),
+        "facts": {
+            "analyst": [
+                "TTM = FY(2025) - H1(2025) + H1(2026), cumulative figures from consolidated (CFS) statements.",
+                "ROE (%) = TTM net_income_owners / average equity_owners x 100, where the average is taken over the start "
+                "and the end of the twelve months: (equity_owners at 2025-06-30 + equity_owners at 2026-06-30) / 2. Use "
+                "owners' equity as reported (hybrid capital securities included); do not annualize half-year figures.",
+                "Gap (pp) = ROE target - TTM ROE, using the targets you hold from each group's value-up plan.",
+                "The inputs are each group's 2025 FY, 2025 H1 and 2026 H1 CFS reports.",
+            ],
+        },
+        "initial": {"analyst": [
+            {"id": f"{code}.valueup.roe_target", "label": f"{FHC_NAMES[code]} 기업가치 제고 계획 ROE 목표",
+             "value": VALUEUP_ROE[code][5], "unit": "%", "source": "DART 기업가치 제고 계획",
+             "rcept_no": VALUEUP_ROE[code][6], "company": code} for code in groups.values()]},
+        "checkpoints": [
+            *[{"type": "answer", "name": f"{g}_ttm_roe", "field": f"{g}_ttm_roe", "expected": round(_vu_roe(code), 6),
+               "rel_tol": 0.001} for g, code in groups.items()],
+            *[{"type": "answer", "name": f"{g}_roe_gap_pp", "field": f"{g}_roe_gap_pp",
+               "expected": round(VALUEUP_ROE[code][5] - _vu_roe(code), 6), "rel_tol": 0.001} for g, code in groups.items()],
+        ],
+        "reference": {
+            "collector": [
+                *[["fetch_financials", {"company": code, "year": y, "period": p, "basis": "CFS"}]
+                  for code in groups.values() for y, p in ((2025, "FY"), (2025, "H1"), (2026, "H1"))],
+                ["share_facts", {"to_agent": "analyst", "fact_ids": [
+                    f for code in groups.values() for f in _kr_inputs(
+                        code, "2025FY.CFS.net_income_owners", "2025H1.CFS.net_income_owners",
+                        "2026H1.CFS.net_income_owners", "2025H1.CFS.equity_owners", "2026H1.CFS.equity_owners")]}],
+            ],
+            "analyst": [
+                ["wait", {"reason": "waiting for inputs"},
+                 {"until_have": {f"{FHC['hana']}.2026H1.CFS.equity_owners": 1}, "retries": 30}],
+                *[["calculate", {"name": f"{g}_ttm_roe", "formula": "(fy - h1p + h1) / ((e0 + e1) / 2) * 100", "unit": "%",
+                                 "inputs": _inputs(fy=f"{code}.2025FY.CFS.net_income_owners",
+                                                   h1p=f"{code}.2025H1.CFS.net_income_owners",
+                                                   h1=f"{code}.2026H1.CFS.net_income_owners",
+                                                   e0=f"{code}.2025H1.CFS.equity_owners",
+                                                   e1=f"{code}.2026H1.CFS.equity_owners")}]
+                  for g, code in groups.items()],
+                *[["calculate", {"name": f"{g}_roe_gap_pp", "formula": "t - r", "unit": "pp",
+                                 "inputs": _inputs(t=f"{code}.valueup.roe_target", r=f"calc.{g}_ttm_roe")}]
+                  for g, code in groups.items()],
+                ["share_facts", {"to_agent": "reporter", "fact_ids": [
+                    *[f"calc.{g}_ttm_roe" for g in groups], *[f"calc.{g}_roe_gap_pp" for g in groups]]}],
+            ],
+            "reporter": [
+                ["wait", {"reason": "waiting for results"},
+                 {"until_have": {**{f"calc.{g}_ttm_roe": 1 for g in groups}, **{f"calc.{g}_roe_gap_pp": 1 for g in groups}},
+                  "retries": 30}],
+                ["submit_answer", {"answers": [
+                    *[{"field": f"{g}_ttm_roe", "fact_id": f"calc.{g}_ttm_roe"} for g in groups],
+                    *[{"field": f"{g}_roe_gap_pp", "fact_id": f"calc.{g}_roe_gap_pp"} for g in groups]]}],
+            ],
+        },
+    }
+
+
+SPECS_KR_FHC = [_k01(), K02, K03, K04, K05, _k06()]
 
 
 MARKETS = {
