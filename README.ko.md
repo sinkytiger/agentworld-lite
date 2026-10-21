@@ -252,6 +252,8 @@ python -m agentworld_lite.finance valuation --bank RY --out reports/ry_valuation
 
 같은 데스크를 KB금융, 신한지주, 하나금융지주, 우리금융지주의 실제 DART 공시에 적용했습니다. 자세한 내용은 [docs/finance_korea_fhc.md](docs/finance_korea_fhc.md)에 있습니다.
 
+![데모: k03 실행을 라운드별로 재생하고, 4대 금융지주 차트와 숫자마다 DART 접수번호가 붙은 섹터 노트를 보여 줍니다](docs/img/korea_desk_demo.gif)
+
 - **데이터셋** `data/finance/dart_fhc` (`fetch --source dart --profile fhc`): 은행 형식 계정(순이자이익, 순수수료이익, 일반관리비, 신용손실충당금 전입액, 지배주주순이익, 지배주주지분, 신종자본증권)을 XBRL `account_id`로 읽고 그룹별 예비 id를 둡니다. 주식 수와, 정정 보고서마다 처음 접수된 보고서도 저장합니다(DART는 정정본을 돌려줌). 수치는 각 그룹의 2026년 2분기 실적 발표와 일치합니다.
 - **DART만 씀**: DART에는 주가가 없고, KRX Open API 약관은 데이터를 제3자에게 넘기는 것을 금지하며, 모든 답을 공시만으로 검증할 수 있어야 하므로 저장소에 주가를 싣지 않았습니다.
 - **과제** `tasks/finance_kr`, 공유형/개인형 쌍, 허용 오차 0.1%: KB금융의 2026년 상반기 말 BPS와 TTM ROE(160,402원, 11.36%. 자기주식·신종자본증권을 빼지 않거나, 평균 대신 기말 자본을 쓰거나, 상반기 순이익을 연환산하면 오답), 신한지주·우리금융지주의 2026년 2분기 단독 CIR(36.29%, 40.81%. 상반기 누적·1분기 비율이나 좁은 분모는 오답), 4대 금융지주의 2분기 단독 지배주주순이익과 보통주자본(지배주주지분 − 신종자본증권)의 평균·최대-최소 차.
@@ -263,6 +265,8 @@ python -m agentworld_lite.finance fetch --source dart --profile fhc --company 10
 python -m agentworld_lite.finance validate --tasks tasks/finance_kr
 python -m agentworld_lite.finance note --reference k03_big4_q2_sector_shared --out reports/k03_note_ko.md
 ```
+
+**첫 모델 실행** (2026-10-21): Claude Opus 5.5가 시드 7의 12판(과제 6개 × 채팅 허용·차단)을 모두 풀었습니다. 실패한 도구 호출도, 허용 오차 밖의 답도 없었고 비용은 5.57달러였습니다. 캐나다 데스크처럼 채팅을 막아도 성공률은 같았고 규칙 기반 CCE만 낮아졌습니다. 자세한 내용은 [docs/finance_korea_fhc.md](docs/finance_korea_fhc.md)에 있습니다.
 
 설계, 데이터 규칙, 한계: [docs/finance_domain_design.md](docs/finance_domain_design.md)
 

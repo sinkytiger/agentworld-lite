@@ -1,6 +1,10 @@
-"""Record an animated GIF of the Streamlit demo (demo/streamlit_app.py) for a README or a portfolio page.
+"""Record an animated GIF of a Streamlit demo for a README or a portfolio page.
 
     python demo/record_gif.py --out ../demo/canada_desk.gif
+    python demo/record_gif.py --app kr --out ../demo/korea_desk.gif --frames-dir ../demo/korea_frames
+
+--app ca (default) records demo/streamlit_app.py, the Canadian desk; --app kr records demo/streamlit_app_kr.py, the
+Korean desk (4대 금융지주).
 
 Starts the app on a local port, drives a headless Chrome or Edge through the Chrome DevTools Protocol, waits until
 each view has finished rendering, takes a screenshot, and joins the screenshots into a GIF with Pillow. Standard
@@ -39,6 +43,18 @@ FRAMES = [
     ({"view": "Sector note"}, 3.6, "comparison"),
     ({"view": "Sector note"}, 3.2, "how-each-answer-was-derived"),
 ]
+APPS = {
+    "ca": (APP, TASK, FRAMES),
+    "kr": (APP.with_name("streamlit_app_kr.py"), "k03_big4_q2_sector_shared", [
+        ({"view": "과제"}, 2.6, None),
+        *[({"view": "데스크 재생", "round": r}, 1.1, None) for r in (2, 5, 9, 11, 13)],
+        ({"view": "데스크 재생", "round": 15}, 2.4, None),
+        ({"view": "4대 금융지주 데이터"}, 3.6, None),
+        ({"view": "섹터 노트"}, 2.0, None),
+        ({"view": "섹터 노트"}, 3.6, "그룹-비교"),
+        ({"view": "섹터 노트"}, 3.2, "계산-과정"),
+    ]),
+}
 BROWSERS = [
     r"C:\Program Files\Google\Chrome\Application\chrome.exe",
     r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
@@ -147,8 +163,13 @@ def capture(dev: DevTools, url: str, anchor: str | None, settle: float, timeout:
         if time.time() > end:
             raise TimeoutError(f"{url} did not finish rendering")
         time.sleep(0.3)
-    if anchor:
-        dev.evaluate(f"document.getElementById({json.dumps(anchor)})?.scrollIntoView({{block: 'start'}})")
+    if anchor:  # a heading's id; Streamlit gives Korean headings none, so fall back to the heading text
+        dev.evaluate(f"""(() => {{
+          const id = {json.dumps(anchor)};
+          const el = document.getElementById(id) || [...document.querySelectorAll('h1, h2, h3')]
+            .find(h => h.textContent.trim() === id.replace(/-/g, ' '));
+          el?.scrollIntoView({{block: 'start'}});
+        }})()""")
     time.sleep(settle)  # charts and fonts draw after the script finishes
     png = base64.b64decode(dev.call("Page.captureScreenshot", format="png")["data"])
     return Image.open(io.BytesIO(png)).convert("RGB")
@@ -157,7 +178,8 @@ def capture(dev: DevTools, url: str, anchor: str | None, settle: float, timeout:
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--out", required=True, help="GIF to write")
-    ap.add_argument("--task", default=TASK)
+    ap.add_argument("--app", choices=sorted(APPS), default="ca", help="ca: Canadian desk, kr: Korean desk")
+    ap.add_argument("--task", default=None, help="task id (default: the app's sector-comparison task)")
     ap.add_argument("--theme", choices=["dark", "light"], default="dark")
     ap.add_argument("--width", type=int, default=1280)
     ap.add_argument("--height", type=int, default=860)
@@ -165,11 +187,13 @@ def main(argv=None) -> int:
     ap.add_argument("--browser", help="Chrome or Edge executable (default: search common locations)")
     ap.add_argument("--frames-dir", help="also keep each frame as a PNG here")
     args = ap.parse_args(argv)
+    app, default_task, frame_specs = APPS[args.app]
+    task = args.task or default_task
 
     browser = find_browser(args.browser)
     app_port, cdp_port = free_port(), free_port()
     profile = tempfile.mkdtemp(prefix="awl-gif-")
-    server = subprocess.Popen([sys.executable, "-m", "streamlit", "run", str(APP), "--server.headless", "true",
+    server = subprocess.Popen([sys.executable, "-m", "streamlit", "run", str(app), "--server.headless", "true",
                                "--server.port", str(app_port), "--browser.gatherUsageStats", "false",
                                "--client.toolbarMode", "viewer", "--theme.base", args.theme],
                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -187,8 +211,8 @@ def main(argv=None) -> int:
         dev.call("Emulation.setDeviceMetricsOverride", width=args.width, height=args.height, deviceScaleFactor=1,
                  mobile=False)
         frames, durations = [], []
-        for i, (query, seconds, anchor) in enumerate(FRAMES):
-            url = f"http://127.0.0.1:{app_port}/?" + urllib.parse.urlencode({"task": args.task, **query})
+        for i, (query, seconds, anchor) in enumerate(frame_specs):
+            url = f"http://127.0.0.1:{app_port}/?" + urllib.parse.urlencode({"task": task, **query})
             img = capture(dev, url, anchor, settle=1.5 if i == 0 else 0.8)
             if args.scale != 1:
                 img = img.resize((round(img.width * args.scale), round(img.height * args.scale)), Image.LANCZOS)
@@ -197,7 +221,7 @@ def main(argv=None) -> int:
                 img.save(Path(args.frames_dir) / f"frame_{i:02d}.png")
             frames.append(img)
             durations.append(int(seconds * 1000))
-            print(f"frame {i + 1}/{len(FRAMES)}: {query}" + (f" #{anchor}" if anchor else ""))
+            print(f"frame {i + 1}/{len(frame_specs)}: {query}" + (f" #{anchor}" if anchor else ""))
     finally:
         for proc in (chrome, server):
             if proc is not None:
