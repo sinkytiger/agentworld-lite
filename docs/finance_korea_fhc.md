@@ -14,7 +14,8 @@ common equity) come as shared/private pairs with a 0.1% tolerance; every listed 
 written in Korean by fixed rules and cites a DART receipt number (접수번호) after every figure. A Korean valuation
 snapshot (P/B against ROE, marked as an educational sample with no rating and no target price) exists but stays off
 until a user adds sourced closing prices. A Korean Streamlit app (`demo/streamlit_app_kr.py`) shows the replay, the
-data, the note and the tasks offline.
+data, the note and the tasks offline. First model run (2026-10-21): Claude Opus 5.5 solved all 12 episodes of
+seed 7 (6 tasks, chat allowed and blocked) with no failed tool call, for US$5.57.
 
 이 문서는 숫자를 어디서 가져왔는지, 어떻게 정규화했는지, 무엇과 대조했는지, 그 숫자로 만든 과제와 산출물(섹터 노트,
 밸류에이션 스냅샷, 데모)을 정리합니다. 설계의 기준은 캐나다 데스크([finance_canada.md](finance_canada.md))이고, 가상
@@ -269,6 +270,8 @@ streamlit run demo/streamlit_app_kr.py
 
 한국어 Streamlit 앱입니다. 모델, API 키, 네트워크를 쓰지 않습니다. 화면은 네 개입니다.
 
+![데모: k03 정답 시나리오를 라운드별로 재생하고, 4대 금융지주 차트와 숫자마다 접수번호가 붙은 섹터 노트를 보여 줍니다](img/korea_desk_demo.gif)
+
 - **데스크 재생.** 정답 시나리오나 올린 궤적을 라운드 슬라이더로 봅니다. 에이전트별 행동, 노트북 크기, 허용 오차 안의 답.
 - **4대 금융지주 데이터.** 2분기 지배주주순이익, 2분기 CIR, 보통주자본 차트와, 숫자마다 보고서와 접수번호를 적은 표.
 - **섹터 노트.** 위 노트와 마크다운 내려받기.
@@ -278,7 +281,8 @@ streamlit run demo/streamlit_app_kr.py
 넣으면 다섯 번째 화면으로 나타납니다. 쿼리 파라미터로 상태를 열 수 있습니다
 (`?task=k03_big4_q2_sector_shared&view=데스크 재생&round=9`).
 배포는 하지 않았습니다. Streamlit Community Cloud에 올릴 때는 main file을 `demo/streamlit_app_kr.py`로 정하고
-`demo/requirements.txt`를 그대로 쓰면 됩니다.
+`demo/requirements.txt`를 그대로 쓰면 됩니다. 위 GIF는 `python demo/record_gif.py --app kr --theme light --out demo.gif`로
+녹화했습니다.
 
 ## 실행
 
@@ -294,8 +298,43 @@ python -m agentworld_lite.finance validate --tasks tasks/finance tasks/finance_c
 python -m agentworld_lite.finance run --tasks tasks/finance_kr --agent llm --model claude-opus-5-5 --settings full no_comm --seeds 7 8 9 --out runs/finance_kr_opus
 ```
 
-한국 금융지주 데스크는 자체 시스템 프롬프트와 도구 설명을 씁니다(금융지주 계정, 신종자본증권, 정정 보고서). 모델
-실행은 아직 하지 않았습니다.
+한국 금융지주 데스크는 자체 시스템 프롬프트와 도구 설명을 씁니다(금융지주 계정, 신종자본증권, 정정 보고서).
+
+```bash
+python -m agentworld_lite evaluate --run runs/finance_kr_opus --judge rule
+```
+
+```bash
+python -m agentworld_lite pair-report --runs runs/finance_kr_opus --out reports/finance_kr_pairs.md
+```
+
+## 결과: Claude Opus 5.5
+
+첫 모델 실행(2026-10-21): `claude-opus-5-5` 기본 effort, 과제 6개(공유형·개인형 3쌍) × 채팅 허용(`full`)·차단(`no_comm`),
+시드 7, 에피소드 12개. 칸마다 공유형과 개인형 두 에피소드입니다.
+
+| 과제 | 설정 | 성공 | 라운드 평균(범위) | 정답 시나리오 | 규칙 CCE 평균 | 에피소드당 비용 |
+|---|---|---|---|---|---|---|
+| k01 KB금융 BPS·TTM ROE | full | 2/2 | 7.5 (7-8) / 18 | 10 | 0.60 | $0.31 |
+| k01 | no_comm | 2/2 | 8.0 (8-8) / 18 | 10 | 0.42 | $0.32 |
+| k02 신한·우리 2분기 CIR | full | 2/2 | 7.0 (7-7) / 20 | 11 | 0.74 | $0.30 |
+| k02 | no_comm | 2/2 | 7.0 (7-7) / 20 | 11 | 0.50 | $0.29 |
+| k03 4대 금융지주 2분기 | full | 2/2 | 14.0 (13-15) / 30 | 15 | 0.62 | $0.72 |
+| k03 | no_comm | 2/2 | 15.5 (15-16) / 30 | 15 | 0.51 | $0.86 |
+
+- **12개를 모두 풀었고 실패한 도구 호출은 0회였습니다.** 제출한 답은 모두 처음부터 허용 오차 안에 있었고, 목록에 적은
+  함정(비지배지분 포함 순이익, 신종자본증권, 자기주식, 누적과 분기 혼동, 연환산)에 한 번도 걸리지 않았습니다(궤적을 다시
+  실행해 제출 시점의 값을 확인). k02와 k03 공유형에서 제출이 여러 번인 것은 오답을 고친 것이 아니라 답이 나오는 대로
+  하나씩 낸 것입니다.
+- **계산을 정답 시나리오보다 적은 단계로 묶었습니다.** k01의 ROE와 k02의 그룹별 CIR을 각각 수식 하나로 계산해서, k01·k02는
+  정답 시나리오보다 2~4라운드 일찍 끝냈습니다. k03은 13~16라운드로 정답 시나리오(15)와 비슷했습니다.
+- **채팅을 막아도 성공률은 같았지만**, 성공에 기여한 행동의 비율(규칙 CCE)은 세 과제 모두 평균이 낮아졌습니다. 방법론이
+  개인 브리핑에 있을 때 채팅 허용 에피소드의 메시지가 평균 4.0개로, 공유 문서에 있을 때(2.0개)보다 많았습니다.
+- **비용:** 총 US$5.57, 모델 호출 354회, 실행 시간 합계 약 23분.
+- **의미:** 캐나다 데스크와 마찬가지로 이 과제들은 최상위 모델과 정답 시나리오를 가르지 못합니다. 시드 하나, 과제 세 쌍의
+  기술적 결과일 뿐이며, 모델 간 차이를 보려면 작은 모델이나 더 어려운 변형이 필요합니다. 궤적과 평가는 `runs/`에 있고
+  저장소에는 올리지 않았습니다. `python -m agentworld_lite.finance note --trajectory <파일>`로 어느 궤적이든 한국어 노트로
+  만들 수 있습니다.
 
 ## 한계
 
