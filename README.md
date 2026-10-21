@@ -215,15 +215,15 @@ python -m agentworld_lite.finance news --cache C:/news_cache --out reports/diges
 The same desk on real DART filings of KB금융, 신한지주, 하나금융지주 and 우리금융지주. Details, in Korean with an English summary: [docs/finance_korea_fhc.md](docs/finance_korea_fhc.md).
 
 - **Dataset** `data/finance/dart_fhc`, built by `fetch --source dart --profile fhc`: bank-format accounts (net interest and fee income, G&A, credit-loss provisions, net income to owners, owners' equity and hybrid capital) read by XBRL `account_id` with per-group fallbacks, share counts, and the original filing of every amended report (DART serves the amended version). The figures match each group's 2Q 2026 earnings release.
-- **Tasks** `tasks/finance_kr`, shared / private pairs with a 0.1% tolerance: the Q2 2026 cost-to-income ratios of Shinhan and Woori (36.29% and 40.81%; H1 ratios, a Q1 ratio or a narrower denominator all miss), and a four-group comparison of Q2 2026 net income to owners plus the average and spread of common equity (owners' equity minus hybrid capital). KB's trailing PER and PBR (k01) is built once sourced closing prices are in the dataset; KRX prices are not in DART, and the KRX Open API's terms forbid passing its data on, so they are supplied with `--price` and `--price-source`.
-- **Korean outputs**: `note` writes a Korean sector note for these tasks, and `valuation --market kr` a Korean valuation snapshot (P/B against ROE, the peers' PBR range). Every figure cites its DART receipt number (접수번호); the snapshot is marked 교육용 예시·투자 권유 아님 and has no rating and no target price.
-- **Demo**: `streamlit run demo/streamlit_app_kr.py`, with Korean labels: replay, the four groups' charts, the note and the valuation, offline and not deployed.
+- **DART only**: DART has no market prices, the KRX Open API's terms forbid passing its data to third parties, and every answer should be verifiable from filings alone, so the repository ships no prices.
+- **Tasks** `tasks/finance_kr`, shared / private pairs with a 0.1% tolerance: KB's BPS and TTM ROE at the end of 2026 H1 (160,402 won and 11.36%; treasury shares, hybrid capital, period-end instead of average equity or annualized H1 earnings all miss), the Q2 2026 cost-to-income ratios of Shinhan and Woori (36.29% and 40.81%; H1 ratios, a Q1 ratio or a narrower denominator all miss), and a four-group comparison of Q2 2026 net income to owners plus the average and spread of common equity (owners' equity minus hybrid capital).
+- **Korean outputs**: `note` writes a Korean sector note for these tasks, citing its DART receipt number (접수번호) after every figure. A Korean valuation snapshot (`valuation --market kr`: P/B against ROE, marked 교육용 예시·투자 권유 아님, no rating and no target price) stays off until a user adds sourced closing prices with `--price` and `--price-source`.
+- **Demo**: `streamlit run demo/streamlit_app_kr.py`, with Korean labels: replay, the four groups' charts, the note and the tasks, offline and not deployed. The valuation view appears only when sourced prices are present.
 
 ```bash
 python -m agentworld_lite.finance fetch --source dart --profile fhc --company 105560 055550 086790 316140 --periods 2025:Q1 2025:H1 2025:Q3 2025:FY 2026:Q1 2026:H1 --cache C:/dart_cache
 python -m agentworld_lite.finance validate --tasks tasks/finance_kr
 python -m agentworld_lite.finance note --reference k03_big4_q2_sector_shared --out reports/k03_note_ko.md
-python -m agentworld_lite.finance valuation --market kr --bank KB금융 --out reports/kb_valuation_ko.md
 ```
 
 ## Metrics

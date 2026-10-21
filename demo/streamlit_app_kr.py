@@ -1,5 +1,6 @@
 """Streamlit demo of the Korean research desk (4대 금융지주): replay a run, compare the four groups' DART figures, and
-read the cited Korean sector note and valuation snapshot.
+read the cited Korean sector note. The desk uses DART filings only and the repository ships no prices, so the valuation
+view appears only after sourced closing prices are added to the dataset (fetch --price ... --price-source ...).
 
     pip install streamlit
     streamlit run demo/streamlit_app_kr.py
@@ -30,12 +31,13 @@ from agentworld_lite.finance.note import NoteError, replay  # noqa: E402
 from agentworld_lite.finance.note_ko import sector_note_ko  # noqa: E402
 from agentworld_lite.finance.run import make_factory, run_episode  # noqa: E402
 from agentworld_lite.finance.valuation import ValuationError  # noqa: E402
-from agentworld_lite.finance.valuation_ko import NOTICE, snapshot_ko  # noqa: E402
+from agentworld_lite.finance.valuation_ko import NOTICE, prices_ready, snapshot_ko  # noqa: E402
 from agentworld_lite.task import load_tasks  # noqa: E402
 
 TASK_DIR = ROOT / "tasks" / "finance_kr"
 DATA_DIR = ROOT / "data" / "finance" / "dart_fhc"
-VIEWS = ("데스크 재생", "4대 금융지주 데이터", "섹터 노트", "밸류에이션", "과제")
+BASE_VIEWS = ("데스크 재생", "4대 금융지주 데이터", "섹터 노트", "과제")
+VALUATION = "밸류에이션"  # listed only when every group has a sourced closing price
 DEFAULT_TASK = "k03_big4_q2_sector_shared"
 CODES = tuple(FHC.values())
 SERIES = {"light": "#2a78d6", "dark": "#3987e5"}  # one series: categorical slot 1 of the reference palette
@@ -236,8 +238,7 @@ def view_valuation(start_group: str | None) -> None:
     try:
         md, n = snapshot_ko(code)
     except ValuationError as exc:
-        st.info("밸류에이션에는 2026-06-30 KRX 종가가 필요한데 DART에는 주가가 없습니다. 출처와 함께 데이터셋에 넣으면 "
-                f"이 화면이 채워집니다.\n\n`{exc}`")
+        st.error(str(exc))
         return
     cols = st.columns(4)
     cols[0].metric("PBR", f"{n['pbr'][code]:.2f}배", help="시가총액 / 보통주자본(지배주주지분 − 신종자본증권)")
@@ -273,10 +274,11 @@ def view_task(task) -> None:
 def main() -> None:
     st.set_page_config(page_title="한국 리서치 데스크: 4대 금융지주", layout="wide")
     qp = st.query_params
+    views = BASE_VIEWS[:3] + ((VALUATION,) if prices_ready(DATA_DIR) else ()) + BASE_VIEWS[3:]
     all_tasks = kr_tasks()
     ids = list(all_tasks)
     start_task = qp.get("task", DEFAULT_TASK)
-    start_view = qp.get("view", VIEWS[0])
+    start_view = qp.get("view", views[0])
     start_round = int(qp["round"]) if str(qp.get("round", "")).isdigit() else None
 
     with st.sidebar:
@@ -287,9 +289,13 @@ def main() -> None:
                                format_func=lambda i: f"{title_of(all_tasks[i])} ({i.rsplit('_', 1)[-1]})")
         source = st.radio("실행", ("정답 시나리오", "궤적 올리기"), horizontal=True)
         upload = st.file_uploader("`finance run`이 쓴 궤적 JSON", type="json") if source != "정답 시나리오" else None
-        view = st.radio("화면", VIEWS, index=VIEWS.index(start_view) if start_view in VIEWS else 0)
+        view = st.radio("화면", views, index=views.index(start_view) if start_view in views else 0)
         st.caption("모델과 API 키를 쓰지 않고, 네트워크에도 접속하지 않습니다. 데이터: 각 그룹이 DART에 낸 "
                    "정기보고서(OpenAPI 전체 재무제표).")
+        if VALUATION not in views:
+            st.caption("이 데스크는 공시만으로 검증할 수 있도록 DART 수치만 씁니다. DART에는 주가가 없고 KRX Open API "
+                       "약관은 데이터를 제3자에게 넘기는 것을 금지해서 주가를 싣지 않았으므로, PER·PBR을 쓰는 "
+                       "밸류에이션 화면은 꺼져 있습니다.")
 
     task, traj = all_tasks[task_id], None
     if upload is not None:
@@ -311,7 +317,7 @@ def main() -> None:
     st.caption(f"`{task.id}` · 기준일 {(task.meta.get('inputs') or {}).get('as_of')} · {run}")
     if view == "4대 금융지주 데이터":
         view_groups()
-    elif view == "밸류에이션":
+    elif view == VALUATION:
         view_valuation(qp.get("group"))
     elif view == "과제":
         view_task(task)

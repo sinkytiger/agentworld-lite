@@ -15,7 +15,7 @@ import pytest
 from agentworld_lite.agents import BaseAgent, Decision
 from agentworld_lite.finance import dart
 from agentworld_lite.finance.__main__ import main as finance_main
-from agentworld_lite.finance.catalog import FHC, KB_PRICE_DATE, SPECS_KR_FHC, _k01, build_task, kb_close
+from agentworld_lite.finance.catalog import FHC, SPECS_KR_FHC, build_task
 from agentworld_lite.finance.dataset import Dataset
 from agentworld_lite.finance.env import build_env
 from agentworld_lite.finance.note import NoteError
@@ -23,7 +23,7 @@ from agentworld_lite.finance.note_ko import fmt_krw, sector_note_ko, uncited_fig
 from agentworld_lite.finance.run import make_factory, run_episode, validate_task
 from agentworld_lite.finance.tools import SYSTEM_PROMPT_KR_FHC
 from agentworld_lite.finance.valuation import ValuationError
-from agentworld_lite.finance.valuation_ko import NOTICE, RATING_WORDS_KO, snapshot_ko
+from agentworld_lite.finance.valuation_ko import NOTICE, PRICE_DATE, RATING_WORDS_KO, prices_ready, snapshot_ko
 from agentworld_lite.task import Task, load_tasks
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -227,11 +227,12 @@ def test_committed_kr_tasks_match_the_catalog():
 
 def test_kr_reference_solves_and_idle_team_fails():
     tasks = load_tasks(str(KR_DIR))
-    assert len(tasks) == 2 * len(SPECS_KR_FHC) >= 4
+    assert len(tasks) == 2 * len(SPECS_KR_FHC) == 6
     for t in tasks:
         assert validate_task(t) == [], t.id
+        assert not any(f.get("price_of") for a in t.agents for f in a.get("initial_facts") or [])  # DART only, no prices
     rounds = {t.id.rsplit("_", 1)[0]: run_episode(t, make_factory("scripted"))["result"]["rounds_used"] for t in tasks}
-    assert rounds["k02_q2_cost_income"] == 11 and rounds["k03_big4_q2_sector"] == 15
+    assert rounds == {"k01_kb_bps_roe": 10, "k02_q2_cost_income": 11, "k03_big4_q2_sector": 15}
 
 
 def test_kr_pairs_differ_only_in_where_the_sentences_are():
@@ -244,33 +245,37 @@ def test_kr_pairs_differ_only_in_where_the_sentences_are():
         assert strip(shared) == strip(private)
 
 
-def test_k01_needs_a_sourced_price_and_its_mistakes_are_wrong_answers():
-    price = kb_close() or 100_000.0  # the traps are relative, so any price shows them when none is committed yet
-    assert ("k01" in _specs()) == bool(kb_close())
-    cps = {cp["field"]: cp for cp in _k01(price)["checkpoints"]}
+def test_k01_mistakes_are_wrong_answers():
+    cps = {cp["field"]: cp for cp in _specs()["k01"]["checkpoints"]}
     st, sh = _st("105560"), _group("105560")["shares"]
     fy, prev, h1, q1 = st["2025:FY:CFS"], st["2025:H1:CFS"], st["2026:H1:CFS"], st["2026:Q1:CFS"]
     ttm = lambda k: fy[k] - prev[k] + h1[k]
+    ce = lambda s: s["equity_owners"] - s["hybrid_capital"]
     issued, treasury = sh["2026:H1"]["common"], sh["2026:H1"]["treasury_common"]
-    mcap = price * issued
-    ce = h1["equity_owners"] - h1["hybrid_capital"]
-    assert not _off(ttm("net_income_owners"), cps["ttm_net_income_owners"])
-    assert not _off(mcap / ttm("net_income_owners"), cps["per"]) and not _off(mcap / ce, cps["pbr"])
-    assert _off(ttm("net_income"), cps["ttm_net_income_owners"])                     # incl. non-controlling interests
-    assert _off(fy["net_income_owners"], cps["ttm_net_income_owners"])               # last fiscal year only
-    assert _off(2 * h1["net_income_owners"], cps["ttm_net_income_owners"])           # H1 x 2
-    assert _off(4 * (h1["net_income_owners"] - q1["net_income_owners"]), cps["ttm_net_income_owners"])  # Q2 x 4
-    assert _off(mcap / ttm("net_income"), cps["per"])
-    assert _off(price * (issued - treasury) / ttm("net_income_owners"), cps["per"])  # treasury shares subtracted
-    assert _off(price * sh["2025:FY"]["common"] / ttm("net_income_owners"), cps["per"])  # stale share count
-    assert _off(mcap / h1["equity_owners"], cps["pbr"])                              # hybrid capital left in
-    assert _off(mcap / h1["equity_total"], cps["pbr"])                               # incl. non-controlling interests
-    assert _off(price * (issued - treasury) / ce, cps["pbr"])
-    assert _off(mcap / (fy["equity_owners"] - fy["hybrid_capital"]), cps["pbr"])    # year-end balance
-    assert _off(mcap / (q1["equity_owners"] - q1["hybrid_capital"]), cps["pbr"])    # March balance
-    ofs = st["2026:H1:OFS"]["net_income"] - st["2025:H1:OFS"]["net_income"] + st["2025:FY:OFS"]["net_income"]
-    assert _off(ofs, cps["ttm_net_income_owners"])                                   # separate statements
-    assert not sh["2026:H1"]["preferred"]                                            # KB has no preferred shares
+    ni, ni_cp, bps, roe = ttm("net_income_owners"), cps["ttm_net_income_owners"], cps["bps"], cps["ttm_roe"]
+    avg = (ce(prev) + ce(h1)) / 2
+    assert not _off(ni, ni_cp) and not _off(ce(h1) / (issued - treasury), bps) and not _off(ni / avg * 100, roe)
+    assert round(cps["bps"]["expected"]) == 160_402 and round(cps["ttm_roe"]["expected"], 2) == 11.36
+    assert _off(ttm("net_income"), ni_cp)                                           # incl. non-controlling interests
+    assert _off(fy["net_income_owners"], ni_cp)                                     # last fiscal year only
+    assert _off(2 * h1["net_income_owners"], ni_cp)                                 # H1 annualized
+    assert _off(4 * (h1["net_income_owners"] - q1["net_income_owners"]), ni_cp)     # Q2 annualized
+    ofs = st["2025:FY:OFS"]["net_income"] - st["2025:H1:OFS"]["net_income"] + st["2026:H1:OFS"]["net_income"]
+    assert _off(ofs, ni_cp)                                                         # separate statements
+    assert _off(ce(h1) / issued, bps)                                               # treasury shares not subtracted
+    assert _off(h1["equity_owners"] / (issued - treasury), bps)                     # hybrid capital left in
+    assert _off(h1["equity_total"] / (issued - treasury), bps)                      # incl. non-controlling interests
+    fy_sh = sh["2025:FY"]
+    assert _off(ce(h1) / (fy_sh["common"] - fy_sh["treasury_common"]), bps)        # year-end share count
+    assert _off(ce(fy) / (issued - treasury), bps)                                  # year-end equity
+    assert _off(ni / ce(h1) * 100, roe)                                             # period-end equity, not average
+    assert _off(ni / ((ce(fy) + ce(h1)) / 2) * 100, roe)                            # average from the year end
+    assert _off(ni / ((prev["equity_owners"] + h1["equity_owners"]) / 2) * 100, roe)  # hybrid capital left in
+    assert _off(ni / ((prev["equity_total"] + h1["equity_total"]) / 2) * 100, roe)
+    assert _off(2 * h1["net_income_owners"] / ((ce(fy) + ce(h1)) / 2) * 100, roe)  # annualized H1 ROE
+    assert _off(ttm("net_income") / avg * 100, roe)
+    assert _off(ni / avg, roe)                                                      # fraction, not percent
+    assert not sh["2026:H1"]["preferred"]                                           # KB has no preferred shares
 
 
 def test_k02_mistakes_are_wrong_answers():
@@ -410,17 +415,27 @@ def test_note_cli_writes_korean_lf_markdown(tmp_path):
 
 
 def _priced(base, prices=None):
-    """A copy of the dataset with closing prices (made up unless given), so the snapshot can be tested offline."""
+    """A copy of the dataset with synthetic closing prices, so the snapshot's arithmetic can be tested offline. They are
+    not market prices and never leave the test's temporary directory; the committed dataset has no prices."""
     d = base / "dart_fhc"
     shutil.copytree(DATA, d)
     prices = prices or {"105560": 100_000, "055550": 60_000, "086790": 80_000, "316140": 20_000}
     for code, px in prices.items():
         p = d / f"{code}.json"
         data = json.loads(p.read_text(encoding="utf-8"))
-        data["prices"][KB_PRICE_DATE] = px
-        data.setdefault("price_sources", {})[KB_PRICE_DATE] = "test price"
+        data["prices"][PRICE_DATE] = px
+        data.setdefault("price_sources", {})[PRICE_DATE] = "test price"
         p.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
     return d
+
+
+def test_committed_dataset_has_no_prices_so_the_snapshot_is_off():
+    for code in FHC.values():
+        data = _group(code)
+        assert data["prices"] == {} and not data.get("price_sources"), code
+    assert not prices_ready()
+    with pytest.raises(ValuationError, match="DART filings only and ships no prices"):
+        snapshot_ko("105560")
 
 
 def test_valuation_ko_arithmetic_citations_and_notice(tmp_path):
@@ -448,7 +463,7 @@ def test_valuation_ko_needs_a_sourced_price_and_a_known_group(tmp_path):
     data = _priced(tmp_path / "a")
     p = data / "316140.json"
     d = json.loads(p.read_text(encoding="utf-8"))
-    d["price_sources"].pop(KB_PRICE_DATE)                       # a price without its source is not used
+    d["price_sources"].pop(PRICE_DATE)                          # a price without its source is not used
     p.write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
     with pytest.raises(ValuationError, match="--price"):
         snapshot_ko("105560", data_dir=data)
@@ -458,11 +473,8 @@ def test_valuation_ko_needs_a_sourced_price_and_a_known_group(tmp_path):
         snapshot_ko("우리금융", as_of="2026-09-30", data_dir=_priced(tmp_path / "c"))  # Shinhan's amended reports
 
 
-def test_valuation_cli_kr(tmp_path):
+def test_valuation_cli_kr_is_off_without_prices(tmp_path, capsys):
     out = tmp_path / "kb.md"
-    code = finance_main(["valuation", "--market", "kr", "--bank", "KB금융", "--out", str(out)])
-    if kb_close():
-        assert code == 0 and b"\r\n" not in out.read_bytes()
-        assert out.read_text(encoding="utf-8").startswith("# 밸류에이션 스냅샷: KB금융(105560)")
-    else:
-        assert code == 1 and not out.exists()
+    assert finance_main(["valuation", "--market", "kr", "--bank", "KB금융", "--out", str(out)]) == 1
+    assert not out.exists() and "ships no prices" in capsys.readouterr().err
+    assert prices_ready(_priced(tmp_path))

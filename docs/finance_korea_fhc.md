@@ -6,22 +6,30 @@ KB금융 (105560), 신한지주 (055550), 하나금융지주 (086790) and 우리
 their bank-format statements (net interest and fee income, G&A, credit-loss provisions, net income to owners, equity
 with hybrid capital shown separately) by XBRL `account_id`, with fallbacks where the groups or periods differ. The
 dataset (`data/finance/dart_fhc`) covers 2025 Q1, H1, Q3 and FY and 2026 Q1 and H1, records the original filing of
-every amended report, and matches each group's 2Q 2026 earnings release. Tasks in `tasks/finance_kr` come as
-shared/private pairs with a 0.1% tolerance; every listed mistake misses it. The sector note and the valuation snapshot
-are written in Korean by fixed rules, cite a DART receipt number (접수번호) after every figure, and the snapshot carries
-an "educational sample, not investment advice" notice with no rating and no target price. A Korean Streamlit app
-(`demo/streamlit_app_kr.py`) shows the replay, the data, the note and the valuation offline.
+every amended report, and matches each group's 2Q 2026 earnings release. The desk is DART-only: DART has no
+market prices, the KRX Open API's terms forbid passing its data to third parties, and every answer should be
+verifiable from filings alone, so no prices ship with the repository. Tasks in `tasks/finance_kr` (KB's BPS and TTM
+ROE, the Q2 cost-to-income ratios of Shinhan and Woori, and a four-group comparison of Q2 net income to owners and
+common equity) come as shared/private pairs with a 0.1% tolerance; every listed mistake misses it. The sector note is
+written in Korean by fixed rules and cites a DART receipt number (접수번호) after every figure. A Korean valuation
+snapshot (P/B against ROE, marked as an educational sample with no rating and no target price) exists but stays off
+until a user adds sourced closing prices. A Korean Streamlit app (`demo/streamlit_app_kr.py`) shows the replay, the
+data, the note and the tasks offline.
 
 이 문서는 숫자를 어디서 가져왔는지, 어떻게 정규화했는지, 무엇과 대조했는지, 그 숫자로 만든 과제와 산출물(섹터 노트,
 밸류에이션 스냅샷, 데모)을 정리합니다. 설계의 기준은 캐나다 데스크([finance_canada.md](finance_canada.md))이고, 가상
 회사로 만든 기존 한국 과제(`tasks/finance`)와 캐나다 과제는 바꾸지 않았습니다.
+
+이 데스크는 **DART 공시만** 씁니다. DART에는 주가가 없고, KRX Open API 약관은 데이터를 제3자에게 넘기는 것을 금지하며,
+모든 답을 공시만으로 검증할 수 있게 하려는 것이 이 데스크의 설계 목표이기 때문입니다. 그래서 저장소에는 주가가 하나도
+없고, 주가가 필요한 PER·PBR 대신 BPS와 ROE를 과제로 냈습니다.
 
 ## 수집 경로
 
 | 경로 | 무엇인가 | 자동 수집 | 이 프로젝트에서 |
 |---|---|---|---|
 | DART OpenAPI | 금융감독원 전자공시의 공식 API. 무료 인증키 필요 | 허용(하루 2만 건) | `dart` 소스, `--profile fhc` |
-| KRX 정보데이터시스템 / KRX Open API | 시세 | Open API는 키 보유자에게 허용되지만 약관 제11조 2항이 데이터를 제3자에게 제공하는 것을 금지 | 쓰지 않음(아래 "주가") |
+| KRX 정보데이터시스템 / KRX Open API | 시세 | Open API는 키 보유자에게 허용되지만 약관 제11조 2항이 데이터를 제3자에게 제공하는 것을 금지 | 쓰지 않음(아래 "주가를 쓰지 않는 이유") |
 | 각 그룹의 실적 발표(IR) | 잠정 실적 보도자료·발표 자료 | 수집하지 않음 | 숫자 대조에만 사용 |
 
 ### 인증키
@@ -123,20 +131,24 @@ id가 없을 때만 쓰는 예비 수단입니다. 맞은 id는 보고서마다 
 1분기 CIR은 0.1%p 차이가 나서, 그룹마다 CIR 분모를 조금씩 다르게 정의하는 것으로 보입니다. 과제는 정의를 문장으로
 못 박아 둡니다. 총자산은 XBRL 원값이며 발표치와 대조하지 않았습니다.
 
-### 주가
+### 주가를 쓰지 않는 이유
 
-KRX 종가는 DART에 없습니다. 이 저장소는 공개되므로 출처의 약관이 재배포를 허용해야 합니다.
+- **DART에는 주가가 없습니다.** 정기보고서와 OpenAPI에는 종가가 없습니다.
+- **KRX Open API 약관이 재배포를 막습니다.** 인증키 방식의 자동 조회는 허용하지만, 이용약관 제11조 2항이 데이터를
+  제3자에게 제공하는 것을 금지합니다. 공개 저장소와 공개 데모에 넣으면 제3자 제공이 되므로 쓰지 않았습니다. 사이트
+  화면을 긁어 오는 방식도 쓰지 않습니다.
+- **공시만으로 검증할 수 있어야 합니다.** 데스크의 모든 숫자는 사실 ID와 접수번호로 공시까지 거슬러 갈 수 있게
+  만들었습니다. 출처 계약이 다른 시세를 섞으면 이 성질이 깨집니다.
 
-- KRX Open API(인증키 방식)는 자동 조회를 허용하지만 이용약관 제11조 2항이 데이터를 제3자에게 제공하는 것을 금지합니다.
-  공개 저장소와 공개 데모에 넣으면 제3자 제공이 되므로 쓰지 않았습니다. 사이트 화면을 긁어 오는 방식도 쓰지 않습니다.
-- 그래서 종가는 사용자가 직접 확인한 값을 출처와 함께 넣습니다. 회사마다 따로 줄 수 있습니다.
+그래서 저장소의 데이터셋에는 종가가 없고(`prices`가 비어 있음, 테스트가 확인), 과제는 BPS·ROE처럼 공시만으로 계산되는
+지표를 씁니다. 밸류에이션 스냅샷은 코드로 남겨 두되 꺼 둡니다. 사용자가 자기 책임으로 출처가 있는 종가를 넣으면 켜집니다.
 
 ```bash
 python -m agentworld_lite.finance fetch --source dart --profile fhc --company 105560 055550 086790 316140 --price 105560@2026-06-30=<종가> 055550@2026-06-30=<종가> 086790@2026-06-30=<종가> 316140@2026-06-30=<종가> --price-source "<출처, 조회일>"
 ```
 
-`--periods` 없이 `--price`만 주면 재무제표를 다시 받지 않고 기존 파일에 종가만 더합니다(회사 코드 확인에 캐시를 씁니다).
-출처가 없는 종가는 과제와 밸류에이션에서 쓰지 않습니다.
+`--periods` 없이 `--price`만 주면 재무제표를 다시 받지 않고 기존 파일에 종가만 더합니다. 출처가 없는 종가는 쓰지
+않습니다. 그렇게 만든 데이터셋은 공개 저장소에 올리지 마세요.
 
 ## 과제 (`tasks/finance_kr`)
 
@@ -144,29 +156,36 @@ python -m agentworld_lite.finance fetch --source dart --profile fhc --company 10
 2026-10-15, 허용 오차는 0.1%입니다. 과제 지시문은 기존 한국 과제처럼 영어이고, 이름과 설명의 한국어판(`name_ko`,
 `description_ko`)이 함께 있습니다. 금액 단위는 원이며 아래 표는 억원으로 적었습니다.
 
-### k01: KB금융 TTM PER·PBR (2026년 상반기 말)
+### k01: KB금융 BPS·TTM ROE (2026년 상반기 말)
 
-TTM 지배주주순이익 = 2025 연간 − 2025 상반기 + 2026 상반기 = 58,332 − 34,357 + 38,846 = **6조 2,821억원**.
-시가총액 = 2026-06-30 종가 × 발행 보통주식 354,687,734주(자기주식 1,300,000주를 빼지 않음, 우선주 없음),
-PER = 시가총액 / TTM 지배주주순이익, PBR = 시가총액 / 보통주자본(지배주주지분 60조 8,908억 − 신종자본증권 4조 2,067억
-= **56조 6,841억원**).
+공시만으로 계산하는 지표입니다.
 
-이 과제는 종가가 출처와 함께 데이터셋에 들어가야 만들어집니다(`catalog.kb_close()`). 함정은 종가와 상관없이 정답 대비
-같은 비율로 빗나갑니다.
+- TTM 지배주주순이익 = 2025 연간 − 2025 상반기 + 2026 상반기 = 58,332 − 34,357 + 38,846 = **6조 2,821억원**.
+- 보통주자본 = 지배주주지분 − 신종자본증권. 백만원 단위로 2026-06-30에 60,890,838 − 4,206,721 = 56,684,117,
+  2025-06-30에 59,069,434 − 5,162,483 = 53,906,951(억원으로 566,841과 539,070).
+- BPS = 2026-06-30 보통주자본 / 유통 보통주식 수(발행 354,687,734주 − 자기주식 1,300,000주 = 353,387,734주)
+  = **160,402원**. KB금융에는 우선주가 없습니다.
+- TTM ROE = TTM 지배주주순이익 / 평균 보통주자본((539,070 + 566,841) / 2 = 552,955) × 100 = **11.36%**. 반기·분기
+  수치를 연환산하지 않습니다.
 
-| 실수 | 빗나가는 정도 |
-|---|---|
-| 비지배지분 포함 순이익(6조 3,210억) | PER −0.62% |
-| 직전 연간 순이익만 사용 | PER +7.7% |
-| 상반기 × 2, 2분기 × 4 | PER −19%, −21% |
-| 자기주식 차감 | PER·PBR −0.37% |
-| 2025년 말 주식 수(381,462,103주) | PER·PBR +7.5% |
-| 신종자본증권을 빼지 않은 지배주주지분 | PBR −6.9% |
-| 자본총계(비지배지분 포함) | PBR −9.6% |
-| 2025년 말·2026년 3월 말 보통주자본 | PBR +3.6%, +2.3% |
-| 별도 재무제표 순이익 | PER 2배 이상 |
+| 실수 | 결과 | 빗나가는 정도 |
+|---|---|---|
+| 비지배지분 포함 순이익 | 6조 3,210억원, ROE 11.43% | +0.62% |
+| 직전 연간 순이익만, 상반기 × 2, 2분기 × 4 | | −7.1%, +24%, +27% |
+| 별도 재무제표 순이익 | 2조 6,267억원 | −58% |
+| 자기주식을 빼지 않은 주식 수 | BPS 159,814원 | −0.37% |
+| 신종자본증권을 빼지 않음 | BPS 172,306원, ROE 10.47% | +7.4%, −7.8% |
+| 자본총계(비지배지분 포함) | BPS 177,431원, ROE 10.16% | +10.6%, −10.6% |
+| 2025년 말 주식 수 또는 자본 | BPS 158,076원, 154,756원 | −1.5%, −3.5% |
+| 기말 자본만으로 ROE | 11.08% | −2.4% |
+| 2025년 말과 2026년 6월 말의 평균 | 11.28% | −0.7% |
+| 상반기 순이익 연환산 ROE | 13.95% | +23% |
+| 비율을 소수로(0.1136) | | |
 
-KB금융에는 우선주가 없으므로, 우선주 함정 대신 보통주가 아닌 자본인 신종자본증권을 함정으로 썼습니다.
+KB금융은 상반기 ROE를 14.09%로 발표했는데(연환산, 회사 정의의 평균자본), 정의가 달라 TTM ROE와 맞춰 보지 않았습니다.
+같은 방식(상반기 연환산, 2025년 말과 2026년 6월 말 보통주자본 평균)으로 계산하면 13.95%로 발표치에 가깝습니다. KB금융에는
+우선주가 없으므로 우선주 함정 대신 보통주가 아닌 자본인 신종자본증권을 함정으로 썼습니다. 정답 시나리오는 18라운드 중
+10라운드에 풉니다.
 
 ### k02: 신한지주·우리금융지주 2026년 2분기 영업이익경비율(CIR)
 
@@ -204,8 +223,8 @@ KB금융에는 우선주가 없으므로, 우선주 함정 대신 보통주가 �
 | 3월 말·2025년 말 잔액 | 평균 −2.8%·−5.2%, 차 −0.9%·+5.0% |
 | 중앙값, 세 그룹 평균 | +3.3%, +8.6% |
 
-정답 시나리오는 k02를 20라운드 중 11라운드, k03을 30라운드 중 15라운드(collector 9번 조회·공유, analyst 6번 계산)에
-풉니다. 아무것도 하지 않는 팀은 모두 실패합니다.
+정답 시나리오는 k01을 18라운드 중 10라운드, k02를 20라운드 중 11라운드, k03을 30라운드 중 15라운드(collector 9번
+조회·공유, analyst 6번 계산)에 풉니다. 아무것도 하지 않는 팀은 모두 실패합니다. 어느 과제도 주가를 쓰지 않습니다.
 
 ## 섹터 노트 (한국어)
 
@@ -226,7 +245,7 @@ python -m agentworld_lite.finance note --reference k03_big4_q2_sector_shared --o
 인용이 있는지 스스로 검사합니다(`uncited_figures_ko`). `note` 명령은 과제가 한국 금융지주 데스크이면 자동으로 한국어
 노트를 씁니다.
 
-## 밸류에이션 스냅샷 (한국어)
+## 밸류에이션 스냅샷 (한국어, 기본으로 꺼짐)
 
 ```bash
 python -m agentworld_lite.finance valuation --market kr --bank KB금융 --out reports/kb_valuation_ko.md
@@ -236,8 +255,11 @@ python -m agentworld_lite.finance valuation --market kr --bank KB금융 --out re
 TTM 지배주주순이익, PER, 보통주자본, PBR, 단순 ROE(TTM 지배주주순이익 / 기말 보통주자본), 2분기 CIR을 보여 주고, 은행주는
 P/B와 ROE로 비교하므로 나머지 세 그룹 PBR의 최저·중간값·최고에 대상 그룹의 보통주자본을 곱한 시가총액 범위를 적습니다.
 맨 위에 **교육용 예시·투자 권유 아님** 문구가 있고, 투자의견과 목표주가는 없으며, 범위는 적정가치나 예측이 아니라고
-적습니다. 숫자마다 사실 ID와 접수번호가 붙고, 종가는 넣을 때 적은 출처를 인용합니다. 출처가 있는 종가가 없으면
-무엇을 넣어야 하는지 알려 주고 멈춥니다.
+적습니다. 숫자마다 사실 ID와 접수번호가 붙고, 종가는 넣을 때 적은 출처를 인용합니다.
+
+저장소에는 종가가 없으므로 이 명령은 지금 "DART 공시만 쓰고 주가를 싣지 않는다"는 오류와 함께 멈춥니다. 네 그룹 모두에
+출처가 있는 종가를 넣어야 켜집니다(위 "주가를 쓰지 않는 이유"). 계산과 인용은 테스트가 임시 폴더의 가상 가격으로
+확인합니다. 그 가격은 시장 가격이 아니며 저장소에 남지 않습니다.
 
 ## 데모
 
@@ -245,15 +267,16 @@ P/B와 ROE로 비교하므로 나머지 세 그룹 PBR의 최저·중간값·최
 streamlit run demo/streamlit_app_kr.py
 ```
 
-한국어 Streamlit 앱입니다. 모델, API 키, 네트워크를 쓰지 않습니다. 화면은 다섯 개입니다.
+한국어 Streamlit 앱입니다. 모델, API 키, 네트워크를 쓰지 않습니다. 화면은 네 개입니다.
 
 - **데스크 재생.** 정답 시나리오나 올린 궤적을 라운드 슬라이더로 봅니다. 에이전트별 행동, 노트북 크기, 허용 오차 안의 답.
 - **4대 금융지주 데이터.** 2분기 지배주주순이익, 2분기 CIR, 보통주자본 차트와, 숫자마다 보고서와 접수번호를 적은 표.
 - **섹터 노트.** 위 노트와 마크다운 내려받기.
-- **밸류에이션.** 그룹을 고르면 위 스냅샷. 종가가 아직 없으면 무엇이 필요한지 안내합니다.
 - **과제.** 설명, 역할과 도구 제한, 방법론 위치(공유 문서 또는 개인 브리핑), 정답.
 
-쿼리 파라미터로 상태를 열 수 있습니다(`?task=k03_big4_q2_sector_shared&view=데스크 재생&round=9&group=055550`).
+주가가 없으므로 밸류에이션 화면은 목록에 없고, 사이드바에 그 이유를 적었습니다. 네 그룹 모두에 출처가 있는 종가를
+넣으면 다섯 번째 화면으로 나타납니다. 쿼리 파라미터로 상태를 열 수 있습니다
+(`?task=k03_big4_q2_sector_shared&view=데스크 재생&round=9`).
 배포는 하지 않았습니다. Streamlit Community Cloud에 올릴 때는 main file을 `demo/streamlit_app_kr.py`로 정하고
 `demo/requirements.txt`를 그대로 쓰면 됩니다.
 

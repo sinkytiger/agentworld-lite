@@ -8,8 +8,6 @@ import pytest
 pytest.importorskip("streamlit")
 from streamlit.testing.v1 import AppTest  # noqa: E402
 
-from agentworld_lite.finance.catalog import kb_close  # noqa: E402
-
 APP = Path(__file__).resolve().parents[1] / "demo" / "streamlit_app_kr.py"
 
 
@@ -43,15 +41,14 @@ def test_group_view_shows_the_k03_figures_and_receipt_numbers():
     assert df.loc[df["종목코드"] == "055550", "반기보고서"].item() == "[기재정정]반기보고서 20261007000223"
 
 
-def test_note_task_and_valuation_views():
+def test_note_and_task_views_and_no_valuation_without_prices():
     at = _open(view="섹터 노트")
     note = " ".join(m.value for m in at.markdown)
     assert "calc.common_equity_average" in note and "접수번호 20260814004200" in note
-    at = _open(view="과제", task="k02_q2_cost_income_private")
-    assert at.header[0].value == "신한지주·우리금융지주 2026년 2분기 영업이익경비율(CIR)"
-    at = _open(view="밸류에이션", group="055550")
-    assert next(s for s in at.selectbox if s.label == "대상 금융지주").value == "055550"
-    if kb_close():
-        assert "교육용 예시·투자 권유 아님" in " ".join(c.value for c in at.caption)
-    else:  # no sourced closing prices in the dataset yet: the view says what is missing instead of failing
-        assert "KRX 종가가 필요" in at.info[0].value
+    at = _open(view="과제", task="k01_kb_bps_roe_private")
+    assert at.header[0].value == "KB금융 BPS·TTM ROE (2026년 상반기 말)"
+    views = next(r for r in at.radio if r.label == "화면").options
+    assert views == ["데스크 재생", "4대 금융지주 데이터", "섹터 노트", "과제"]       # DART only: no valuation view
+    assert "주가를 싣지 않았으므로" in " ".join(c.value for c in at.caption)
+    at = _open(view="밸류에이션")                                                      # an old link falls back
+    assert next(r for r in at.radio if r.label == "화면").value == "데스크 재생"
