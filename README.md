@@ -218,14 +218,16 @@ The same desk on real DART filings of KB금융, 신한지주, 하나금융지주
 
 - **Dataset** `data/finance/dart_fhc`, built by `fetch --source dart --profile fhc`: bank-format accounts (net interest and fee income, G&A, credit-loss provisions, net income to owners, owners' equity and hybrid capital) read by XBRL `account_id` with per-group fallbacks, share counts, and the original filing of every amended report (DART serves the amended version). The figures match each group's 2Q 2026 earnings release.
 - **DART only**: DART has no market prices, the KRX Open API's terms forbid passing its data to third parties, and every answer should be verifiable from filings alone, so the repository ships no prices.
-- **Tasks** `tasks/finance_kr`, shared / private pairs with a 0.1% tolerance: KB's BPS and TTM ROE at the end of 2026 H1 (160,402 won and 11.36%; treasury shares, hybrid capital, period-end instead of average equity or annualized H1 earnings all miss), the Q2 2026 cost-to-income ratios of Shinhan and Woori (36.29% and 40.81%; H1 ratios, a Q1 ratio or a narrower denominator all miss), and a four-group comparison of Q2 2026 net income to owners plus the average and spread of common equity (owners' equity minus hybrid capital).
+- **Tasks** `tasks/finance_kr`, shared / private pairs with a 0.1% tolerance: KB's BPS and TTM ROE at the end of 2026 H1 (160,402 won and 11.36%; treasury shares, hybrid capital, period-end instead of average equity or annualized H1 earnings all miss), the Q2 2026 cost-to-income ratios of Shinhan and Woori (36.29% and 40.81%; H1 ratios, a Q1 ratio or a narrower denominator all miss), and a four-group comparison of Q2 2026 net income to owners plus the average and spread of common equity (owners' equity minus hybrid capital). Harder pairs: each group's and the combined year-on-year growth of Q2 earnings (sixteen reports; the mean of the four rates misses), the combined cost-to-income ratio with no data plan given, and Shinhan's and Hana's ROE against their value-up targets (k06).
+- **Value-up check**: `valueup` quotes each group's 기업가치 제고 계획 targets verbatim with their receipt numbers (`--build` downloads each filing and refuses to write unless every quote is in it) and measures progress from filings only: ROE, the CET1 ratio each group printed in its half-year report, the payout ratio from the dividend and buyback-decision APIs, and Shinhan's share count. Each target is marked achieved, on track, behind or short (no deadline); Shinhan's own reported ROE and payout are the cross-check.
 - **Korean outputs**: `note` writes a Korean sector note for these tasks, citing its DART receipt number (접수번호) after every figure. A Korean valuation snapshot (`valuation --market kr`: P/B against ROE, marked 교육용 예시·투자 권유 아님, no rating and no target price) stays off until a user adds sourced closing prices with `--price` and `--price-source`.
-- **Demo**: `streamlit run demo/streamlit_app_kr.py`, with Korean labels: replay, the four groups' charts, the note and the tasks, offline and not deployed. The valuation view appears only when sourced prices are present.
+- **Demo**: `streamlit run demo/streamlit_app_kr.py`, with Korean labels: replay, the four groups' charts, the value-up check, the note and the tasks, offline and not deployed. The valuation view appears only when sourced prices are present.
 
 ```bash
 python -m agentworld_lite.finance fetch --source dart --profile fhc --company 105560 055550 086790 316140 --periods 2025:Q1 2025:H1 2025:Q3 2025:FY 2026:Q1 2026:H1 --cache C:/dart_cache
 python -m agentworld_lite.finance validate --tasks tasks/finance_kr
 python -m agentworld_lite.finance note --reference k03_big4_q2_sector_shared --out reports/k03_note_ko.md
+python -m agentworld_lite.finance valueup --out reports/valueup_ko.md
 ```
 
 **First model run** (2026-10-21): Claude Opus 5.5 solved all 12 episodes of seed 7 (6 tasks, chat allowed and blocked) with no failed tool call and no answer outside the tolerance, for US$5.57. As on the Canadian desk, blocking chat did not change success but lowered rule CCE; see [docs/finance_korea_fhc.md](docs/finance_korea_fhc.md).
@@ -272,7 +274,7 @@ tasks/gym/        28 generated tasks (example output of `gen`)
 tasks/finance/    4 Korean finance tasks (2 shared/private pairs, synthetic company)
 tasks/finance_ca/ 6 Canadian finance tasks (3 shared/private pairs, real bank filings)
 tasks/finance_kr/ Korean finance tasks on real DART filings of the four financial holding companies
-data/finance/     sample/ synthetic companies (DART format), edgar/ Big 5 Canadian banks, dart_fhc/ four Korean financial holding companies
+data/finance/     sample/ synthetic companies (DART format), edgar/ Big 5 Canadian banks, dart_fhc/ four Korean financial holding companies, valueup/ their value-up targets and evidence
 docs/             paper analysis and AutoGym integration design (Korean)
 ```
 

@@ -227,13 +227,13 @@ def test_committed_kr_tasks_match_the_catalog():
 
 def test_kr_reference_solves_and_idle_team_fails():
     tasks = load_tasks(str(KR_DIR))
-    assert len(tasks) == 2 * len(SPECS_KR_FHC) == 10
+    assert len(tasks) == 2 * len(SPECS_KR_FHC) == 12
     for t in tasks:
         assert validate_task(t) == [], t.id
         assert not any(f.get("price_of") for a in t.agents for f in a.get("initial_facts") or [])  # DART only, no prices
     rounds = {t.id.rsplit("_", 1)[0]: run_episode(t, make_factory("scripted"))["result"]["rounds_used"] for t in tasks}
     assert rounds == {"k01_kb_bps_roe": 10, "k02_q2_cost_income": 11, "k03_big4_q2_sector": 15,
-                      "k04_big4_q2_yoy": 22, "k05_big4_combined_cir": 11}
+                      "k04_big4_q2_yoy": 22, "k05_big4_combined_cir": 11, "k06_valueup_roe_gap": 11}
     budget = {t.id.rsplit("_", 1)[0]: t.max_rounds for t in tasks}
     assert all(budget[k] / rounds[k] < 1.3 for k in ("k04_big4_q2_yoy", "k05_big4_combined_cir"))  # tighter budgets
 

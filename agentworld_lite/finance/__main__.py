@@ -8,6 +8,8 @@
   news         write a Big 5 sector risk digest from news feeds and the banks' filed figures (no LLM)
   valuation    write a cited valuation snapshot of one bank with its peers as comps (no LLM): --market ca for the
                Big 5 Canadian banks (English), --market kr for the four Korean financial holding companies (Korean)
+  valueup      Korean value-up scorecard of the four financial holding companies: targets quoted from their
+               기업가치 제고 계획 filings, progress measured from filings (--build fetches and checks the sources)
   fetch        build a company dataset from a filing source:
                  --source dart       DART OpenAPI (your own key in DART_API_KEY)
                  --source edgar      SEC EDGAR XBRL of 40-F / 6-K / 10-K / 10-Q (your contact in SEC_USER_AGENT)
@@ -126,6 +128,33 @@ def cmd_valuation(args) -> int:
     return 0
 
 
+def cmd_valueup(args) -> int:
+    from pathlib import Path
+    from .valueup import ValueupError, build, render_scorecard
+    try:
+        if args.build:
+            from .dart import DartClient, DartError
+            try:
+                path = build(DartClient(cache_dir=args.cache))
+            except DartError as exc:
+                raise ValueupError(str(exc)) from None
+            print(f"wrote {path}")
+            if not args.out:
+                return 0
+        md = render_scorecard()
+    except ValueupError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    if args.out:
+        Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+        with open(args.out, "w", encoding="utf-8", newline="\n") as f:
+            f.write(md)
+        print(f"wrote {args.out}")
+    else:
+        sys.stdout.write(md)
+    return 0
+
+
 def cmd_fetch(args) -> int:
     from .sources import SourceError, get_source
     prices, company_prices = {}, {}  # DATE=VALUE applies to every --company; CODE@DATE=VALUE to one of them
@@ -218,6 +247,12 @@ def main(argv=None) -> int:
     val.add_argument("--year", type=int, default=2026, help="fiscal year of the Q3 (ca) or H1 (kr) report")
     val.add_argument("--out", help="Markdown file to write (default: print)")
 
+    vu = sub.add_parser("valueup", help="Korean value-up scorecard: quoted targets vs progress measured from filings")
+    vu.add_argument("--build", action="store_true",
+                    help="fetch the sources from DART (needs DART_API_KEY), check every quote, write valueup.json")
+    vu.add_argument("--cache", default="data/finance/cache", help="DART company-code cache (with --build)")
+    vu.add_argument("--out", help="Markdown file to write (default: print)")
+
     f = sub.add_parser("fetch", help="build company datasets from DART, EDGAR or hand-checked local documents")
     f.add_argument("--source", choices=["dart", "edgar", "local_pdf", "sedar_dds"], default="dart")
     f.add_argument("--company", nargs="+", help="DART: stock code or exact name; EDGAR: ticker (RY), CIK or exact name")
@@ -244,7 +279,7 @@ def main(argv=None) -> int:
             ap.error("--model is required with --provider ollama (e.g. llama3.2:3b or gemma4:cloud)")
         args.model = DEFAULT_MODEL
     return {"make-tasks": cmd_make_tasks, "validate": cmd_validate, "run": cmd_run, "note": cmd_note,
-            "news": cmd_news, "valuation": cmd_valuation, "fetch": cmd_fetch}[args.cmd](args)
+            "news": cmd_news, "valuation": cmd_valuation, "valueup": cmd_valueup, "fetch": cmd_fetch}[args.cmd](args)
 
 
 if __name__ == "__main__":
