@@ -296,7 +296,9 @@ def references(data_dir=None, vu_path=None) -> list[Ref]:
     for code in CODES:
         c = ds.companies[code]
         st = {(y, p): {f.meta["account"]: f for f in statement_facts(c, y, p, "CFS")}
-              for y, p in ((2025, "Q1"), (2025, "H1"), (2025, "Q3"), (2025, "FY"), (2026, "Q1"), (2026, "H1"))}
+              for y, p in ((2025, "Q1"), (2025, "H1"), (2025, "Q3"), (2025, "FY"), (2026, "Q1"), (2026, "H1"),
+                           (2026, "Q3"), (2026, "FY"))}
+        st = {k: v for k, v in st.items() if v}  # later 2026 reports count once watch-filings has added them
         flow: dict[tuple[int, str], dict[str, tuple[float, tuple]]] = {}
         for (y, p), fs in st.items():
             tag = "9M" if p == "Q3" else p
@@ -309,33 +311,36 @@ def references(data_dir=None, vu_path=None) -> list[Ref]:
             add(code, "common_equity", p, y, ce, "KRW", f"{y}년 {PERIOD_END[p]} 보통주자본", _src(fs["equity_owners"]))
         sub = lambda a, b: {k: (a[k][0] - b[k][0], a[k][1] + b[k][1]) for k in FLOWS}
         for y in (2025, 2026):
-            flow[(y, "Q2")] = sub(flow[(y, "H1")], flow[(y, "Q1")])
-        flow[(2025, "Q3")] = sub(flow[(2025, "9M")], flow[(2025, "H1")])
-        flow[(2025, "Q4")] = sub(flow[(2025, "FY")], flow[(2025, "9M")])
+            for q, (cum, prev) in (("Q2", ("H1", "Q1")), ("Q3", ("9M", "H1")), ("Q4", ("FY", "9M"))):
+                if (y, cum) in flow and (y, prev) in flow:
+                    flow[(y, q)] = sub(flow[(y, cum)], flow[(y, prev)])
         for (y, tag), accts in flow.items():
             for a, (v, s) in accts.items():
                 add(code, a, tag, y, v, "KRW", f"{y}년 {PERIOD_KO[tag]} {ACCOUNT_KO[a]}", s)
-                if a == "net_income_owners" and tag in ("Q2", "H1"):
+                if a == "net_income_owners" and tag in ("Q2", "H1", "Q3", "9M"):
                     sector.setdefault(("ni", y, tag), []).append((v, s))
+        new = [t for t in ("Q3", "9M") if (2026, t) in flow]  # tags of the latest reports, once filed
         for a in FLOWS:
-            for tag in ("Q1", "Q2", "H1"):
+            for tag in ("Q1", "Q2", "H1", *new):
                 (v1, s1), (v0, s0) = flow[(2026, tag)][a], flow[(2025, tag)][a]
                 add(code, a, tag, 2026, (v1 / v0 - 1) * 100, "%", f"2026년 {PERIOD_KO[tag]} {ACCOUNT_KO[a]} 전년 대비 증감률",
                     s1 + s0)
-            (v1, s1), (v0, s0) = flow[(2026, "Q2")][a], flow[(2026, "Q1")][a]
-            add(code, a, "Q2", 2026, (v1 / v0 - 1) * 100, "%", f"2026년 2분기 {ACCOUNT_KO[a]} 전분기 대비 증감률", s1 + s0,
-                basis="qoq")
+            for q, p in (("Q2", "Q1"), ("Q3", "Q2")):
+                if (2026, q) in flow:
+                    (v1, s1), (v0, s0) = flow[(2026, q)][a], flow[(2026, p)][a]
+                    add(code, a, q, 2026, (v1 / v0 - 1) * 100, "%", f"2026년 {PERIOD_KO[q]} {ACCOUNT_KO[a]} 전분기 대비 "
+                        "증감률", s1 + s0, basis="qoq")
         cir = {}
         for (y, tag) in ((2025, "Q1"), (2025, "Q2"), (2025, "H1"), (2025, "FY"), (2026, "Q1"), (2026, "Q2"),
-                         (2026, "H1")):
+                         (2026, "H1"), *[(y, t) for t in new for y in (2025, 2026)]):
             f = flow[(y, tag)]
             g, rev = f["general_admin_expense"][0], sum(f[k][0] for k in ("general_admin_expense", "operating_income",
                                                                          "credit_loss_provision"))
             cir[(y, tag)] = g / rev * 100
             add(code, "cir", tag, y, cir[(y, tag)], "%", f"{y}년 {PERIOD_KO[tag]} CIR", f["general_admin_expense"][1])
-            if (y, tag) in ((2026, "H1"), (2026, "Q2")):
+            if y == 2026 and tag in ("H1", "Q2", *new):
                 sector.setdefault(("cir", y, tag), []).append((g, rev, f["general_admin_expense"][1]))
-        for tag in ("Q2", "H1"):
+        for tag in ("Q2", "H1", *new):
             add(code, "cir", tag, 2026, cir[(2026, tag)] - cir[(2025, tag)], "pp",
                 f"2026년 {PERIOD_KO[tag]} CIR 전년 대비 변화", flow[(2026, tag)]["general_admin_expense"][1])
         mm = m[code]
@@ -398,11 +403,12 @@ def references(data_dir=None, vu_path=None) -> list[Ref]:
         add(c["code"], "roe", "FY", c["year"], c["roe"], "%", f"{c['year']}년 ROE(회사 발표)", (c["rcept_no"],), "reported")
         add(c["code"], "payout", "", c["year"], c["payout"], "%", f"{c['year']}년 주주환원율(회사 발표)", (c["rcept_no"],),
             "reported")
-    for y, tag in ((2025, "Q2"), (2026, "Q2"), (2025, "H1"), (2026, "H1")):
+    tags = ("Q2", "H1", *[t for t in ("Q3", "9M") if len(sector.get(("ni", 2026, t), [])) == len(CODES)])
+    for y, tag in [(y, t) for t in tags for y in (2025, 2026)]:
         vals = sector[("ni", y, tag)]
         add("sector", "net_income_owners", tag, y, sum(v for v, _ in vals), "KRW", f"{y}년 {PERIOD_KO[tag]} 지배주주순이익 합계",
             tuple(s for _, ss in vals for s in ss))
-    for tag in ("Q2", "H1"):
+    for tag in tags:
         now, before = sector[("ni", 2026, tag)], sector[("ni", 2025, tag)]
         add("sector", "net_income_owners", tag, 2026, (sum(v for v, _ in now) / sum(v for v, _ in before) - 1) * 100,
             "%", f"2026년 {PERIOD_KO[tag]} 합산 지배주주순이익 전년 대비 증감률", ())
@@ -432,7 +438,8 @@ FAMILY_RE = re.compile(
     r"|(?P<credit_loss_provision>충당금|대손|신용손실|크레딧\s?코스트)|(?P<total_assets>총자산|자산총계)"
     r"|(?P<shares>발행주식|주식\s?수|주식수|유통주식)|(?P<dividends>배당)|(?P<buyback>자사주|자기주식|소각)", re.I)
 FAMILIES = {"equity": {"equity_owners", "equity_total"}, "net_income": {"net_income", "net_income_owners"}}
-PERIOD_RE = re.compile(r"(?P<Q2>2분기|2Q|4~6월|4-6월|2/4분기)|(?P<H1>상반기|1H|반기|6월\s?말)|(?P<Q1>1분기|1Q|1~3월|3월\s?말)"
+PERIOD_RE = re.compile(r"(?P<M9>3분기\s?누적|1~9월|9M)"  # nine months to September (Q3 report figures)
+                       r"|(?P<Q2>2분기|2Q|4~6월|4-6월|2/4분기)|(?P<H1>상반기|1H|반기|6월\s?말)|(?P<Q1>1분기|1Q|1~3월|3월\s?말)"
                        r"|(?P<Q3>3분기|3Q)|(?P<Q4>4분기|4Q)|(?P<FY>연간|사업연도|연말|12월\s?말|20\d\d년\s?말|FY)|(?P<none>TTM|최근\s?12개월|LTM)")
 YEAR_RE = re.compile(r"(?P<y4>20(?:2[4-7]))\s?년?|'(?P<y2a>2[4-7])|[1-4]Q(?P<y2b>2[4-7])|[12]H(?P<y2c>2[4-7])"
                      r"|(?P<y2d>2[4-7])년|(?P<prev>전년|작년|지난해|1년 전)")
@@ -478,7 +485,7 @@ def _context(before: str, after: str, fallback: Context, column_target: bool = F
     fam = _kind(_last(FAMILY_RE, sent) or FAMILY_RE.search(after[:20])  # a table's metric may sit in a cell to the left
                 or _last(FAMILY_RE, re.sub(_MASK_CITES, " ", left_cells)) or _last(FAMILY_RE, before))
     ctx.families = FAMILIES.get(fam, {fam}) if fam else set(fallback.families)
-    per = _kind(_last(PERIOD_RE, sent))
+    per = {"M9": "9M"}.get(k := _kind(_last(PERIOD_RE, sent)), k)
     ctx.period = (None if per == "none" else per) if per else fallback.period
     years = set()
     for y in YEAR_RE.finditer(sent):
