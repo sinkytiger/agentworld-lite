@@ -2,6 +2,19 @@
 
 [English](README.md) · 한국어
 
+**은행 공시를 읽는 AI 애널리스트 에이전트, 한국과 캐나다.** 에이전트 셋(collector, analyst, reporter)이 한국 4대 금융지주(DART)와 캐나다 5대 은행(SEC EDGAR)의 공시만으로 질문에 답하고, 모든 숫자에 출처 공시를 붙여야 합니다. 차트가 있는 소개 글(영문): **[docs/overview_en.md](docs/overview_en.md)** · 라이브 데모: **[agentworld-canada-desk.streamlit.app](https://agentworld-canada-desk.streamlit.app)**
+
+![캐나다 5대 은행의 2025 회계연도 ROE와 은행별 중기 ROE 목표](docs/img/chart_objectives_roe.png)
+
+- **목표 대비 공시:** 2025 회계연도 ROE로 자기 목표를 충족한 캐나다 은행은 RBC뿐입니다(16.3%, 목표 16% 이상). TD의 공시 ROE 17.8%는 목표가 쓰는 조정 기준으로 12.9%입니다. 한국에서는 KB금융이 밸류업 ROE 목표를 충족했고, 신한지주는 순항 중이며, 하나금융지주는 9.11%로 목표 12%에 못 미칩니다. 목표 문구는 모두 공시 원문에서 인용하고, 문서의 SHA-256이나 DART 접수번호를 붙였습니다.
+- **모델 비교:** Sonnet 5.5는 48/48, Haiku 5.5는 66/72를 풀었고, Haiku의 성공 1건당 비용은 Sonnet의 약 15분의 1이었습니다. 틀린 숫자를 낸 모델은 없었습니다. Haiku의 실패는 모두 계산 방법이 한 에이전트의 개인 지시서에만 있고 채팅이 막힌 설정에서 나왔습니다.
+- **지어낸 숫자 없음:** 데이터 없이 물으면 Opus 5.5는 "확인 필요"를 53번 쓰고 2026년 수치를 하나도 지어내지 않았습니다. 출처가 붙은 데이터를 주면 61개 수치 중 60개가 공시와 일치했습니다.
+- **API 키 없이 오프라인 실행:** `pip install -e ".[demo]"` 후 `streamlit run demo/streamlit_app_kr.py`(한국, 한국어 화면) 또는 `streamlit run demo/streamlit_app.py`(캐나다).
+
+교육용 프로젝트이며 투자 권유가 아닙니다.
+
+---
+
 > **비공식 구현입니다.** AgentWorld·AutoGym 논문 저자들과 관계가 없습니다. 공식 AgentWorld 벤치마크(게임 엔진, 과제 100 + 200개, 기준 하네스, 평가 도구)는 **[openagents-org/agentworld](https://github.com/openagents-org/agentworld)** 에 있으며 게임 서버를 따로 구성해야 합니다. 이 프로젝트는 같은 프로토콜을 따르되 `pip`만으로 돌아가는 별도의 작은 격자 시뮬레이터로, 과제 설계와 소통 효과를 빠르게 실험하기 위한 것입니다. 원 논문의 수치와 직접 비교되지 않습니다.
 
 [AgentWorld (arXiv:2609.31590)](https://arxiv.org/abs/2609.31590) 논문의 평가 방식을 가벼운 Python 시뮬레이터에서 재현하고, [AutoGym (arXiv:2609.22592)](https://arxiv.org/abs/2609.22592)의 청사진 우선 아이디어를 과제 생성기에 빌려 온 프로젝트입니다. RPG 샌드박스에서 여러 LLM 에이전트가 **비대칭 역할**을 나눠 맡고 **채팅으로만 협업**해 장기 과제를 풉니다. 결과는 성공률(SR/PSR)과 **인과 협업 효율(CCE/PAC)**, 그리고 **소통 실패 유형**으로 평가합니다.
@@ -240,7 +253,7 @@ python -m agentworld_lite pair-report --runs runs/finance_llama --out reports/fi
 - **밸류에이션 스냅샷** (`python -m agentworld_lite.finance valuation --bank RY`): 한 은행을 나머지 4개 은행과 TTM 희석 EPS, P/E, 효율성비율, CET1로 비교하고, 동종 P/E 중앙값과 동종 P/E 범위가 가리키는 주가 범위를 보여 줍니다. 숫자마다 출처 공시가 붙고, 종가는 각 은행의 2026 회계연도 3분기 6-K 첨부 문서에서 읽었습니다. 투자의견과 목표주가는 없는 교육용 샘플입니다.
 - **실적 리뷰** (`python -m agentworld_lite.finance earnings-review --market ca --group all`): [anthropics/financial-services](https://github.com/anthropics/financial-services)의 Earnings Reviewer 흐름을 모델 없이 EDGAR 공시만으로 따릅니다. 은행별 2026 회계연도 3분기 단독 실적(누적 공시에서 계산)을 직전 분기와 비교하고, 누적 변동, 자본, 은행이 밝힌 목표(원문 인용), QC, 분기 모델을 `reports/earnings/ca`에 검토용으로 씁니다. QC는 BMO의 보통주주 귀속 순이익이 직전 분기보다 32.97% 줄어든 것(영업권 손상이 반영된 분기)을 표시합니다.
 - **재무 목표 점검** (`python -m agentworld_lite.finance objectives-ca`): 은행마다 2025 회계연도 40-F의 MD&A 첨부 문서에서 재무 목표를 원문 그대로 인용하고(인용 35개, 문서마다 SHA-256 기록, `--verify-local DIR`로 저장본 재확인), 공시로 잰 진척과 견주며, 한국 금융지주의 밸류업 목표를 나란히 보여 줍니다. 2025 회계연도 ROE로는 RBC만 목표를 충족합니다(16.3%, 목표 16% 이상). 자세한 내용은 [docs/overview_en.md](docs/overview_en.md)(영문)에 있습니다.
-- **데모** (`pip install -e ".[demo]"` 후 `streamlit run demo/streamlit_app.py`): Streamlit 앱입니다. 실행 과정을 라운드별로 재생하고, 5대 은행 수치를 숫자마다 출처 공시와 함께 차트·표로 보여 주고, 섹터 노트와 밸류에이션 스냅샷, (버튼을 누르면 실시간 피드로) 뉴스 다이제스트를 띄웁니다. `python demo/record_gif.py --out demo.gif`로 GIF를 녹화합니다.
+- **데모** (`pip install -e ".[demo]"` 후 `streamlit run demo/streamlit_app.py`): Streamlit 앱입니다. 실행 과정을 라운드별로 재생하고, 5대 은행 수치를 숫자마다 출처 공시와 함께 차트·표로 보여 주고, 은행별 ROE를 인용한 목표와 견주고, 섹터 노트와 밸류에이션 스냅샷, (버튼을 누르면 실시간 피드로) 뉴스 다이제스트를 띄웁니다. `python demo/record_gif.py --out demo.gif`로 GIF를 녹화합니다.
 
 ```bash
 python -m agentworld_lite.finance fetch --source edgar --company RY --periods 2025:FY 2026:Q3 --cache C:/edgar_cache

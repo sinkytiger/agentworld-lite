@@ -131,10 +131,8 @@ def chart_objectives_roe() -> Path:
     from agentworld_lite.finance import objectives_ca as oc
     rows = []
     for bank in oc.DOCS:
-        o = next(o for o in oc.OBJECTIVES if o.bank == bank and o.metric == "roe")
-        rep, adj, _ = oc.ROE_FY2025[bank]
-        on_basis = o.basis == "adjusted" and adj is not None
-        rows.append((oc.NAMES[bank], o, adj if on_basis else rep, rep if on_basis else adj))
+        r = oc.roe_check(bank)
+        rows.append((oc.NAMES[bank], r["objective"], r["tested"].value, r["other"] and r["other"].value))
     fig, ax = plt.subplots(figsize=(8, 4.4))
     for y, (_, o, tested, other) in enumerate(rows[::-1]):
         if other is not None:

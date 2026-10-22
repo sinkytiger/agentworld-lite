@@ -2,8 +2,18 @@
 
 English · [한국어](README.ko.md)
 
-> **New:** AI analyst agents on bank filings in Korea and Canada: what was built, why the two markets, and what came
-> out of it, with charts: [docs/overview_en.md](docs/overview_en.md).
+**AI analyst agents on bank filings, Korea and Canada.** Three agents (a collector, an analyst and a reporter) answer questions about Korea's four largest financial holding companies (DART) and Canada's Big 5 banks (SEC EDGAR) from their regulatory filings, and every number must cite the filing it came from. Write-up with charts: **[docs/overview_en.md](docs/overview_en.md)** · live demo: **[agentworld-canada-desk.streamlit.app](https://agentworld-canada-desk.streamlit.app)**
+
+![Canada's Big 5: fiscal 2025 ROE against each bank's medium-term ROE objective](docs/img/chart_objectives_roe.png)
+
+- **Promises vs filings:** on fiscal 2025 ROE only RBC meets its own objective (16.3% against 16%+); TD's reported 17.8% is 12.9% on the adjusted basis its objective uses. In Korea, KB meets its value-up ROE target, Shinhan is on track and Hana is at 9.11% against 12%. Every objective is quoted from the filed document, with the document's SHA-256 or DART receipt number.
+- **Models:** Sonnet 5.5 solved 48/48 episodes and Haiku 5.5 66/72 at about 1/15 of Sonnet's cost per success; no model submitted a wrong number. All of Haiku's failures came when the method sat only in one agent's private brief and chat was blocked.
+- **No invented numbers:** with no data, Opus 5.5 wrote "needs checking" 53 times and made up no 2026 figure; with a cited data pack, 60 of its 61 figures matched the filings.
+- **Try it offline, no API key:** `pip install -e ".[demo]"`, then `streamlit run demo/streamlit_app.py` (Canada) or `streamlit run demo/streamlit_app_kr.py` (Korea, Korean labels).
+
+Educational project, not investment advice.
+
+---
 
 A lightweight, pip-installable testbed for **long-horizon multi-agent LLM collaboration**, based on two September 2026 papers:
 
@@ -22,7 +32,7 @@ A lightweight, pip-installable testbed for **long-horizon multi-agent LLM collab
 - **Blueprint-first task generator** (idea borrowed from AutoGym, adapted to multi-agent play): sample generation parameters, build the solution DAG (who gathers, crafts and hands what to whom), materialize a task, certify it by running the reference solution, repair failures, set the round budget. No LLM calls; **~93% yield**.
 - **Model backends**: Claude (Anthropic API) and **Ollama** (free local models, or Ollama cloud models such as `gemma4:cloud`).
 - **Finance domain**: the same protocol on a research desk that fetches filings, computes valuation metrics and submits cited answers. Korean DART disclosures (a synthetic company and **real filings of Korea's four financial holding companies**) and **real filings of Canada's Big 5 banks** (SEDAR+ annual and interim reports, read from their SEC EDGAR copies), with a cited sector note generated from a finished run (see below).
-- **282 tests**, none of which call an API.
+- **284 tests**, none of which call an API.
 
 ## Quick start (no API key)
 
@@ -202,7 +212,7 @@ The same desk on real filings of RBC, TD, Scotiabank, BMO and CIBC. Details: [do
 - **Valuation snapshot** (`python -m agentworld_lite.finance valuation --bank RY`): one bank against the other four on TTM diluted EPS, P/E, efficiency ratio and CET1, with the peer median and the price range the peers' P/E range implies. Every number cites its filing; the closing prices were read from each bank's Q3 2026 6-K exhibit. No rating and no target price: an educational sample.
 - **Earnings review** (`python -m agentworld_lite.finance earnings-review --market ca --group all`): the Earnings Reviewer flow of [anthropics/financial-services](https://github.com/anthropics/financial-services) on EDGAR filings only, with no model. Each bank's fiscal Q3 2026 alone (from the year-to-date filings) against the previous quarter, year-to-date variance, capital, the bank's quoted objectives, QC checks and a coverage model, staged in `reports/earnings/ca`. The QC flags BMO's net income to common, down 32.97% from the previous quarter (the quarter of its goodwill charge).
 - **Financial objectives** (`python -m agentworld_lite.finance objectives-ca`): each bank's objectives quoted verbatim from the MD&A exhibit of its fiscal 2025 40-F (35 quotes, each document's SHA-256 recorded; `--verify-local DIR` re-checks saved copies) against progress from filings, with the Korean value-up targets side by side. On fiscal 2025 ROE only RBC meets its objective (16.3% against 16%+); see [docs/overview_en.md](docs/overview_en.md).
-- **Demo** (`pip install -e ".[demo]"`, then `streamlit run demo/streamlit_app.py`): a Streamlit app that replays a run round by round, charts the Big 5 figures with the filing behind each one, and shows the sector note, the valuation snapshot and (on request, from the live feeds) the news digest. `python demo/record_gif.py --out demo.gif` records a GIF of it.
+- **Demo** (`pip install -e ".[demo]"`, then `streamlit run demo/streamlit_app.py`): a Streamlit app that replays a run round by round, charts the Big 5 figures with the filing behind each one, checks each bank's ROE against its quoted objective, and shows the sector note, the valuation snapshot and (on request, from the live feeds) the news digest. `python demo/record_gif.py --out demo.gif` records a GIF of it.
 
 ```bash
 python -m agentworld_lite.finance fetch --source edgar --company RY --periods 2025:FY 2026:Q3 --cache C:/edgar_cache

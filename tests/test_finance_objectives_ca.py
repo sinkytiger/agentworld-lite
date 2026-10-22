@@ -2,6 +2,8 @@
 against the five MD&A exhibits on 2026-10-22; the saved-copy tests here use synthetic pages built from the quotes."""
 
 import hashlib
+import io
+import sys
 from html import escape
 from pathlib import Path
 
@@ -85,6 +87,14 @@ def test_cli(tmp_path, capsys):
     assert finance_main(["objectives-ca", "--verify-local", str(tmp_path)]) == 1
     assert "RY: no saved copy of d95203dex2.htm" in capsys.readouterr().out
     assert finance_main(["objectives-ca", "--verify-local", str(tmp_path / "nope")]) == 1
+
+
+def test_cli_prints_through_a_non_utf8_pipe(monkeypatch):
+    out = io.TextIOWrapper(io.BytesIO(), encoding="cp949")               # a piped stdout on Korean Windows
+    monkeypatch.setattr(sys, "stdout", out)
+    assert finance_main(["objectives-ca"]) == 0
+    out.flush()
+    assert out.buffer.getvalue().decode("utf-8").startswith("# Canada's Big 5")
 
 
 @pytest.mark.parametrize("bank", BIG5)
