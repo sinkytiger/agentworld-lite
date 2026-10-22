@@ -13,7 +13,8 @@
   ai-report    ask a model the same Korean question twice (no data / a DART data pack), store prompts and answers,
                and fact-check every figure against the filings (--prompts and --check need no model; --run is paid)
   earnings-review  Korean earnings review of the latest report: variance vs a year ago and the previous quarter,
-               value-up targets, QC and a cited draft staged for review (--draft adds a paid, fact-checked model draft)
+               value-up targets, QC and a cited draft staged for review (--draft adds a paid, fact-checked model draft);
+               --market ca: English review of the Big 5 Canadian banks from their EDGAR filings (rules only)
   leaderboard  compare models on the Korean tasks from saved runs; failures sorted by trap and collaboration step
   watch-filings  check DART's list for new or amended periodic reports of the four Korean financial holding
                companies; --apply adds new periods (Q3) and writes a cited Korean Q3 note. One run: it schedules
@@ -236,7 +237,10 @@ def cmd_leaderboard(args) -> int:
 
 
 def cmd_earnings_review(args) -> int:
+    if args.market == "ca":
+        return _earnings_review_ca(args)
     from .earnings_review import ReviewError, draft, groups, review, write
+    args.data, args.out_dir = args.data or str(DATA_FHC), args.out_dir or "reports/earnings"
     try:
         for code in groups(args.group):
             rv = review(code, args.year, args.period, data_dir=args.data)
@@ -248,6 +252,26 @@ def cmd_earnings_review(args) -> int:
                 from ..llm import ClaudeClient
                 draft(ClaudeClient(model=args.model), rv, args.out_dir, max_cost=args.max_cost,
                       max_tokens=args.max_tokens, data_dir=args.data)
+    except ReviewError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    return 0
+
+
+def _earnings_review_ca(args) -> int:
+    from .earnings_review_ca import DATA_DIR, ReviewError, groups, review, write
+    if args.draft:
+        print("error: --draft is not available with --market ca; the Canadian review is written by rules only",
+              file=sys.stderr)
+        return 2
+    data, out_dir = args.data or str(DATA_DIR), args.out_dir or "reports/earnings/ca"
+    try:
+        for code in groups(args.group, data):
+            rv = review(code, args.year, args.period, data_dir=data)
+            d = write(rv, out_dir, data)
+            flags = [name for name, ok, _ in rv.checks if not ok]
+            print(f"{rv.name} {rv.label}: {d / 'review.md'} (QC: " + ("all passed" if not flags else
+                                                                     "check " + "; ".join(flags)) + ")")
     except ReviewError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
@@ -380,14 +404,20 @@ def main(argv=None) -> int:
     lb.add_argument("--runs-root", default="runs")
     lb.add_argument("--out", help="Markdown file to write (default: print)")
 
-    erv = sub.add_parser("earnings-review", help="Korean earnings review of a financial holding company's latest "
-                                                 "report: variance table, QC and a cited draft (no model unless --draft)")
-    erv.add_argument("--group", default="all", help="all, a stock code, a name (신한지주) or kb|shinhan|hana|woori")
-    erv.add_argument("--year", type=int, help="with --period; default: the group's latest report in the dataset")
+    erv = sub.add_parser("earnings-review", help="earnings review of the latest report (Korean financial holding "
+                                                 "companies, or the Big 5 Canadian banks with --market ca): variance "
+                                                 "table, QC and a cited draft (no model unless --draft)")
+    erv.add_argument("--market", choices=["kr", "ca"], default="kr",
+                     help="kr: four Korean financial holding companies (Korean); ca: Big 5 Canadian banks (English)")
+    erv.add_argument("--group", default="all", help="kr: all, a stock code, a name (신한지주) or kb|shinhan|hana|woori; "
+                                                    "ca: all, RY, TD, BNS, BMO, CM or a full name")
+    erv.add_argument("--year", type=int, help="with --period (fiscal for ca); default: the latest report")
     erv.add_argument("--period", choices=["Q1", "H1", "Q3", "FY"])
-    erv.add_argument("--data", default=str(DATA_FHC))
-    erv.add_argument("--out-dir", default="reports/earnings", help="drafts for review (outside git)")
-    erv.add_argument("--draft", action="store_true", help="paid: one model draft per group, then the rule fact-check")
+    erv.add_argument("--data", default=None, help="default data/finance/dart_fhc (kr) or data/finance/edgar (ca)")
+    erv.add_argument("--out-dir", default=None, help="drafts for review (outside git); default reports/earnings (kr) "
+                                                     "or reports/earnings/ca (ca)")
+    erv.add_argument("--draft", action="store_true", help="paid, kr only: one model draft per group, then the rule "
+                                                          "fact-check")
     erv.add_argument("--model", default="claude-opus-5-5")
     erv.add_argument("--max-cost", type=float, default=1.0, help="per draft; refused before calling when exceeded")
     erv.add_argument("--max-tokens", type=int, default=16000)
