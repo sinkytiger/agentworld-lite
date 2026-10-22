@@ -34,7 +34,12 @@ and never runs git, and its tests use synthetic fixtures. A leaderboard (`leader
 k01-k05 (129 episodes): Opus 5.5 20/20, Sonnet 5.5 40/40, Haiku 5.5 54/60 at about a fifteenth of Sonnet's cost per
 success, local qwen3:4b 0/9. Every failed answer is placed at the step that failed by replaying the run; none was a
 wrong value and no calculation hit any of the 98 listed traps. All six Haiku failures were in the private, no-chat
-setting, where the analyst could not ask for the inputs only its private brief mentions.
+setting, where the analyst could not ask for the inputs only its private brief mentions. An earnings reviewer
+(`earnings-review`), modelled on the Earnings Reviewer agent of anthropics/financial-services but on DART data only,
+writes a cited Korean review of a group's latest report: variance against the same quarter a year earlier and the
+previous quarter (DART has no consensus), value-up targets, seven QC checks and a coverage-model file, staged for
+review; an optional paid model draft is kept only if the rule fact-check finds no contradicted figure and every
+citation recomputes.
 
 이 문서는 숫자를 어디서 가져왔는지, 어떻게 정규화했는지, 무엇과 대조했는지, 그 숫자로 만든 과제와 산출물(섹터 노트,
 밸류에이션 스냅샷, 데모)을 정리합니다. 설계의 기준은 캐나다 데스크([finance_canada.md](finance_canada.md))이고, 가상
@@ -503,6 +508,53 @@ python -m agentworld_lite.finance watch-filings --apply --note reports/q3_2026_k
 
 2026-10-22에 실제 DART로 한 번 확인한 결과(반영 없이)는 "새 보고서나 정정 보고서가 없습니다"였습니다. 3분기보고서는
 분기 말부터 45일인 제출 기한 무렵(11월 중순)에 나옵니다.
+
+## DART 실적 리뷰 (Earnings Reviewer)
+
+```bash
+python -m agentworld_lite.finance earnings-review --group all
+```
+
+```bash
+python -m agentworld_lite.finance earnings-review --group 신한지주 --draft --max-cost 1.0
+```
+
+`agentworld_lite/finance/earnings_review.py`는 금융지주가 새 정기보고서를 내면 분기 실적 리뷰 초안을 씁니다. 작업 흐름은
+[anthropics/financial-services](https://github.com/anthropics/financial-services)(Apache-2.0)의 Earnings Reviewer
+에이전트를 참고했습니다(실적 받기 → 모델 갱신 → 모델 검사 → 노트 초안 → 검토 대기, 숫자마다 출처, 외부 배포 금지). 코드와
+문구는 가져오지 않았고, 데이터는 유료 데이터 연결 대신 이 데스크의 DART 데이터셋입니다.
+
+| Earnings Reviewer 단계 | 이 데스크 |
+|---|---|
+| 실적 받기(FactSet·Daloopa, 10-Q) | DART 데이터셋. 새 보고서는 `watch-filings --apply`가 넣음 |
+| 실적발표 콘퍼런스콜 읽기 | 하지 않음(DART만 씀). 노트에 그렇게 적음 |
+| 모델 갱신 | 그룹의 모든 분기 단독 값과 출처를 `model.json`으로 |
+| 모델 검사 | QC 7개(아래) |
+| 변동표: 실적 vs 컨센서스 vs 기존 추정 | DART에는 컨센서스가 없어 전년 같은 분기·직전 분기 대비와 밸류업 목표 대비 |
+| 노트 초안, 숫자마다 출처, `[UNSOURCED]` | 규칙으로 쓴 노트(숫자마다 사실 ID·접수번호, 인용이 빠지면 내보내지 않음). 원하면 모델 초안(`--draft`) |
+| 검토 대기, 외부 배포 금지 | `reports/earnings/<종목>_<기간>/`(저장소 밖)에 "검토용 초안"으로 저장. 게시·발송·푸시 없음 |
+
+- **변동표**: 순이자이익, 순수수료이익, 일반관리비, 신용손실충당금 전입액, 영업이익, 지배주주순이익과 분기 CIR을 이번 분기,
+  전년 같은 분기, 직전 분기로 보여 줍니다. 분기 단독 값은 누적 보고서끼리 뺍니다(2분기 = 상반기 − 1분기, 3분기 = 1~9월 −
+  상반기, 4분기 = 연간 − 1~9월).
+- **자본과 밸류업**: 보통주자본, TTM ROE(12개월 전과 지금의 지배주주지분 평균), 인용한 ROE·CET1 목표와 남은 격차. 이번
+  보고서 기준 CET1이 데이터셋에 없으면 "확인 필요"라고 적습니다(CET1은 반기보고서 본문 인용뿐).
+- **QC**: 분기 단독 값이 양수인지, 분기 CIR이 20~70 범위인지, 자본총계 ≥ 지배주주지분 > 신종자본증권 > 0인지, 비교 기간
+  보고서가 있는지, 핵심 이익(순이자·순수수료)의 전년 대비 변동이 40 퍼센트 안인지(넘으면 XBRL 계정이 같은지 함께 적음),
+  접수일이 오늘 이전인지, 정정 보고서인지.
+- **모델 초안(`--draft`, 유료)**: 리뷰에 쓰인 공시 수치와 인용 목표만 데이터 팩으로 주고(공시 원문은 주지 않아 원문 속
+  문장이 모델에게 지시할 수 없음), 숫자마다 ``[사실 `id`]``·`[계산: 식]`을 요구합니다. 받은 초안은 위 "AI 리포트와
+  팩트체크"의 규칙으로 검사해, 공시와 다른 숫자나 다시 계산되지 않는 인용이 하나도 없고 정상 종료했을 때만 "검토 가능",
+  아니면 "수정 필요"로 둡니다. 최악 비용(입력 1글자 = 1토큰, 출력 16,000토큰)이 `--max-cost`를 넘으면 호출하지 않습니다.
+  Opus 5.5 기준 그룹당 최악 약 0.35달러, 보통 0.2달러 안팎으로 예상합니다. 아직 실행하지 않았습니다.
+- **팩트체크 기준값의 확장**: 3분기·연간 보고서가 데이터셋에 들어오면 `ai_report.references`가 그 분기의 단독 값, 전년·전분기
+  대비 증감률, CIR, 4개 그룹 합계를 기준값에 자동으로 더합니다(지금 데이터셋에서는 기준값 675개 그대로).
+
+2026-10-22 현재 데이터셋의 최신 보고서는 2026년 반기보고서(2분기)이며, 오프라인으로 네 그룹의 리뷰를 썼습니다. QC는
+KB금융과 신한지주의 2분기 순수수료이익이 전년 같은 분기보다 각각 55%, 56% 늘어난 것을 "확인 필요"로 표시했습니다. 두 해 모두
+같은 XBRL 계정(`ifrs-full_FeeAndCommissionIncomeExpense`)이라 매핑 문제가 아니라 실제 변동이거나 회사의 재분류이며, 사람이
+실적발표 자료로 확인할 몫입니다. 3분기보고서가 나오면 `watch-filings --apply` 다음에 이 명령을 실행하면 됩니다. 테스트는 가상
+3분기 보고서(상반기 손익 × 1.5, 잔액 × 1.01)와 가짜 클라이언트로 네트워크 없이 돕니다.
 
 ## 밸류에이션 스냅샷 (한국어, 기본으로 꺼짐)
 

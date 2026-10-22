@@ -12,6 +12,8 @@
                기업가치 제고 계획 filings, progress measured from filings (--build fetches and checks the sources)
   ai-report    ask a model the same Korean question twice (no data / a DART data pack), store prompts and answers,
                and fact-check every figure against the filings (--prompts and --check need no model; --run is paid)
+  earnings-review  Korean earnings review of the latest report: variance vs a year ago and the previous quarter,
+               value-up targets, QC and a cited draft staged for review (--draft adds a paid, fact-checked model draft)
   leaderboard  compare models on the Korean tasks from saved runs; failures sorted by trap and collaboration step
   watch-filings  check DART's list for new or amended periodic reports of the four Korean financial holding
                companies; --apply adds new periods (Q3) and writes a cited Korean Q3 note. One run: it schedules
@@ -233,6 +235,25 @@ def cmd_leaderboard(args) -> int:
     return 0
 
 
+def cmd_earnings_review(args) -> int:
+    from .earnings_review import ReviewError, draft, groups, review, write
+    try:
+        for code in groups(args.group):
+            rv = review(code, args.year, args.period, data_dir=args.data)
+            d = write(rv, args.out_dir, args.data)
+            flags = [name for name, ok, _ in rv.checks if not ok]
+            print(f"{rv.name} {rv.label}: {d / 'review.md'} (QC: " + ("모두 통과" if not flags else
+                                                                     "확인 필요 " + ", ".join(flags)) + ")")
+            if args.draft:
+                from ..llm import ClaudeClient
+                draft(ClaudeClient(model=args.model), rv, args.out_dir, max_cost=args.max_cost,
+                      max_tokens=args.max_tokens, data_dir=args.data)
+    except ReviewError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    return 0
+
+
 def cmd_fetch(args) -> int:
     from .sources import SourceError, get_source
     prices, company_prices = {}, {}  # DATE=VALUE applies to every --company; CODE@DATE=VALUE to one of them
@@ -359,6 +380,18 @@ def main(argv=None) -> int:
     lb.add_argument("--runs-root", default="runs")
     lb.add_argument("--out", help="Markdown file to write (default: print)")
 
+    erv = sub.add_parser("earnings-review", help="Korean earnings review of a financial holding company's latest "
+                                                 "report: variance table, QC and a cited draft (no model unless --draft)")
+    erv.add_argument("--group", default="all", help="all, a stock code, a name (신한지주) or kb|shinhan|hana|woori")
+    erv.add_argument("--year", type=int, help="with --period; default: the group's latest report in the dataset")
+    erv.add_argument("--period", choices=["Q1", "H1", "Q3", "FY"])
+    erv.add_argument("--data", default=str(DATA_FHC))
+    erv.add_argument("--out-dir", default="reports/earnings", help="drafts for review (outside git)")
+    erv.add_argument("--draft", action="store_true", help="paid: one model draft per group, then the rule fact-check")
+    erv.add_argument("--model", default="claude-opus-5-5")
+    erv.add_argument("--max-cost", type=float, default=1.0, help="per draft; refused before calling when exceeded")
+    erv.add_argument("--max-tokens", type=int, default=16000)
+
     f = sub.add_parser("fetch", help="build company datasets from DART, EDGAR or hand-checked local documents")
     f.add_argument("--source", choices=["dart", "edgar", "local_pdf", "sedar_dds"], default="dart")
     f.add_argument("--company", nargs="+", help="DART: stock code or exact name; EDGAR: ticker (RY), CIK or exact name")
@@ -387,7 +420,7 @@ def main(argv=None) -> int:
     return {"make-tasks": cmd_make_tasks, "validate": cmd_validate, "run": cmd_run, "note": cmd_note,
             "news": cmd_news, "valuation": cmd_valuation, "valueup": cmd_valueup, "ai-report": cmd_ai_report,
             "watch-filings": cmd_watch_filings, "leaderboard": cmd_leaderboard,
-            "fetch": cmd_fetch}[args.cmd](args)
+            "earnings-review": cmd_earnings_review, "fetch": cmd_fetch}[args.cmd](args)
 
 
 if __name__ == "__main__":
