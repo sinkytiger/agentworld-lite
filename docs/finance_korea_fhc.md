@@ -27,7 +27,10 @@ An AI report experiment (`ai_report.py`) asks Claude Opus 5.5 the same Korean qu
 by rules (recomputing citations, matching context against 675 filed reference values) plus the finground `verify_claims`
 tool. Without data the model invented no 2026 figure (53 "확인 필요") and recalled targets partly out of date. With data
 the first answer hit the 8,000-token cap; asked again with 20,000 tokens, 60 of 61 figures and all 46 citations checked
-out and its verdicts mostly matched the scorecard (US$0.77 for the three calls).
+out and its verdicts mostly matched the scorecard (US$0.77 for the three calls). A filings watcher (`watch-filings`)
+reads DART's list of periodic reports, finds reports the dataset lacks (the coming Q3 reports) and amendments, adds only
+new periods with --apply, revalidates the tasks and writes a cited Korean Q3 note; it is one run that schedules nothing
+and never runs git, and its tests use synthetic fixtures.
 
 이 문서는 숫자를 어디서 가져왔는지, 어떻게 정규화했는지, 무엇과 대조했는지, 그 숫자로 만든 과제와 산출물(섹터 노트,
 밸류에이션 스냅샷, 데모)을 정리합니다. 설계의 기준은 캐나다 데스크([finance_canada.md](finance_canada.md))이고, 가상
@@ -462,6 +465,40 @@ python -m agentworld_lite.finance ai-report --run --max-cost 1.0
   규칙을 주면 숫자와 판정 대부분이 공시와 맞지만, 인용 형식만큼 출력 한도를 넉넉히 잡아야 합니다. 질문마다 한 번씩 물은
   결과이고, 문맥 대조는 정규식 규칙이라 그룹·지표를 잘못 짚을 수 있습니다(판정마다 고른 기준값과 접수번호를
   `factcheck.md`에 적음).
+
+## 3분기 실적 자동 갱신
+
+```bash
+python -m agentworld_lite.finance watch-filings
+```
+
+```bash
+python -m agentworld_lite.finance watch-filings --apply --note reports/q3_2026_ko.md
+```
+
+`agentworld_lite/finance/filings_watch.py`는 DART 공시 목록(`list.json`, 정기보고서 `pblntf_ty=A`)에서 4대 금융지주의
+새 보고서와 정정 보고서를 찾습니다. 그룹마다 데이터셋에 있는 가장 최근 접수일부터 오늘까지 목록을 읽고, 보고서 이름으로
+기간을 정합니다("분기보고서 (2026.09)"는 2026년 3분기, "[기재정정]반기보고서 (2026.06)"은 2026년 상반기 정정).
+
+- **새 보고서**(데이터셋에 없는 기간): `--apply`가 `fetch --profile fhc`와 같은 코드로 연결·별도 재무제표, 주식 수, 정정
+  보고서의 최초 접수를 받아 데이터셋에 넣고, 한국어 과제를 다시 검증한 뒤 3분기 노트를 씁니다.
+- **정정 보고서**(데이터셋에 있는 기간의 더 새 접수): 알리기만 하고 반영하지 않습니다. 반영하면 숫자와 접수일이 바뀌고
+  접수일이 과제 기준일(2026-10-15) 이후가 되어 과제가 깨지므로, 사람이 정해서 `fetch`로 받아야 합니다.
+- **3분기 노트**: 그룹별 3분기 단독 지배주주순이익(3분기 누적 − 상반기 누적)과 전년 같은 분기 대비 증감률, 누적
+  지배주주순이익, 누적 CIR, 9월 말 보통주자본을 숫자마다 사실 ID와 접수번호를 붙여 씁니다. 아직 3분기보고서가 없는 그룹은
+  따로 적고, 인용이 빠지면 내보내지 않습니다. `--note-only`는 네트워크 없이 지금 데이터셋으로 씁니다.
+- **한 번 실행하고 끝납니다.** 예약 작업이나 상주 서비스를 만들지 않고 git을 실행하지 않습니다(커밋·푸시는 사람이
+  합니다). 주기적으로 확인하려면 사용자가 직접 예약해야 합니다. 처음 발견한 날짜는 저장소 밖 캐시
+  (`data/finance/cache/watch_state.json`)에 남겨, 실행할 때마다 언제 처음 보였는지 함께 알려 줍니다.
+
+테스트(`tests/test_finance_filings_watch.py`)는 네트워크 없이 돕니다. 공시 목록은 가상 고정 자료
+(`tests/fixtures/dart_watch/list_2026q3.json`, 접수번호 9번째 자리가 9인 존재하지 않는 번호)이고, 3분기 재무제표는 가짜
+클라이언트가 상반기 값으로 만든 가상 값입니다(손익 × 1.5, 잔액 × 1.01). 데이터셋 복사본에서 새 3분기보고서 두 건(그중
+하나는 정정본까지 있음)과 다른 그룹의 상반기 정정 한 건을 찾고, 새 기간만 반영하며 정정은 그대로 두고, 노트의 숫자마다
+인용이 붙는지 확인합니다. 모듈에 `subprocess`, `git`, 예약 명령이 없다는 것도 테스트합니다.
+
+2026-10-22에 실제 DART로 한 번 확인한 결과(반영 없이)는 "새 보고서나 정정 보고서가 없습니다"였습니다. 3분기보고서는
+분기 말부터 45일인 제출 기한 무렵(11월 중순)에 나옵니다.
 
 ## 밸류에이션 스냅샷 (한국어, 기본으로 꺼짐)
 
