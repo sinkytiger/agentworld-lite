@@ -454,21 +454,21 @@
  },
  "data": {
   "summary": {
-   "figures": 17,
-   "일치": 17,
+   "figures": 61,
+   "일치": 60,
    "기준 다름": 0,
    "불일치": 0,
    "지표 불명": 0,
-   "확인 불가": 0,
-   "cited": 16,
-   "인용 일치": 16,
+   "확인 불가": 1,
+   "cited": 46,
+   "인용 일치": 46,
    "인용 불일치": 0,
    "인용 오류": 0,
-   "확인 필요 표시": 0
+   "확인 필요 표시": 10
   },
   "figures": [
    {
-    "line": 13,
+    "line": 14,
     "figure": "1조 9,922억원",
     "value": 1992200000000.0,
     "unit": "KRW",
@@ -499,7 +499,7 @@
     "citation_value": "1조 9,922억원"
    },
    {
-    "line": 13,
+    "line": 14,
     "figure": "1조 7,384억원",
     "value": 1738400000000.0,
     "unit": "KRW",
@@ -530,7 +530,7 @@
     "citation_value": "1조 7,384억원"
    },
    {
-    "line": 13,
+    "line": 14,
     "figure": "+14.6%",
     "value": 14.6,
     "unit": "%",
@@ -564,7 +564,7 @@
     "citation_value": "14.60%"
    },
    {
-    "line": 14,
+    "line": 15,
     "figure": "1조 8,201억원",
     "value": 1820100000000.0,
     "unit": "KRW",
@@ -595,7 +595,7 @@
     "citation_value": "1조 8,201억원"
    },
    {
-    "line": 14,
+    "line": 15,
     "figure": "1조 5,491억원",
     "value": 1549100000000.0,
     "unit": "KRW",
@@ -626,7 +626,7 @@
     "citation_value": "1조 5,491억원"
    },
    {
-    "line": 14,
+    "line": 15,
     "figure": "+17.5%",
     "value": 17.5,
     "unit": "%",
@@ -660,7 +660,7 @@
     "citation_value": "17.50%"
    },
    {
-    "line": 15,
+    "line": 16,
     "figure": "1조 1,928억원",
     "value": 1192800000000.0,
     "unit": "KRW",
@@ -691,7 +691,7 @@
     "citation_value": "1조 1,928억원"
    },
    {
-    "line": 15,
+    "line": 16,
     "figure": "1조 1,733억원",
     "value": 1173300000000.0,
     "unit": "KRW",
@@ -722,7 +722,7 @@
     "citation_value": "1조 1,733억원"
    },
    {
-    "line": 15,
+    "line": 16,
     "figure": "+1.7%",
     "value": 1.7,
     "unit": "%",
@@ -756,7 +756,7 @@
     "citation_value": "1.67%"
    },
    {
-    "line": 16,
+    "line": 17,
     "figure": "1조 46억원",
     "value": 1004600000000.0,
     "unit": "KRW",
@@ -787,7 +787,7 @@
     "citation_value": "1조 46억원"
    },
    {
-    "line": 16,
+    "line": 17,
     "figure": "9,353억원",
     "value": 935300000000.0,
     "unit": "KRW",
@@ -818,7 +818,7 @@
     "citation_value": "9,353억원"
    },
    {
-    "line": 16,
+    "line": 17,
     "figure": "+7.4%",
     "value": 7.4,
     "unit": "%",
@@ -852,7 +852,7 @@
     "citation_value": "7.40%"
    },
    {
-    "line": 19,
+    "line": 21,
     "figure": "6조 97억원",
     "value": 6009700000000.0,
     "unit": "KRW",
@@ -889,7 +889,7 @@
     "citation_value": "6조 97억원"
    },
    {
-    "line": 20,
+    "line": 22,
     "figure": "5조 3,961억원",
     "value": 5396100000000.0,
     "unit": "KRW",
@@ -926,7 +926,7 @@
     "citation_value": "5조 3,961억원"
    },
    {
-    "line": 21,
+    "line": 23,
     "figure": "+11.4%",
     "value": 11.4,
     "unit": "%",
@@ -936,7 +936,9 @@
       "net_income_owners"
      ],
      "period": "Q2",
-     "years": [],
+     "years": [
+      2026
+     ],
      "target": false
     },
     "verdict": "일치",
@@ -952,7 +954,7 @@
     "citation_value": "11.37%"
    },
    {
-    "line": 33,
+    "line": 31,
     "figure": "36.2%",
     "value": 36.2,
     "unit": "%",
@@ -982,7 +984,7 @@
     "citation_value": "36.16%"
    },
    {
-    "line": 33,
+    "line": 31,
     "figure": "36.9%",
     "value": 36.9,
     "unit": "%",
@@ -1007,6 +1009,1302 @@
      ],
      "kind": "value"
     },
+    "citation": "[계산: `105560.2025H1.CFS.general_admin_expense` / (`105560.2025H1.CFS.operating_income` + `105560.2025H1.CFS.general_admin_expense` + `105560.2025H1.CFS.credit_loss_provision`) * 100]",
+    "citation_verdict": "인용 일치",
+    "citation_value": "36.90%"
+   },
+   {
+    "line": 32,
+    "figure": "36.5%",
+    "value": 36.5,
+    "unit": "%",
+    "context": {
+     "group": "신한지주",
+     "families": [
+      "cir"
+     ],
+     "period": "H1",
+     "years": [
+      2026
+     ],
+     "target": false
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "신한지주 2026년 상반기 CIR",
+     "value": 36.450222,
+     "shown": "36.45%",
+     "sources": [
+      "20261007000223"
+     ],
+     "kind": "value"
+    },
+    "citation": "[계산: `055550.2026H1.CFS.general_admin_expense` / (`055550.2026H1.CFS.operating_income` + `055550.2026H1.CFS.general_admin_expense` + `055550.2026H1.CFS.credit_loss_provision`) * 100]",
+    "citation_verdict": "인용 일치",
+    "citation_value": "36.45%"
+   },
+   {
+    "line": 32,
+    "figure": "36.6%",
+    "value": 36.6,
+    "unit": "%",
+    "context": {
+     "group": "신한지주",
+     "families": [
+      "cir"
+     ],
+     "period": "H1",
+     "years": [
+      2025
+     ],
+     "target": false
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "신한지주 2025년 상반기 CIR",
+     "value": 36.636632,
+     "shown": "36.64%",
+     "sources": [
+      "20250814002920"
+     ],
+     "kind": "value"
+    },
+    "citation": "[계산: `055550.2025H1.CFS.general_admin_expense` / (`055550.2025H1.CFS.operating_income` + `055550.2025H1.CFS.general_admin_expense` + `055550.2025H1.CFS.credit_loss_provision`) * 100]",
+    "citation_verdict": "인용 일치",
+    "citation_value": "36.64%"
+   },
+   {
+    "line": 33,
+    "figure": "38.9%",
+    "value": 38.9,
+    "unit": "%",
+    "context": {
+     "group": "하나금융지주",
+     "families": [
+      "cir"
+     ],
+     "period": "H1",
+     "years": [
+      2026
+     ],
+     "target": false
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "하나금융지주 2026년 상반기 CIR",
+     "value": 38.885937,
+     "shown": "38.89%",
+     "sources": [
+      "20260814003800"
+     ],
+     "kind": "value"
+    },
+    "citation": "[계산: `086790.2026H1.CFS.general_admin_expense` / (`086790.2026H1.CFS.operating_income` + `086790.2026H1.CFS.general_admin_expense` + `086790.2026H1.CFS.credit_loss_provision`) * 100]",
+    "citation_verdict": "인용 일치",
+    "citation_value": "38.89%"
+   },
+   {
+    "line": 33,
+    "figure": "38.5%",
+    "value": 38.5,
+    "unit": "%",
+    "context": {
+     "group": "하나금융지주",
+     "families": [
+      "cir"
+     ],
+     "period": "H1",
+     "years": [
+      2025
+     ],
+     "target": false
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "하나금융지주 2025년 상반기 CIR",
+     "value": 38.536123,
+     "shown": "38.54%",
+     "sources": [
+      "20250814004489"
+     ],
+     "kind": "value"
+    },
+    "citation": "[계산: `086790.2025H1.CFS.general_admin_expense` / (`086790.2025H1.CFS.operating_income` + `086790.2025H1.CFS.general_admin_expense` + `086790.2025H1.CFS.credit_loss_provision`) * 100]",
+    "citation_verdict": "인용 일치",
+    "citation_value": "38.54%"
+   },
+   {
+    "line": 34,
+    "figure": "46.0%",
+    "value": 46.0,
+    "unit": "%",
+    "context": {
+     "group": "우리금융지주",
+     "families": [
+      "cir"
+     ],
+     "period": "H1",
+     "years": [
+      2026
+     ],
+     "target": false
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "우리금융지주 2026년 상반기 CIR",
+     "value": 46.00717,
+     "shown": "46.01%",
+     "sources": [
+      "20260814003410"
+     ],
+     "kind": "value"
+    },
+    "citation": "[계산: `316140.2026H1.CFS.general_admin_expense` / (`316140.2026H1.CFS.operating_income` + `316140.2026H1.CFS.general_admin_expense` + `316140.2026H1.CFS.credit_loss_provision`) * 100]",
+    "citation_verdict": "인용 일치",
+    "citation_value": "46.01%"
+   },
+   {
+    "line": 34,
+    "figure": "45.9%",
+    "value": 45.9,
+    "unit": "%",
+    "context": {
+     "group": "우리금융지주",
+     "families": [
+      "cir"
+     ],
+     "period": "H1",
+     "years": [
+      2025
+     ],
+     "target": false
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "우리금융지주 2025년 상반기 CIR",
+     "value": 45.908065,
+     "shown": "45.91%",
+     "sources": [
+      "20250814004065"
+     ],
+     "kind": "value"
+    },
+    "citation": "[계산: `316140.2025H1.CFS.general_admin_expense` / (`316140.2025H1.CFS.operating_income` + `316140.2025H1.CFS.general_admin_expense` + `316140.2025H1.CFS.credit_loss_provision`) * 100]",
+    "citation_verdict": "인용 일치",
+    "citation_value": "45.91%"
+   },
+   {
+    "line": 40,
+    "figure": "13.74%",
+    "value": 13.74,
+    "unit": "%",
+    "context": {
+     "group": "KB금융",
+     "families": [
+      "cet1"
+     ],
+     "period": "H1",
+     "years": [
+      2026
+     ],
+     "target": false
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "KB금융 보통주자본비율(2026-06-30)",
+     "value": 13.74,
+     "shown": "13.74%",
+     "sources": [
+      "20260814004200"
+     ],
+     "kind": "value"
+    },
+    "citation": "[사실 `105560.cet1.2026H1`]",
+    "citation_verdict": "인용 일치",
+    "citation_value": "13.74%"
+   },
+   {
+    "line": 41,
+    "figure": "13.43%",
+    "value": 13.43,
+    "unit": "%",
+    "context": {
+     "group": "신한지주",
+     "families": [
+      "cet1"
+     ],
+     "period": "H1",
+     "years": [
+      2026
+     ],
+     "target": false
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "신한지주 보통주자본비율(2026-06-30)",
+     "value": 13.43,
+     "shown": "13.43%",
+     "sources": [
+      "20261007000223"
+     ],
+     "kind": "value"
+    },
+    "citation": "[사실 `055550.cet1.2026H1`]",
+    "citation_verdict": "인용 일치",
+    "citation_value": "13.43%"
+   },
+   {
+    "line": 42,
+    "figure": "13.27%",
+    "value": 13.27,
+    "unit": "%",
+    "context": {
+     "group": "하나금융지주",
+     "families": [
+      "cet1"
+     ],
+     "period": "H1",
+     "years": [
+      2026
+     ],
+     "target": false
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "하나금융지주 보통주자본비율(2026-06-30)",
+     "value": 13.27,
+     "shown": "13.27%",
+     "sources": [
+      "20260814003800"
+     ],
+     "kind": "value"
+    },
+    "citation": "[사실 `086790.cet1.2026H1`]",
+    "citation_verdict": "인용 일치",
+    "citation_value": "13.27%"
+   },
+   {
+    "line": 43,
+    "figure": "12.89%",
+    "value": 12.89,
+    "unit": "%",
+    "context": {
+     "group": "우리금융지주",
+     "families": [
+      "cet1"
+     ],
+     "period": "FY",
+     "years": [
+      2025
+     ],
+     "target": false
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "우리금융지주 보통주자본비율(2025년 말)",
+     "value": 12.89,
+     "shown": "12.89%",
+     "sources": [
+      "20260814003410"
+     ],
+     "kind": "value"
+    },
+    "citation": null,
+    "citation_verdict": null,
+    "citation_value": null
+   },
+   {
+    "line": 49,
+    "figure": "10.5%",
+    "value": 10.5,
+    "unit": "%",
+    "context": {
+     "group": "KB금융",
+     "families": [
+      "roe"
+     ],
+     "period": null,
+     "years": [],
+     "target": false
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "KB금융 TTM ROE(2026년 6월 말, 평균 지배주주지분)",
+     "value": 10.473566,
+     "shown": "10.47%",
+     "sources": [
+      "20260619000667",
+      "20260324000827",
+      "20260814004200"
+     ],
+     "kind": "value"
+    },
+    "citation": "[계산: (`105560.2025FY.CFS.net_income_owners` + `105560.2026H1.CFS.net_income_owners` - `105560.2025H1.CFS.net_income_owners`) / ((`105560.2025H1.CFS.equity_owners` + `105560.2026H1.CFS.equity_owners`) / 2) * 100]",
+    "citation_verdict": "인용 일치",
+    "citation_value": "10.47%"
+   },
+   {
+    "line": 50,
+    "figure": "9.9%",
+    "value": 9.9,
+    "unit": "%",
+    "context": {
+     "group": "KB금융",
+     "families": [
+      "roe"
+     ],
+     "period": null,
+     "years": [
+      2025,
+      2026
+     ],
+     "target": false
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "KB금융 TTM ROE(2025년 6월 말, 평균 지배주주지분)",
+     "value": 9.864841,
+     "shown": "9.86%",
+     "sources": [
+      "20260324000822",
+      "20260324000813",
+      "20260324000827"
+     ],
+     "kind": "value"
+    },
+    "citation": "[계산: (`105560.2024FY.CFS.net_income_owners` + `105560.2025H1.CFS.net_income_owners` - `105560.2024H1.CFS.net_income_owners`) / ((`105560.2024H1.CFS.equity_owners` + `105560.2025H1.CFS.equity_owners`) / 2) * 100]",
+    "citation_verdict": "인용 일치",
+    "citation_value": "9.86%"
+   },
+   {
+    "line": 51,
+    "figure": "9.2%",
+    "value": 9.2,
+    "unit": "%",
+    "context": {
+     "group": "신한지주",
+     "families": [
+      "roe"
+     ],
+     "period": null,
+     "years": [],
+     "target": false
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "신한지주 TTM ROE(2026년 6월 말, 평균 지배주주지분)",
+     "value": 9.168491,
+     "shown": "9.17%",
+     "sources": [
+      "20261007000218",
+      "20250814002920",
+      "20261007000223"
+     ],
+     "kind": "value"
+    },
+    "citation": "[계산: (`055550.2025FY.CFS.net_income_owners` + `055550.2026H1.CFS.net_income_owners` - `055550.2025H1.CFS.net_income_owners`) / ((`055550.2025H1.CFS.equity_owners` + `055550.2026H1.CFS.equity_owners`) / 2) * 100]",
+    "citation_verdict": "인용 일치",
+    "citation_value": "9.17%"
+   },
+   {
+    "line": 52,
+    "figure": "8.5%",
+    "value": 8.5,
+    "unit": "%",
+    "context": {
+     "group": "신한지주",
+     "families": [
+      "roe"
+     ],
+     "period": null,
+     "years": [
+      2025,
+      2026
+     ],
+     "target": false
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "신한지주 TTM ROE(2025년 6월 말, 평균 지배주주지분)",
+     "value": 8.463243,
+     "shown": "8.46%",
+     "sources": [
+      "20250318000993",
+      "20240814003880",
+      "20250814002920"
+     ],
+     "kind": "value"
+    },
+    "citation": "[계산: (`055550.2024FY.CFS.net_income_owners` + `055550.2025H1.CFS.net_income_owners` - `055550.2024H1.CFS.net_income_owners`) / ((`055550.2024H1.CFS.equity_owners` + `055550.2025H1.CFS.equity_owners`) / 2) * 100]",
+    "citation_verdict": "인용 일치",
+    "citation_value": "8.46%"
+   },
+   {
+    "line": 53,
+    "figure": "9.1%",
+    "value": 9.1,
+    "unit": "%",
+    "context": {
+     "group": "하나금융지주",
+     "families": [
+      "roe"
+     ],
+     "period": null,
+     "years": [],
+     "target": false
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "하나금융지주 TTM ROE(2026년 6월 말, 평균 지배주주지분)",
+     "value": 9.114388,
+     "shown": "9.11%",
+     "sources": [
+      "20260814004019",
+      "20250814004489",
+      "20260814003800"
+     ],
+     "kind": "value"
+    },
+    "citation": "[계산: (`086790.2025FY.CFS.net_income_owners` + `086790.2026H1.CFS.net_income_owners` - `086790.2025H1.CFS.net_income_owners`) / ((`086790.2025H1.CFS.equity_owners` + `086790.2026H1.CFS.equity_owners`) / 2) * 100]",
+    "citation_verdict": "인용 일치",
+    "citation_value": "9.11%"
+   },
+   {
+    "line": 54,
+    "figure": "9.5%",
+    "value": 9.5,
+    "unit": "%",
+    "context": {
+     "group": "하나금융지주",
+     "families": [
+      "roe"
+     ],
+     "period": null,
+     "years": [
+      2025,
+      2026
+     ],
+     "target": false
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "하나금융지주 TTM ROE(2025년 6월 말, 평균 지배주주지분)",
+     "value": 9.453898,
+     "shown": "9.45%",
+     "sources": [
+      "20250317000894",
+      "20240814004342",
+      "20250814004489"
+     ],
+     "kind": "value"
+    },
+    "citation": "[계산: (`086790.2024FY.CFS.net_income_owners` + `086790.2025H1.CFS.net_income_owners` - `086790.2024H1.CFS.net_income_owners`) / ((`086790.2024H1.CFS.equity_owners` + `086790.2025H1.CFS.equity_owners`) / 2) * 100]",
+    "citation_verdict": "인용 일치",
+    "citation_value": "9.45%"
+   },
+   {
+    "line": 55,
+    "figure": "8.7%",
+    "value": 8.7,
+    "unit": "%",
+    "context": {
+     "group": "우리금융지주",
+     "families": [
+      "roe"
+     ],
+     "period": null,
+     "years": [],
+     "target": false
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "우리금융지주 TTM ROE(2026년 6월 말, 평균 지배주주지분)",
+     "value": 8.708503,
+     "shown": "8.71%",
+     "sources": [
+      "20260313001235",
+      "20250814004065",
+      "20260814003410"
+     ],
+     "kind": "value"
+    },
+    "citation": "[계산: (`316140.2025FY.CFS.net_income_owners` + `316140.2026H1.CFS.net_income_owners` - `316140.2025H1.CFS.net_income_owners`) / ((`316140.2025H1.CFS.equity_owners` + `316140.2026H1.CFS.equity_owners`) / 2) * 100]",
+    "citation_verdict": "인용 일치",
+    "citation_value": "8.71%"
+   },
+   {
+    "line": 56,
+    "figure": "8.5%",
+    "value": 8.5,
+    "unit": "%",
+    "context": {
+     "group": "우리금융지주",
+     "families": [
+      "roe"
+     ],
+     "period": null,
+     "years": [
+      2025,
+      2026
+     ],
+     "target": false
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "우리금융지주 TTM ROE(2025년 6월 말, 평균 지배주주지분)",
+     "value": 8.522858,
+     "shown": "8.52%",
+     "sources": [
+      "20250318001196",
+      "20240814004511",
+      "20250814004065"
+     ],
+     "kind": "value"
+    },
+    "citation": "[계산: (`316140.2024FY.CFS.net_income_owners` + `316140.2025H1.CFS.net_income_owners` - `316140.2024H1.CFS.net_income_owners`) / ((`316140.2024H1.CFS.equity_owners` + `316140.2025H1.CFS.equity_owners`) / 2) * 100]",
+    "citation_verdict": "인용 일치",
+    "citation_value": "8.52%"
+   },
+   {
+    "line": 62,
+    "figure": "51.2%",
+    "value": 51.2,
+    "unit": "%",
+    "context": {
+     "group": "신한지주",
+     "families": [
+      "payout"
+     ],
+     "period": null,
+     "years": [],
+     "target": false
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "신한지주 2025년 주주환원율(배당 + 그해 결정한 자기주식)",
+     "value": 51.205849,
+     "shown": "51.21%",
+     "sources": [
+      "20261007000218",
+      "20250206000192",
+      "20250725000288"
+     ],
+     "kind": "value"
+    },
+    "citation": "[계산: (`055550.dividends.FY2025` + `055550.buyback.20250206000192` + `055550.buyback.20250725000288`) / `055550.2025FY.CFS.net_income_owners` * 100]",
+    "citation_verdict": "인용 일치",
+    "citation_value": "51.21%"
+   },
+   {
+    "line": 63,
+    "figure": "46.7%",
+    "value": 46.7,
+    "unit": "%",
+    "context": {
+     "group": "하나금융지주",
+     "families": [
+      "payout"
+     ],
+     "period": null,
+     "years": [],
+     "target": false
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "하나금융지주 2025년 주주환원율(배당 + 그해 결정한 자기주식)",
+     "value": 46.660856,
+     "shown": "46.66%",
+     "sources": [
+      "20260814004019",
+      "20250204000177",
+      "20250725000416",
+      "20251028000206"
+     ],
+     "kind": "value"
+    },
+    "citation": "[계산: (`086790.dividends.FY2025` + `086790.buyback.20250204000177` + `086790.buyback.20250725000416` + `086790.buyback.20251028000206`) / `086790.2025FY.CFS.net_income_owners` * 100]",
+    "citation_verdict": "인용 일치",
+    "citation_value": "46.66%"
+   },
+   {
+    "line": 69,
+    "figure": "10%",
+    "value": 10.0,
+    "unit": "%",
+    "context": {
+     "group": "KB금융",
+     "families": [
+      "roe"
+     ],
+     "period": null,
+     "years": [],
+     "target": true
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "KB금융 기업가치 제고 계획 ROE 목표",
+     "value": 10.0,
+     "shown": "10.00%",
+     "sources": [
+      "20241024800258"
+     ],
+     "kind": "target"
+    },
+    "citation": null,
+    "citation_verdict": null,
+    "citation_value": null
+   },
+   {
+    "line": 69,
+    "figure": "10.5%",
+    "value": 10.5,
+    "unit": "%",
+    "context": {
+     "group": "KB금융",
+     "families": [
+      "roe"
+     ],
+     "period": null,
+     "years": [],
+     "target": false
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "KB금융 TTM ROE(2026년 6월 말, 평균 지배주주지분)",
+     "value": 10.473566,
+     "shown": "10.47%",
+     "sources": [
+      "20260619000667",
+      "20260324000827",
+      "20260814004200"
+     ],
+     "kind": "value"
+    },
+    "citation": null,
+    "citation_verdict": null,
+    "citation_value": null
+   },
+   {
+    "line": 70,
+    "figure": "13%",
+    "value": 13.0,
+    "unit": "%",
+    "context": {
+     "group": "KB금융",
+     "families": [
+      "cet1"
+     ],
+     "period": null,
+     "years": [],
+     "target": true
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "KB금융 기업가치 제고 계획 CET1 비율 목표",
+     "value": 13.0,
+     "shown": "13.00%",
+     "sources": [
+      "20241024800258"
+     ],
+     "kind": "target"
+    },
+    "citation": null,
+    "citation_verdict": null,
+    "citation_value": null
+   },
+   {
+    "line": 70,
+    "figure": "13.74%",
+    "value": 13.74,
+    "unit": "%",
+    "context": {
+     "group": "KB금융",
+     "families": [
+      "cet1"
+     ],
+     "period": null,
+     "years": [],
+     "target": false
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "KB금융 보통주자본비율(2026-06-30)",
+     "value": 13.74,
+     "shown": "13.74%",
+     "sources": [
+      "20260814004200"
+     ],
+     "kind": "value"
+    },
+    "citation": "[사실 `105560.cet1.2026H1`]",
+    "citation_verdict": "인용 일치",
+    "citation_value": "13.74%"
+   },
+   {
+    "line": 72,
+    "figure": "10%",
+    "value": 10.0,
+    "unit": "%",
+    "context": {
+     "group": "신한지주",
+     "families": [
+      "roe"
+     ],
+     "period": null,
+     "years": [],
+     "target": true
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "신한지주 기업가치 제고 계획 ROE 목표",
+     "value": 10.0,
+     "shown": "10.00%",
+     "sources": [
+      "20260423800235"
+     ],
+     "kind": "target"
+    },
+    "citation": "[사실 `055550.target.roe`]",
+    "citation_verdict": "인용 일치",
+    "citation_value": "10.00%"
+   },
+   {
+    "line": 72,
+    "figure": "9.2%",
+    "value": 9.2,
+    "unit": "%",
+    "context": {
+     "group": "신한지주",
+     "families": [
+      "roe"
+     ],
+     "period": null,
+     "years": [],
+     "target": false
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "신한지주 TTM ROE(2026년 6월 말, 평균 지배주주지분)",
+     "value": 9.168491,
+     "shown": "9.17%",
+     "sources": [
+      "20261007000218",
+      "20250814002920",
+      "20261007000223"
+     ],
+     "kind": "value"
+    },
+    "citation": null,
+    "citation_verdict": null,
+    "citation_value": null
+   },
+   {
+    "line": 73,
+    "figure": "13%",
+    "value": 13.0,
+    "unit": "%",
+    "context": {
+     "group": "신한지주",
+     "families": [
+      "cet1"
+     ],
+     "period": null,
+     "years": [],
+     "target": true
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "신한지주 기업가치 제고 계획 CET1 비율 목표",
+     "value": 13.0,
+     "shown": "13.00%",
+     "sources": [
+      "20260423800235"
+     ],
+     "kind": "target"
+    },
+    "citation": null,
+    "citation_verdict": null,
+    "citation_value": null
+   },
+   {
+    "line": 73,
+    "figure": "13.43%",
+    "value": 13.43,
+    "unit": "%",
+    "context": {
+     "group": "신한지주",
+     "families": [
+      "cet1"
+     ],
+     "period": null,
+     "years": [],
+     "target": false
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "신한지주 보통주자본비율(2026-06-30)",
+     "value": 13.43,
+     "shown": "13.43%",
+     "sources": [
+      "20261007000223"
+     ],
+     "kind": "value"
+    },
+    "citation": "[사실 `055550.cet1.2026H1`]",
+    "citation_verdict": "인용 일치",
+    "citation_value": "13.43%"
+   },
+   {
+    "line": 74,
+    "figure": "50%",
+    "value": 50.0,
+    "unit": "%",
+    "context": {
+     "group": "신한지주",
+     "families": [
+      "payout"
+     ],
+     "period": null,
+     "years": [],
+     "target": true
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "신한지주 기업가치 제고 계획 주주환원율 목표",
+     "value": 50.0,
+     "shown": "50.00%",
+     "sources": [
+      "20260423800235"
+     ],
+     "kind": "target"
+    },
+    "citation": "[사실 `055550.target.payout`]",
+    "citation_verdict": "인용 일치",
+    "citation_value": "50.00%"
+   },
+   {
+    "line": 74,
+    "figure": "51.2%",
+    "value": 51.2,
+    "unit": "%",
+    "context": {
+     "group": "신한지주",
+     "families": [
+      "payout"
+     ],
+     "period": null,
+     "years": [],
+     "target": false
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "신한지주 2025년 주주환원율(배당 + 그해 결정한 자기주식)",
+     "value": 51.205849,
+     "shown": "51.21%",
+     "sources": [
+      "20261007000218",
+      "20250206000192",
+      "20250725000288"
+     ],
+     "kind": "value"
+    },
+    "citation": null,
+    "citation_verdict": null,
+    "citation_value": null
+   },
+   {
+    "line": 75,
+    "figure": "4억 5,000만주",
+    "value": 450000000.0,
+    "unit": "shares",
+    "context": {
+     "group": "신한지주",
+     "families": [
+      "shares"
+     ],
+     "period": null,
+     "years": [],
+     "target": true
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "신한지주 기업가치 제고 계획 발행주식 수 목표",
+     "value": 450000000.0,
+     "shown": "450,000,000주",
+     "sources": [
+      "20250425800271"
+     ],
+     "kind": "target"
+    },
+    "citation": "[사실 `055550.target.shares`]",
+    "citation_verdict": "인용 일치",
+    "citation_value": "450,000,000주"
+   },
+   {
+    "line": 76,
+    "figure": "12%",
+    "value": 12.0,
+    "unit": "%",
+    "context": {
+     "group": "하나금융지주",
+     "families": [
+      "roe"
+     ],
+     "period": null,
+     "years": [],
+     "target": true
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "하나금융지주 기업가치 제고 계획 ROE 목표",
+     "value": 12.0,
+     "shown": "12.00%",
+     "sources": [
+      "20260724800373"
+     ],
+     "kind": "target"
+    },
+    "citation": "[사실 `086790.target.roe`]",
+    "citation_verdict": "인용 일치",
+    "citation_value": "12.00%"
+   },
+   {
+    "line": 76,
+    "figure": "9.1%",
+    "value": 9.1,
+    "unit": "%",
+    "context": {
+     "group": "하나금융지주",
+     "families": [
+      "roe"
+     ],
+     "period": null,
+     "years": [],
+     "target": false
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "하나금융지주 TTM ROE(2026년 6월 말, 평균 지배주주지분)",
+     "value": 9.114388,
+     "shown": "9.11%",
+     "sources": [
+      "20260814004019",
+      "20250814004489",
+      "20260814003800"
+     ],
+     "kind": "value"
+    },
+    "citation": null,
+    "citation_verdict": null,
+    "citation_value": null
+   },
+   {
+    "line": 77,
+    "figure": "13%",
+    "value": 13.0,
+    "unit": "%",
+    "context": {
+     "group": "하나금융지주",
+     "families": [
+      "cet1"
+     ],
+     "period": null,
+     "years": [],
+     "target": true
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "하나금융지주 기업가치 제고 계획 CET1 비율 목표",
+     "value": 13.0,
+     "shown": "13.00%",
+     "sources": [
+      "20260724800373"
+     ],
+     "kind": "target"
+    },
+    "citation": null,
+    "citation_verdict": null,
+    "citation_value": null
+   },
+   {
+    "line": 77,
+    "figure": "13.27%",
+    "value": 13.27,
+    "unit": "%",
+    "context": {
+     "group": "하나금융지주",
+     "families": [
+      "cet1"
+     ],
+     "period": null,
+     "years": [],
+     "target": false
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "하나금융지주 보통주자본비율(2026-06-30)",
+     "value": 13.27,
+     "shown": "13.27%",
+     "sources": [
+      "20260814003800"
+     ],
+     "kind": "value"
+    },
+    "citation": "[사실 `086790.cet1.2026H1`]",
+    "citation_verdict": "인용 일치",
+    "citation_value": "13.27%"
+   },
+   {
+    "line": 78,
+    "figure": "50%",
+    "value": 50.0,
+    "unit": "%",
+    "context": {
+     "group": "하나금융지주",
+     "families": [
+      "payout"
+     ],
+     "period": null,
+     "years": [],
+     "target": true
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "하나금융지주 기업가치 제고 계획 주주환원율 목표",
+     "value": 50.0,
+     "shown": "50.00%",
+     "sources": [
+      "20260724800373"
+     ],
+     "kind": "target"
+    },
+    "citation": null,
+    "citation_verdict": null,
+    "citation_value": null
+   },
+   {
+    "line": 78,
+    "figure": "46.7%",
+    "value": 46.7,
+    "unit": "%",
+    "context": {
+     "group": "하나금융지주",
+     "families": [
+      "payout"
+     ],
+     "period": null,
+     "years": [],
+     "target": false
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "하나금융지주 2025년 주주환원율(배당 + 그해 결정한 자기주식)",
+     "value": 46.660856,
+     "shown": "46.66%",
+     "sources": [
+      "20260814004019",
+      "20250204000177",
+      "20250725000416",
+      "20251028000206"
+     ],
+     "kind": "value"
+    },
+    "citation": null,
+    "citation_verdict": null,
+    "citation_value": null
+   },
+   {
+    "line": 79,
+    "figure": "8.7%",
+    "value": 8.7,
+    "unit": "%",
+    "context": {
+     "group": "우리금융지주",
+     "families": [
+      "roe"
+     ],
+     "period": null,
+     "years": [],
+     "target": false
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "우리금융지주 TTM ROE(2026년 6월 말, 평균 지배주주지분)",
+     "value": 8.708503,
+     "shown": "8.71%",
+     "sources": [
+      "20260313001235",
+      "20250814004065",
+      "20260814003410"
+     ],
+     "kind": "value"
+    },
+    "citation": null,
+    "citation_verdict": null,
+    "citation_value": null
+   },
+   {
+    "line": 83,
+    "figure": "10,840,573주",
+    "value": 10840573.0,
+    "unit": "shares",
+    "context": {
+     "group": "신한지주",
+     "families": [
+      "shares"
+     ],
+     "period": null,
+     "years": [],
+     "target": false
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "신한지주 1년간 줄어든 발행 보통주식 수",
+     "value": 10840573.0,
+     "shown": "10,840,573주",
+     "sources": [
+      "20261007000223",
+      "20250814002920"
+     ],
+     "kind": "value"
+    },
+    "citation": "[계산: `055550.2025H1.shares_common` - `055550.2026H1.shares_common`]",
+    "citation_verdict": "인용 일치",
+    "citation_value": "10,840,573주"
+   },
+   {
+    "line": 84,
+    "figure": "24,654,361주",
+    "value": 24654361.0,
+    "unit": "shares",
+    "context": {
+     "group": "신한지주",
+     "families": [
+      "shares"
+     ],
+     "period": null,
+     "years": [],
+     "target": false
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "신한지주 발행주식 수 목표까지 남은 주식 수",
+     "value": 24654361.0,
+     "shown": "24,654,361주",
+     "sources": [
+      "20261007000223",
+      "20250425800271"
+     ],
+     "kind": "value"
+    },
+    "citation": "[계산: `055550.2026H1.shares_common` - `055550.target.shares`]",
+    "citation_verdict": "인용 일치",
+    "citation_value": "24,654,361주"
+   },
+   {
+    "line": 85,
+    "figure": "19,450,238주",
+    "value": 19450238.0,
+    "unit": "shares",
+    "context": {
+     "group": "신한지주",
+     "families": [
+      "shares"
+     ],
+     "period": null,
+     "years": [],
+     "target": false
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "신한지주 자기주식을 모두 소각해도 목표까지 남는 주식 수",
+     "value": 19450238.0,
+     "shown": "19,450,238주",
+     "sources": [
+      "20261007000223",
+      "20250425800271"
+     ],
+     "kind": "value"
+    },
+    "citation": "[계산: `055550.2026H1.shares_common` - `055550.2026H1.shares_treasury_common` - `055550.target.shares`]",
+    "citation_verdict": "인용 일치",
+    "citation_value": "19,450,238주"
+   },
+   {
+    "line": 87,
+    "figure": "50백만주",
+    "value": 50000000.0,
+    "unit": "shares",
+    "context": {
+     "group": "신한지주",
+     "families": [
+      "shares"
+     ],
+     "period": null,
+     "years": [
+      2026
+     ],
+     "target": true
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "신한지주 기업가치 제고 계획 발행주식수 감축 목표(50백만주)",
+     "value": 50000000.0,
+     "shown": "50,000,000주",
+     "sources": [
+      "20260423800235"
+     ],
+     "kind": "target"
+    },
+    "citation": null,
+    "citation_verdict": null,
+    "citation_value": null
+   },
+   {
+    "line": 91,
+    "figure": "11.4%",
+    "value": 11.4,
+    "unit": "%",
+    "context": {
+     "group": "sector",
+     "families": [
+      "net_income_owners"
+     ],
+     "period": "Q2",
+     "years": [
+      2025,
+      2026
+     ],
+     "target": false
+    },
+    "verdict": "일치",
+    "ref": {
+     "label": "4개 그룹 2026년 2분기 합산 지배주주순이익 전년 대비 증감률",
+     "value": 11.371866,
+     "shown": "11.37%",
+     "sources": [],
+     "kind": "value"
+    },
+    "citation": null,
+    "citation_verdict": null,
+    "citation_value": null
+   },
+   {
+    "line": 92,
+    "figure": "13%",
+    "value": 13.0,
+    "unit": "%",
+    "context": {
+     "group": "sector",
+     "families": [
+      "cet1"
+     ],
+     "period": null,
+     "years": [],
+     "target": false
+    },
+    "verdict": "확인 불가",
+    "ref": null,
     "citation": null,
     "citation_verdict": null,
     "citation_value": null

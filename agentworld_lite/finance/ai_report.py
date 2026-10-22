@@ -188,6 +188,7 @@ _FIG = re.compile(
     rf"|(?P<man>{_NUM})\s?만\s?(?P<man_tail>원|주)"
     rf"|(?P<plain>{_NUM})\s?(?P<punit>백만\s?원|백만\s?주|원|주|%p|%포인트|pp|bp|%|배)"
     rf"|(?P<bare>\d{{1,3}}(?:,\d{{3}})+(?:\.\d+)?|\d+\.\d+)(?![\d.,]\d))")
+_RANGE = re.compile(r"\s?(?:(?:초반|중반|후반)대|대(?![비출표상응규형한체량]))")  # "30% 중반대", "40%대로", not "대비"
 _MASK_CITES = r"\[사실 [^\]]*\]|\[계산:[^\]]*\]|`[^`]*`"
 _MASK = re.compile(_MASK_CITES + r"|\d{4}[.\-/]\d{1,2}(?:[.\-/]\d{1,2})?|\d{14}")
 _CITE = re.compile(r"^[\s*)）]*(?P<cite>\[(?:사실 (?P<ids>[^\]]*)|계산:\s*(?P<expr>[^\]]+))\])")
@@ -216,10 +217,13 @@ def _scaled(value: float, precision: float, scale: float) -> tuple[float, float]
 
 
 def parse_figures(text: str, header_unit: str | None = None) -> list[Figure]:
-    """Figures in one line. Masked: citations, code spans, dates and 14-digit receipt numbers."""
+    """Figures in one line. Masked: citations, code spans, dates and 14-digit receipt numbers. Skipped: ranges such
+    as "30% 중반대" or "40%대", which state no single value."""
     masked = _MASK.sub(lambda m: " " * len(m.group(0)), text)
     out = []
     for m in _FIG.finditer(masked):
+        if _RANGE.match(masked, m.end()):
+            continue
         g = m.groupdict()
         unit, value, prec = "KRW", 0.0, 1.0
         if g["jo"]:
@@ -368,6 +372,20 @@ def references(data_dir=None, vu_path=None) -> list[Ref]:
             if mm["shares"][i]:
                 add(code, "shares", "H1", year, mm["shares"][i][0], "shares", f"{year}년 6월 말 발행 보통주식 수",
                     _src(*mm["shares"][i][2]))
+        if all(mm["shares"]):
+            add(code, "shares", "", 2026, mm["shares"][1][0] - mm["shares"][0][0], "shares",
+                "1년간 줄어든 발행 보통주식 수", _src(*mm["shares"][0][2], *mm["shares"][1][2]))
+        for t in vu.TARGETS:
+            if t.code == code and t.metric == "shares" and mm["shares"][0]:
+                treasury = next((f for f in share_facts(c, 2026, "H1") if f.id.endswith("shares_treasury_common")), None)
+                add(code, "shares", "", 2026, mm["shares"][0][0] - t.threshold, "shares", "발행주식 수 목표까지 남은 주식 수",
+                    (*_src(*mm["shares"][0][2]), t.rcept_no))
+                if treasury:
+                    add(code, "shares", "", 2026, mm["shares"][0][0] - treasury.value - t.threshold, "shares",
+                        "자기주식을 모두 소각해도 목표까지 남는 주식 수", (*_src(*mm["shares"][0][2]), t.rcept_no))
+        if code == "055550":  # the 2026 plan restates the share target as a reduction (quoted in valueup.TARGETS)
+            add(code, "shares", "", None, 50_000_000, "shares", "기업가치 제고 계획 발행주식수 감축 목표(50백만주)",
+                ("20260423800235",), kind="target")
         for t in vu.TARGETS:
             if t.code == code and t.threshold is not None:
                 add(code, t.metric, "", None, t.threshold, "shares" if t.metric == "shares" else "%",
@@ -401,9 +419,9 @@ def references(data_dir=None, vu_path=None) -> list[Ref]:
 
 
 # ---------------------------------------------------------------------- context
-GROUP_RE = re.compile(r"(?P<g105560>KB|국민)|(?P<g055550>신한)|(?P<g086790>하나(?:금융|은행)|하나(?![가-힣]))"
-                      r"|(?P<g316140>우리(?:금융|은행)|우리(?![가-힣]))"
-                      r"|(?P<sector>4대|네 그룹|4개 그룹|4개사|4사|합산|합계|섹터|업종 전체)")
+GROUP_RE = re.compile(r"(?P<g105560>KB|국민)|(?P<g055550>신한)|(?P<g086790>하나(?:금융|은행)|하나(?=[은는이와과도로]|[^가-힣]|$))"
+                      r"|(?P<g316140>우리(?:금융|은행)|우리(?=[은는이가의와과도로]|[^가-힣]|$))"
+                      r"|(?P<sector>4대|네 그룹|\d개 그룹|4개사|4사|합산|합계|섹터|업종 전체)")
 FAMILY_RE = re.compile(
     r"(?P<cet1>보통주자본비율|CET\s?-?1)|(?P<payout>주주환원율|총주주환원|환원율)|(?P<div_payout>배당성향)"
     r"|(?P<roe>ROE|자기자본이익률)|(?P<cir>영업이익경비율|경비율|CIR|비용효율|Cost[- ]?to[- ]?income)"
@@ -415,11 +433,11 @@ FAMILY_RE = re.compile(
     r"|(?P<shares>발행주식|주식\s?수|주식수|유통주식)|(?P<dividends>배당)|(?P<buyback>자사주|자기주식|소각)", re.I)
 FAMILIES = {"equity": {"equity_owners", "equity_total"}, "net_income": {"net_income", "net_income_owners"}}
 PERIOD_RE = re.compile(r"(?P<Q2>2분기|2Q|4~6월|4-6월|2/4분기)|(?P<H1>상반기|1H|반기|6월\s?말)|(?P<Q1>1분기|1Q|1~3월|3월\s?말)"
-                       r"|(?P<Q3>3분기|3Q)|(?P<Q4>4분기|4Q)|(?P<FY>연간|사업연도|연말|12월\s?말|FY)|(?P<none>TTM|최근\s?12개월|LTM)")
+                       r"|(?P<Q3>3분기|3Q)|(?P<Q4>4분기|4Q)|(?P<FY>연간|사업연도|연말|12월\s?말|20\d\d년\s?말|FY)|(?P<none>TTM|최근\s?12개월|LTM)")
 YEAR_RE = re.compile(r"(?P<y4>20(?:2[4-7]))\s?년?|'(?P<y2a>2[4-7])|[1-4]Q(?P<y2b>2[4-7])|[12]H(?P<y2c>2[4-7])"
                      r"|(?P<y2d>2[4-7])년|(?P<prev>전년|작년|지난해|1년 전)")
 TARGET_RE = re.compile(r"목표|Target|타깃")
-CURRENT_RE = re.compile(r"현재|현 수준|실적|기록|TTM|최근|기준일|6월\s?말|상반기|2분기")
+CURRENT_RE = re.compile(r"현재|현 수준|실적|기록|TTM|최근|기준일|6월\s?말|상반기|2분기|남은|차이|격차|부족")
 GROWTH_RE = re.compile(r"YoY|QoQ|증감|증가율|성장률|전년\s?대비|전분기\s?대비", re.I)
 NEG_RE = re.compile(r"^[^,.;:|]{0,8}?(감소|하락|줄|축소|악화|역성장)")
 
@@ -448,7 +466,7 @@ CLAUSE_END = re.compile(r"(?<!\d)[,.;](?!\d)|\s-\s")
 COMPARE_RE = re.compile(r"(?P<qoq>전분기|직전\s?분기|QoQ)|(?P<yoy>전년|작년|지난해|YoY)", re.I)
 
 
-def _context(before: str, after: str, fallback: Context, column_target: bool = False) -> Context:
+def _context(before: str, after: str, fallback: Context, column_target: bool = False, left_cells: str = "") -> Context:
     """Group from the line; metric from the sentence, then the line; period and years from the sentence; 목표 and the
     comparison basis from the clause. Missing pieces come from the heading (or a line naming one group)."""
     ctx = Context()
@@ -457,7 +475,8 @@ def _context(before: str, after: str, fallback: Context, column_target: bool = F
     clause = CLAUSE_END.split(sent)[-1]
     g = _kind(_last(GROUP_RE, sent) or _last(GROUP_RE, before))
     ctx.group = (g[1:] if g and g.startswith("g") else g) or fallback.group
-    fam = _kind(_last(FAMILY_RE, sent) or FAMILY_RE.search(after[:20]) or _last(FAMILY_RE, before))
+    fam = _kind(_last(FAMILY_RE, sent) or FAMILY_RE.search(after[:20])  # a table's metric may sit in a cell to the left
+                or _last(FAMILY_RE, re.sub(_MASK_CITES, " ", left_cells)) or _last(FAMILY_RE, before))
     ctx.families = FAMILIES.get(fam, {fam}) if fam else set(fallback.families)
     per = _kind(_last(PERIOD_RE, sent))
     ctx.period = (None if per == "none" else per) if per else fallback.period
@@ -593,13 +612,14 @@ def check_answer(text: str, refs: list[Ref], facts: dict[str, Fact] | None = Non
     """One record per figure, in reading order."""
     facts = facts or {}
     out = []
-    heading = Context()            # from the last heading, or a line that names one group and has no figure
+    heading = Context()            # from the last heading, or a line without figures (a bold label, a lead-in)
     header: list[str] | None = None
+    parents: list[tuple[int, str | None]] = []  # (indent, group) of the enclosing bullets
     for no, line in enumerate(text.splitlines(), 1):
         s = line.strip()
         if s.startswith("#"):
             heading = _context(s, "", Context())
-            header = None
+            header, parents = None, []
             continue
         if s.startswith("|"):
             if re.fullmatch(r"\|[\s:|-]+\|?", s):
@@ -618,21 +638,36 @@ def check_answer(text: str, refs: list[Ref], facts: dict[str, Fact] | None = Non
                 for fig in parse_figures(cell, hu):
                     before = f"{col} | {row_label} | {cell[:fig.start]}"
                     out.append(_record(no, fig, before, cell[fig.end:], heading, refs, facts,
-                                       bool(TARGET_RE.search(own))))
+                                       bool(TARGET_RE.search(own)), " | ".join(cells[1:j])))
             continue
         header = None
         figs = parse_figures(line)
-        groups = {_kind(m) for m in GROUP_RE.finditer(_MASK.sub(" ", line))}
-        if not figs and len(groups) == 1:
-            g = groups.pop()
-            heading = Context(g[1:] if g.startswith("g") else g, heading.families, heading.period, heading.years)
+        plain = _MASK.sub(" ", line)
+        groups = [_group(m) for m in GROUP_RE.finditer(plain)]
+        if not figs and s:
+            fam = _kind(_last(FAMILY_RE, plain))
+            heading = Context(groups[0] if len(set(groups)) == 1 else heading.group,
+                              FAMILIES.get(fam, {fam}) if fam else heading.families, heading.period, heading.years)
+        indent = len(line) - len(line.lstrip())
+        parents = [p for p in parents if p[0] < indent]
+        fallback = heading
+        if parents and parents[-1][1]:  # a sub-bullet inherits the group of its parent bullet
+            fallback = Context(parents[-1][1], heading.families, heading.period, heading.years)
+        if s.startswith(("-", "*")) or s[:2].rstrip(".").isdigit():
+            parents.append((indent, groups[-1] if groups else fallback.group))
         for fig in figs:
-            out.append(_record(no, fig, line[:fig.start], line[fig.end:], heading, refs, facts))
+            quoted = (line[:fig.start].count('"') % 2 == 1) or (line[:fig.start].count("“") > line[:fig.start].count("”"))
+            out.append(_record(no, fig, line[:fig.start], line[fig.end:], fallback, refs, facts, quoted))
     return out
 
 
-def _record(no, fig, before, after, heading, refs, facts, column_target=False) -> dict:
-    ctx = _context(before, after, heading, column_target)
+def _group(m: re.Match) -> str:
+    g = _kind(m)
+    return g[1:] if g.startswith("g") else g
+
+
+def _record(no, fig, before, after, heading, refs, facts, column_target=False, left_cells="") -> dict:
+    ctx = _context(before, after, heading, column_target, left_cells)
     neg = bool(NEG_RE.match(after)) and any(f in FLOWS for f in ctx.families)
     verdict, ref = match(fig, ctx, refs, neg)
     cite = _CITE.match(after)
@@ -693,6 +728,11 @@ def render(result: dict, out: Path) -> str:
                          f"{u['output_tokens']:,} | {u['cost_usd']:.4f} | {c['stop_reason']} |")
         lines += ["", f"합계 {calls.get('total_cost_usd', 0):.4f}달러"
                   + (f"(다시 물어 교체한 답 {len(calls['replaced'])}개 포함)" if calls.get("replaced") else "") + "."]
+        for c in calls.get("replaced", []):
+            u = c["usage"]
+            lines.append(f"- 교체한 답: {TITLE[c['prompt_file'][7:-3]]}의 이전 답(출력 한도 {c['max_tokens']:,}토큰, 출력 "
+                         f"{u['output_tokens']:,}토큰, {u['cost_usd']:.4f}달러, 종료 {c['stop_reason']}). 이전 답은 저장소 "
+                         "기록(git)에 남아 있습니다.")
         for v, c in calls["calls"].items():
             if c["stop_reason"] == "max_tokens":
                 lines.append(f"- {TITLE[v]}은 출력 한도({c['max_tokens']:,}토큰)에 걸려 끝까지 쓰지 못했습니다. 아래 "

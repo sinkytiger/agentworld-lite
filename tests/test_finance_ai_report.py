@@ -102,6 +102,31 @@ def test_stated_targets_are_checked_against_the_quoted_targets_only(refs):
                    ("13%", "확인 불가", None)]                                         # no group named
 
 
+def test_context_from_lead_in_lines_parent_bullets_and_left_cells(refs):
+    text = """## 4. 밸류업
+**최근 12개월 ROE**(최근 12개월 = 2025년 연간 + 2026년 상반기 − 2025년 상반기)
+
+- **KB금융**: 10.5%
+  - 1년 전: 9.9%
+- 우리는 CIR이 40% 중반대로 가장 높습니다. 참고로 2025년 말 CET1 비율은 12.89%입니다.
+
+| 그룹 | 지표 | 목표 | 현재 |
+|---|---|---|---|
+| 신한지주 | ROE | 10% (2027년까지) | 9.2% |
+
+**신한지주 발행주식 수**
+- 목표까지 남은 주식 수: 24,654,361주
+- 2026년 계획의 "발행주식수 50백만주 감축"이 어느 시점 기준인지 확인 필요"""
+    got = [(r["figure"], r["verdict"], (r["ref"] or {}).get("label")) for r in ar.check_answer(text, refs)]
+    assert got == [("10.5%", "일치", "KB금융 TTM ROE(2026년 6월 말, 평균 지배주주지분)"),
+                   ("9.9%", "일치", "KB금융 TTM ROE(2025년 6월 말, 평균 지배주주지분)"),       # group from the parent
+                   ("12.89%", "일치", "우리금융지주 보통주자본비율(2025년 말)"),                  # "40% 중반대" skipped
+                   ("10%", "일치", "신한지주 기업가치 제고 계획 ROE 목표"),
+                   ("9.2%", "일치", "신한지주 TTM ROE(2026년 6월 말, 평균 지배주주지분)"),       # ROE from a left cell
+                   ("24,654,361주", "일치", "신한지주 발행주식 수 목표까지 남은 주식 수"),          # a gap, not a target
+                   ("50백만주", "일치", "신한지주 기업가치 제고 계획 발행주식수 감축 목표(50백만주)")]  # quoted wording
+
+
 def test_citations_are_recomputed_from_the_data_pack(refs, facts):
     text = ("- KB금융 2분기 순이익 1조 9,922억원 [계산: `105560.2026H1.CFS.net_income_owners` - "
             "`105560.2026Q1.CFS.net_income_owners`], CET1 13.74% [사실 `105560.cet1.2026H1`]\n"
