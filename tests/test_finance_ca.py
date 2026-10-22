@@ -396,6 +396,25 @@ def test_edgar_client_needs_a_declared_contact(monkeypatch):
     with pytest.raises(SourceError):
         EdgarClient(user_agent="no contact here")
     assert EdgarClient(user_agent="Jane Doe jane@example.com").user_agent.endswith("example.com")
+    with pytest.raises(SourceError, match="plain ASCII"):                  # HTTP headers cannot carry Hangul
+        EdgarClient(user_agent="홍길동 gildong@example.com")
+
+
+def test_edgar_filing_documents_are_listed_and_cached(tmp_path):
+    calls = []
+    index = {"directory": {"item": [{"name": "d95203dex2.htm", "type": "text.gif", "size": "17246847"}]}}
+
+    def fetch(url):
+        calls.append(url)
+        return json.dumps(index).encode() if url.endswith("index.json") else b"<html>MD&A</html>"
+
+    client = EdgarClient(cache_dir=tmp_path, fetch=fetch)
+    for _ in range(2):
+        assert client.documents(1000275, "0001193125-25-305927")[0]["name"] == "d95203dex2.htm"
+        assert client.document(1000275, "0001193125-25-305927", "d95203dex2.htm") == b"<html>MD&A</html>"
+    assert calls == ["https://www.sec.gov/Archives/edgar/data/1000275/000119312525305927/index.json",
+                     "https://www.sec.gov/Archives/edgar/data/1000275/000119312525305927/d95203dex2.htm"]
+    assert (tmp_path / "docs" / "000119312525305927" / "d95203dex2.htm").exists()
 
 
 # ---------------------------------------------------------------------- local documents and the DDS stub

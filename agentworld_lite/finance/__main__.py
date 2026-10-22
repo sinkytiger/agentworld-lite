@@ -10,6 +10,8 @@
                Big 5 Canadian banks (English), --market kr for the four Korean financial holding companies (Korean)
   valueup      Korean value-up scorecard of the four financial holding companies: targets quoted from their
                기업가치 제고 계획 filings, progress measured from filings (--build fetches and checks the sources)
+  objectives-ca  Canadian Big 5 scorecard: financial objectives quoted from the fiscal 2025 40-F, progress from
+               filings, side by side with the Korean targets (--verify-local checks saved copies of the exhibits)
   ai-report    ask a model the same Korean question twice (no data / a DART data pack), store prompts and answers,
                and fact-check every figure against the filings (--prompts and --check need no model; --run is paid)
   earnings-review  Korean earnings review of the latest report: variance vs a year ago and the previous quarter,
@@ -156,6 +158,39 @@ def cmd_valueup(args) -> int:
                 return 0
         md = render_scorecard()
     except ValueupError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    if args.out:
+        Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+        with open(args.out, "w", encoding="utf-8", newline="\n") as f:
+            f.write(md)
+        print(f"wrote {args.out}")
+    else:
+        sys.stdout.write(md)
+    return 0
+
+
+def cmd_objectives_ca(args) -> int:
+    from pathlib import Path
+    from .objectives_ca import DOCS, ObjectivesError, quotes, render, verify_local
+    if args.verify_local:
+        if not Path(args.verify_local).is_dir():
+            print(f"error: {args.verify_local} is not a folder", file=sys.stderr)
+            return 1
+        ok = True
+        for bank, r in verify_local(args.verify_local).items():
+            if r["file"] is None:
+                print(f"{bank}: no saved copy of {DOCS[bank]['document']}")
+                ok = False
+                continue
+            found = len(quotes(bank)) - len(r["missing"])
+            print(f"{bank}: {r['file']}  SHA-256 {'same as sec.gov' if r['same_sha256'] else 'DIFFERS'}  "
+                  f"quotes {found}/{len(quotes(bank))}" + "".join(f"\n  missing: {q}" for q in r["missing"]))
+            ok = ok and r["same_sha256"] and not r["missing"]
+        return 0 if ok else 1
+    try:
+        md = render()
+    except ObjectivesError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
     if args.out:
@@ -376,6 +411,12 @@ def main(argv=None) -> int:
     vu.add_argument("--cache", default="data/finance/cache", help="DART company-code cache (with --build)")
     vu.add_argument("--out", help="Markdown file to write (default: print)")
 
+    oc = sub.add_parser("objectives-ca", help="Canadian Big 5: financial objectives quoted from the fiscal 2025 40-F "
+                        "vs progress from filings, with the Korean value-up targets")
+    oc.add_argument("--out", help="Markdown file to write (default: print)")
+    oc.add_argument("--verify-local", metavar="DIR",
+                    help="check saved copies of the five MD&A exhibits in DIR: same SHA-256 as sec.gov, every quote present")
+
     ai = sub.add_parser("ai-report", help="Korean AI report with and without a DART data pack, fact-checked")
     ai.add_argument("--prompts", action="store_true", help="write the system prompt and both prompts (no model call)")
     ai.add_argument("--run", action="store_true", help="paid: ask the model once per prompt not yet answered")
@@ -448,7 +489,8 @@ def main(argv=None) -> int:
             ap.error("--model is required with --provider ollama (e.g. llama3.2:3b or gemma4:cloud)")
         args.model = DEFAULT_MODEL
     return {"make-tasks": cmd_make_tasks, "validate": cmd_validate, "run": cmd_run, "note": cmd_note,
-            "news": cmd_news, "valuation": cmd_valuation, "valueup": cmd_valueup, "ai-report": cmd_ai_report,
+            "news": cmd_news, "valuation": cmd_valuation, "valueup": cmd_valueup, "objectives-ca": cmd_objectives_ca,
+            "ai-report": cmd_ai_report,
             "watch-filings": cmd_watch_filings, "leaderboard": cmd_leaderboard,
             "earnings-review": cmd_earnings_review, "fetch": cmd_fetch}[args.cmd](args)
 

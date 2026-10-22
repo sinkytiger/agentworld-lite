@@ -16,9 +16,8 @@ Everything here can be rerun offline from the repository; the figures in this pa
   holding companies, Canada's Big 5), and both report capital under the Basel III framework, so CET1 ratios can stand
   next to each other.
 - **Both make public promises.** Korea's groups publish value-up plans (기업가치 제고 계획) with ROE, CET1 and payout
-  targets; Canada's banks publish medium-term financial objectives. The aim is to check "promise vs progress" from
-  filings alone in both. (The Canadian check, which quotes the objectives from the annual reports, is in progress;
-  see below.)
+  targets; Canada's banks publish medium-term financial objectives in their annual reports. Both checks quote the
+  promise verbatim from the filed document and measure progress from filings alone.
 - **Different filing systems.** DART and SEDAR+/EDGAR differ in format, identifiers and amendment practice. If "every
   number cites a filing" holds on both, the method is not tuned to one market.
 - **What is not compared.** Share prices and valuation multiples (not verifiable from filings alone; the Korean desk
@@ -39,6 +38,9 @@ On top of the desk:
   number, and the build refuses to write unless every quote is found in the filed document. Progress is measured from
   filings: TTM ROE, the CET1 ratio each group printed in its half-year report, payout from the dividend and
   buyback-decision APIs, the share count.
+- **Objectives check (Canada).** Each Big 5 bank's financial objectives are quoted verbatim from the MD&A exhibit of
+  its fiscal 2025 annual filing (Form 40-F), with the SHA-256 of the document sec.gov served; progress is the bank's
+  own fiscal 2025 ROE (quoted), nine-month EPS growth and the CET1 ratio from the fiscal Q3 2026 XBRL.
 - **AI report and fact-check.** The same question went to Claude Opus 5.5 twice, without data and with a 289-fact data
   pack that requires a citation after every figure. A rule-based checker (no model) recomputes every citation and
   matches every figure's context against 675 values computed from the filings; a separate filing-checker tool confirmed
@@ -100,16 +102,39 @@ rules and the reporting dates differ, so this is a level check, not a ranking.
 - **KB Financial and Shinhan, Q2 2026:** fee income up 55% and 56% from a year earlier, with the same XBRL concept in
   both years, so a real move or a company reclassification, not a mapping error.
 
-### Canada's medium-term objectives
+### Canada's medium-term objectives, checked against filings
 
-In progress: the same promise-versus-progress check for the Big 5, with each bank's objectives quoted from its fiscal
-2025 annual report and verified against the filed document.
+![Canadian Big 5 fiscal 2025 ROE against each bank's medium-term ROE objective](img/chart_objectives_roe.png)
+
+All five banks state financial objectives in the MD&A of their fiscal 2025 annual reports, mostly over three to five
+years and mostly on an adjusted basis (excluding items of note). The desk quotes 25 objectives, each bank's horizon
+wording and its own fiscal 2025 ROE: 35 quotes.
+
+Only Royal Bank of Canada meets its ROE objective (16.3% against 16%+). CIBC is close (14.4% adjusted against 15%+).
+TD's reported 17.8% includes items of note; on the adjusted basis its objective uses, it is 12.9% against about 16% by
+fiscal 2029 (its nearer target is about 13% for fiscal 2026). BMO is at 11.3% adjusted against 15%+, and Scotiabank at
+9.7% reported (11.8% adjusted) against 14%+. EPS growth is shown without a verdict: the filings' XBRL carries reported
+EPS, and one year's items of note swing it far either way (TD -23%, Scotiabank +49% over the first nine months of
+fiscal 2026).
+
+Side by side, the ambitions differ more than the capital: Korea's groups aim for ROE of 10-12%, Canada's banks for
+14-16%, while the CET1 ratios of all eight sit between 13.0% and 14.3%. Korea's groups set an explicit 13% CET1
+target; Canada's banks mostly keep CET1 qualitative ("strong", "exceed regulatory requirement"), TD's 13%+ for fiscal
+2026 being the exception. The two ROEs are not like-for-like: Korea's
+plans use average owners' equity including hybrid capital, Canada's banks average common equity.
+
+How the quotes were verified: sec.gov refused this machine's scripted requests (HTTP 403, request rate threshold), so
+the five exhibits were opened in a browser, the SHA-256 of each served document was recorded, and every quote was
+matched against its text. Saved copies were then checked again with
+`python -m agentworld_lite.finance objectives-ca --verify-local <folder>`: 5 of 5 hashes identical, 35 of 35 quotes
+found.
 
 ## Limits
 
 Small numbers of episodes and seeds (Opus ran one seed); costs are token counts times list prices; figures are as
 filed, with no adjustment for one-off items; the fact-check rules were tuned on the answers they report on; the CET1
-comparison mixes two reporting dates.
+comparison mixes two reporting dates; Canadian ROE is each bank's own quoted figure, not recomputed (the desk's XBRL
+data holds no common equity), and Canadian EPS growth is reported while most objectives are adjusted.
 
 ## Try it
 
@@ -121,4 +146,5 @@ streamlit run demo/streamlit_app.py
 
 No API key is needed for the tests or the demos. Korean details: [finance_korea_fhc.md](finance_korea_fhc.md);
 Canadian details: [finance_canada.md](finance_canada.md); model comparison: [finance_kr_leaderboard.md](finance_kr_leaderboard.md);
-deploying the demos: [deploy_demo.md](deploy_demo.md). Charts: `python demo/make_charts.py`.
+deploying the demos: [deploy_demo.md](deploy_demo.md). Canadian objectives scorecard:
+`python -m agentworld_lite.finance objectives-ca`. Charts: `python demo/make_charts.py`.

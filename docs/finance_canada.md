@@ -223,6 +223,47 @@ For RBC the peer P/E runs from 15.93x (CIBC) to 20.49x (BMO), median 17.03x, whi
 share (C$270.14 at the median) against its close of C$293.41. BMO's P/E and efficiency ratio are high partly because
 its reported fiscal Q3 includes the goodwill charge described above; the snapshot uses reported earnings and says so.
 
+## Earnings review
+
+```bash
+python -m agentworld_lite.finance earnings-review --market ca --group all
+```
+
+`agentworld_lite/finance/earnings_review_ca.py` follows the Earnings Reviewer agent of
+[anthropics/financial-services](https://github.com/anthropics/financial-services) on EDGAR filings only, with no model.
+For each bank's latest report it derives the quarter alone from the year-to-date filings, sets it against the previous
+quarter (and against the same quarter a year earlier once the dataset has the prior H1 report), and adds year-to-date
+variance, capital, the bank's quoted objectives, QC checks and a coverage model (`model.json`), staged in
+`reports/earnings/ca/<bank>_2026Q3` for a person to review. On fiscal Q3 2026 the QC flags BMO: net income to common
+down 32.97% from the previous quarter, the quarter of its goodwill charge.
+
+## Financial objectives
+
+```bash
+python -m agentworld_lite.finance objectives-ca --out reports/objectives_ca.md
+```
+
+`agentworld_lite/finance/objectives_ca.py` quotes each bank's financial objectives verbatim from the MD&A exhibit of
+its fiscal 2025 annual filing (Form 40-F) and measures progress from filings: the bank's own fiscal 2025 ROE (quoted,
+reported and adjusted where given), diluted EPS growth over the first nine months of fiscal 2026 (reported, so shown
+without a verdict) and the CET1 ratio at 2026-07-31. It ends with the Korean groups' value-up targets side by side.
+
+| Bank | 40-F accession | Exhibit | ROE objective | Fiscal 2025 ROE | Verdict |
+|---|---|---|---|---|---|
+| RY | 0001193125-25-305927 | EX-2 `d95203dex2.htm` | 16%+ | 16.3% | meets |
+| TD | 0001562762-25-000289 | EX-99.2 `ex992.htm` | ~16% adjusted (fiscal 2029) | 12.9% adjusted (17.8% reported) | below |
+| BNS | 0001193125-25-304643 | EX-99.2 `d936350dex992.htm` | 14%+ | 9.7% (11.8% adjusted) | below |
+| BMO | 0001193125-25-307982 | EX-99.2 `d938207dex992.htm` | 15%+ adjusted | 11.3% adjusted | below |
+| CM | 0001193125-25-307488 | EX-99.B3(C) `d91021dex99b3c.htm` | 15%+ adjusted | 14.4% adjusted | below |
+
+**How the quotes are checked.** On 2026-10-22 sec.gov answered this machine's scripted requests with HTTP 403
+("Request Rate Threshold Exceeded") while a browser could open the same pages, so the five exhibits were read in a
+browser: the SHA-256 of each served document is recorded in `DOCS`, and each of the 35 quotes was found in the page
+text with whitespace collapsed. `--verify-local DIR` repeats the check on saved copies (found by size and hash, so a
+renamed download still counts): same SHA-256, and every quote present once tags, entities and whitespace are dropped.
+Saved copies of all five passed. `EdgarClient.documents()` and `document()` fetch a filing's file list and one
+document (cached) for when scripted access works again.
+
 ## Demo
 
 ```bash
