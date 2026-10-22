@@ -10,6 +10,8 @@
                Big 5 Canadian banks (English), --market kr for the four Korean financial holding companies (Korean)
   valueup      Korean value-up scorecard of the four financial holding companies: targets quoted from their
                기업가치 제고 계획 filings, progress measured from filings (--build fetches and checks the sources)
+  ai-report    ask a model the same Korean question twice (no data / a DART data pack), store prompts and answers,
+               and fact-check every figure against the filings (--prompts and --check need no model; --run is paid)
   fetch        build a company dataset from a filing source:
                  --source dart       DART OpenAPI (your own key in DART_API_KEY)
                  --source edgar      SEC EDGAR XBRL of 40-F / 6-K / 10-K / 10-Q (your contact in SEC_USER_AGENT)
@@ -20,6 +22,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 
 from ..llm import DEFAULT_MODEL
@@ -155,6 +158,25 @@ def cmd_valueup(args) -> int:
     return 0
 
 
+def cmd_ai_report(args) -> int:
+    from .ai_report import AIReportError, check, run, write_prompts
+    try:
+        if args.prompts:
+            print(f"wrote prompts to {write_prompts(args.out)}")
+        if args.run:
+            from ..llm import ClaudeClient
+            record = run(ClaudeClient(model=args.model), args.out, max_cost=args.max_cost, force=args.force,
+                         variants=args.variants, max_tokens=args.max_tokens)
+            print(f"total ${record['total_cost_usd']:.4f}")
+        if args.check or args.run:
+            for variant, res in check(args.out).items():
+                print(variant, json.dumps(res["summary"], ensure_ascii=False))
+    except AIReportError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    return 0
+
+
 def cmd_fetch(args) -> int:
     from .sources import SourceError, get_source
     prices, company_prices = {}, {}  # DATE=VALUE applies to every --company; CODE@DATE=VALUE to one of them
@@ -253,6 +275,17 @@ def main(argv=None) -> int:
     vu.add_argument("--cache", default="data/finance/cache", help="DART company-code cache (with --build)")
     vu.add_argument("--out", help="Markdown file to write (default: print)")
 
+    ai = sub.add_parser("ai-report", help="Korean AI report with and without a DART data pack, fact-checked")
+    ai.add_argument("--prompts", action="store_true", help="write the system prompt and both prompts (no model call)")
+    ai.add_argument("--run", action="store_true", help="paid: ask the model once per prompt not yet answered")
+    ai.add_argument("--check", action="store_true", help="fact-check the saved answers (no model call)")
+    ai.add_argument("--model", default="claude-opus-5-5")
+    ai.add_argument("--max-cost", type=float, default=1.0, help="refuse to call when the worst case exceeds this (USD)")
+    ai.add_argument("--force", action="store_true", help="ask again even when an answer is saved")
+    ai.add_argument("--variants", nargs="+", choices=["nodata", "data"], default=["nodata", "data"])
+    ai.add_argument("--max-tokens", type=int, default=8000, help="output cap per call (thinking included)")
+    ai.add_argument("--out", default="data/finance/ai_report")
+
     f = sub.add_parser("fetch", help="build company datasets from DART, EDGAR or hand-checked local documents")
     f.add_argument("--source", choices=["dart", "edgar", "local_pdf", "sedar_dds"], default="dart")
     f.add_argument("--company", nargs="+", help="DART: stock code or exact name; EDGAR: ticker (RY), CIK or exact name")
@@ -279,7 +312,8 @@ def main(argv=None) -> int:
             ap.error("--model is required with --provider ollama (e.g. llama3.2:3b or gemma4:cloud)")
         args.model = DEFAULT_MODEL
     return {"make-tasks": cmd_make_tasks, "validate": cmd_validate, "run": cmd_run, "note": cmd_note,
-            "news": cmd_news, "valuation": cmd_valuation, "valueup": cmd_valueup, "fetch": cmd_fetch}[args.cmd](args)
+            "news": cmd_news, "valuation": cmd_valuation, "valueup": cmd_valueup, "ai-report": cmd_ai_report,
+            "fetch": cmd_fetch}[args.cmd](args)
 
 
 if __name__ == "__main__":

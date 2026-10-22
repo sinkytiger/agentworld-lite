@@ -22,6 +22,11 @@ given) and k06 (Shinhan's and Hana's ROE against the targets in their value-up p
 against the filed document, and measures progress from filings only: ROE, the CET1 ratio each group printed in its
 half-year report, the payout ratio from the dividend and buyback-decision APIs, and Shinhan's share count. It marks each
 target achieved, on track, behind or short with no deadline, and cross-checks against Shinhan's own reported figures.
+An AI report experiment (`ai_report.py`) asks Claude Opus 5.5 the same Korean question twice, without data and with a
+289-fact DART data pack that must be cited after every figure, stores prompts, answers and costs, and checks every figure
+by rules (recomputing citations, matching context against 669 filed reference values) plus the finground `verify_claims`
+tool. Without data the model invented no 2026 figure (53 "확인 필요") and recalled targets partly out of date; with data
+all 17 figures and 16 citations checked out, but the answer hit the 8,000-token cap partway through.
 
 이 문서는 숫자를 어디서 가져왔는지, 어떻게 정규화했는지, 무엇과 대조했는지, 그 숫자로 만든 과제와 산출물(섹터 노트,
 밸류에이션 스냅샷, 데모)을 정리합니다. 설계의 기준은 캐나다 데스크([finance_canada.md](finance_canada.md))이고, 가상
@@ -386,6 +391,63 @@ python -m agentworld_lite.finance valueup --build
 
 점검표는 숫자마다 사실 ID와 접수번호를 붙이고, 따옴표로 인용한 목표 문구 뒤에도 접수번호를 붙이며, 빠진 인용이 있으면
 내보내지 않습니다(`uncited_figures_ko`가 “…” 인용문도 검사). 맨 위에 **교육용 예시·투자 권유 아님** 문구가 있습니다.
+
+## AI 리포트와 팩트체크
+
+```bash
+python -m agentworld_lite.finance ai-report --check
+```
+
+```bash
+python -m agentworld_lite.finance ai-report --run --max-cost 1.0
+```
+
+`agentworld_lite/finance/ai_report.py`는 같은 질문(2026년 2분기 실적과 밸류업 진척 리포트, 정의 포함)을 언어 모델에 두 번
+묻고, 답에 나온 숫자를 모두 공시와 대조합니다. 한 번은 자료 없이, 한 번은 **데이터 팩**과 함께 묻습니다. 데이터 팩은
+사실 289개(그룹별 2025년 1분기·상반기·연간과 2026년 1분기·상반기 연결 재무제표, 2024년 상반기·연간 순이익과 자본, 주식 수,
+반기보고서의 CET1 비율, 원문 인용이 붙은 밸류업 목표, 배당과 자기주식 결정)이고 사실마다 접수번호가 있습니다. 데이터
+버전은 숫자마다 ``[사실 `id`]`` 또는 `[계산: 식]`을 붙이게 합니다. `--run`은 유료이며, 남은 호출의 최악 비용(입력 1글자 =
+1토큰, 출력 한도까지)이 `--max-cost`를 넘으면 호출하지 않습니다. `--prompts`와 `--check`는 모델을 쓰지 않습니다.
+
+저장 위치는 `data/finance/ai_report`입니다. 시스템 프롬프트(`system.txt`), 두 프롬프트(`prompt_nodata.md`,
+`prompt_data.md`), 두 답(`answer_*.md`), 호출 기록(`calls.json`: 모델, 토큰, 비용, 종료 이유), 팩트체크(`factcheck.json`,
+`factcheck.md`), 별도 도구 검증(`verify_claims.json`)이 있습니다.
+
+**팩트체크 방법.** 판정은 규칙이 하고 언어 모델은 쓰지 않습니다.
+
+- **근거 재계산**: 숫자 뒤의 `[사실 id]`·`[계산: 식]`을 데이터 팩으로 다시 계산해, 쓴 자릿수까지 같은지(반올림 또는
+  버림) 봅니다. 식은 사실 id, 숫자, 사칙연산만 허용합니다.
+- **문맥 대조**: 숫자 앞의 그룹명(같은 줄, 표의 행, 제목), 지표·기간·연도 단어(같은 문장, 표의 열 머리글), "목표"와
+  비교 기준(전년 대비, 전분기 대비)으로 공시 기준값 669개 중 후보를 고릅니다. 기준값은 공시 원값, 분기 단독 값, 증감률,
+  CIR, 보통주자본, 여러 정의의 ROE, CET1, 주주환원율, 주식 수, 밸류업 목표, 배당·자기주식, 신한지주 자체 발표, %p 차이,
+  4개 그룹 합계입니다. 판정은 일치, 기준 다름(다른 기간·연도·비교 기준의 값), 불일치, 지표 불명, 확인 불가입니다. 목표를
+  말한 숫자는 인용한 목표와만 비교하고, 인용할 목표가 없는 그룹(우리금융지주)이나 그룹이 없는 숫자는 확인 불가입니다.
+- **별도 도구**: finground-lite-kr 플러그인의 `verify_claims`(DART 정기보고서 대조)로 순이익 주장을 한 번 더 확인했습니다.
+
+**결과 (2026-10-22, `claude-opus-5-5` 기본 effort, 출력 한도 8,000토큰, 각 1회).**
+
+| | 자료 없이 | 데이터 팩과 함께 |
+|---|---|---|
+| 비용 | 0.1054달러 (입력 735, 출력 5,123토큰) | 0.2628달러 (입력 25,702, 출력 8,000토큰, 한도 도달) |
+| 숫자 | 16 | 17 |
+| 일치 / 불일치 / 확인 불가 | 9 / 2 / 5 | 17 / 0 / 0 |
+| 근거 재계산 | 근거 없음 | 16개 모두 인용 일치 |
+| "확인 필요" 표시 | 53 | 0 |
+
+- **자료 없이 쓴 답은 2026년 실적 숫자를 하나도 지어내지 않았습니다.** 순이익, CIR, CET1, ROE, 주주환원율 칸을 모두
+  "확인 필요"로 두고 "제가 확인할 수 있는 정보 범위 밖"이라고 적었습니다. 쓴 숫자는 기억에 있는 밸류업 목표뿐이고,
+  "2024년 최초 공시 기준"이라고 밝혔습니다. 신한지주의 ROE 10%, CET1 13%, 주주환원율 50%, 2027년 4.5억 주와 KB금융의
+  CET1 13%는 공시와 맞습니다. 하나금융지주의 "ROE 10%(2027년)"와 "CET1 13.0~13.5%"는 기준일의 최신 계획(ROE 12%, 기한
+  없음, 보통주자본비율 13% 이상, 20260724800373)과 다릅니다(모델 스스로 최신 공시 확인이 필요하다고 적음). 우리금융지주의
+  목표 세 개는 인용할 공시 본문이 없어 확인 불가입니다. KB금융의 ROE 목표(10%)는 "확인 필요"로 남겼습니다.
+- **데이터 팩과 함께 쓴 답은 숫자가 모두 맞았지만 끝까지 쓰지 못했습니다.** 근거 16개를 다시 계산하면 모두 일치하고,
+  `verify_claims`도 그룹별 2분기 지배주주순이익(2026·2025년)과 증감률 12개를 모두 지지했습니다(우리금융지주는 이름으로는
+  후보가 둘이라 보류되어 종목코드로 다시 확인). 그러나 출력 한도 8,000토큰에 걸려 2절 CIR 표 중간에서 끊겼고, CET1,
+  밸류업, 종합이 빠졌습니다. 답 본문은 4,108자입니다. 긴 `[계산: ...]` 식과, 본문 밖에 쓰인 토큰(사고 과정으로 보임)이
+  한도를 썼습니다. 이 실행은 응답 블록 종류를 기록하지 않았고, 이후 실행부터 `calls.json`에 남깁니다.
+- **의미**: 자료가 없으면 신중한 모델은 지어내는 대신 비워 두지만, 그러면 리포트로 쓸 수 없습니다. 자료와 인용 규칙을
+  주면 숫자는 검증되지만, 인용 형식이 길면 같은 출력 한도 안에서 다룰 수 있는 내용이 줄어듭니다. 실행 한 번씩의 결과이고,
+  문맥 대조는 정규식 규칙이라 그룹·지표를 잘못 짚을 수 있습니다(판정마다 고른 기준값과 접수번호를 `factcheck.md`에 적음).
 
 ## 밸류에이션 스냅샷 (한국어, 기본으로 꺼짐)
 
