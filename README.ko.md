@@ -263,7 +263,7 @@ python -m agentworld_lite.finance valuation --bank RY --out reports/ry_valuation
 - **DART 실적 리뷰**: `earnings-review`는 [anthropics/financial-services](https://github.com/anthropics/financial-services)의 Earnings Reviewer 에이전트 흐름을 DART 데이터만으로 따릅니다. 그룹별 최신 보고서의 변동표(전년 같은 분기·직전 분기 대비), 밸류업 목표, QC 7개, 분기 모델(JSON)을 숫자마다 접수번호가 붙은 검토용 초안으로 `reports/earnings`에 씁니다. `--draft`는 그룹마다 유료 모델 초안을 한 번 받아, 규칙 팩트체크를 통과할 때만 "검토 가능"으로 둡니다. 2026년 2분기 보고서에서 QC는 KB금융과 신한지주의 순수수료이익(전년 대비 +55%, +56%, XBRL 계정은 같음)을 사람이 확인할 항목으로 표시했습니다.
 - **3분기 실적 자동 갱신**: `watch-filings`는 DART 정기보고서 목록에서 데이터셋에 없는 보고서와 정정 보고서를 찾고, `--apply`는 새 기간만 데이터셋에 넣은 뒤 한국어 과제를 다시 검증하고 인용이 붙은 3분기 노트를 씁니다. 한 번 실행하고 끝나며 예약 작업을 만들지 않고 git도 실행하지 않습니다. 테스트는 가상 고정 자료로 오프라인에서 돕니다.
 - **한국어 산출물**: `note`는 이 과제들의 한국어 섹터 노트를 쓰고, 숫자마다 DART 접수번호를 붙입니다. 한국어 밸류에이션 스냅샷(`valuation --market kr`: P/B와 ROE, 교육용 예시·투자 권유 아님, 투자의견·목표주가 없음)은 사용자가 `--price`와 `--price-source`로 출처가 있는 종가를 넣기 전까지 꺼져 있습니다.
-- **데모**: `streamlit run demo/streamlit_app_kr.py`. 한국어 화면으로 실행 재생, 4대 금융지주 차트, 밸류업 점검, 노트, 과제를 보여 줍니다. 오프라인으로 동작하고 배포하지 않았습니다. 밸류에이션 화면은 출처가 있는 종가가 있을 때만 나타납니다.
+- **데모**: `streamlit run demo/streamlit_app_kr.py`. 한국어 화면으로 실행 재생, 4대 금융지주 차트, 밸류업 점검, 노트, 과제를 보여 줍니다. 오프라인으로 동작합니다. 밸류에이션 화면은 출처가 있는 종가가 있을 때만 나타납니다. 데모를 인터넷에 올리는 방법은 [docs/deploy_demo.md](docs/deploy_demo.md)에 있습니다(Streamlit Community Cloud, 비밀값 필요 없음).
 
 ```bash
 python -m agentworld_lite.finance fetch --source dart --profile fhc --company 105560 055550 086790 316140 --periods 2025:Q1 2025:H1 2025:Q3 2025:FY 2026:Q1 2026:H1 --cache C:/dart_cache
