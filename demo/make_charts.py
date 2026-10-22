@@ -4,6 +4,7 @@
 
 - chart_models.png      success rate and cost per solved episode by model (docs/finance_kr_leaderboard.md)
 - chart_valueup_roe.png the Korean groups' TTM ROE now, a year earlier and their quoted value-up target
+- chart_objectives_roe.png  the Canadian Big 5's fiscal 2025 ROE against their quoted medium-term ROE objective
 - chart_cet1.png        CET1 ratios of the Korean groups (2026-06-30, quoted from H1 reports) and the Canadian Big 5
                         (2026-07-31, XBRL of the Q3 reports)
 
@@ -126,6 +127,41 @@ def chart_valueup_roe() -> Path:
                  "average owners' equity.")
 
 
+def chart_objectives_roe() -> Path:
+    from agentworld_lite.finance import objectives_ca as oc
+    rows = []
+    for bank in oc.DOCS:
+        o = next(o for o in oc.OBJECTIVES if o.bank == bank and o.metric == "roe")
+        rep, adj, _ = oc.ROE_FY2025[bank]
+        on_basis = o.basis == "adjusted" and adj is not None
+        rows.append((oc.NAMES[bank], o, adj if on_basis else rep, rep if on_basis else adj))
+    fig, ax = plt.subplots(figsize=(8, 4.4))
+    for y, (_, o, tested, other) in enumerate(rows[::-1]):
+        if other is not None:
+            ax.plot([other, tested], [y, y], color=AXIS, linewidth=2, zorder=1)
+            ax.scatter([other], [y], s=70, facecolor=SURFACE, edgecolor=ORANGE, linewidth=2, zorder=3)
+            if abs(other - tested) >= 1:                                  # CIBC's two figures sit 0.1 pt apart
+                ax.text(other, y + 0.2, f"{other:.1f}%", ha="center", va="bottom", color=INK2, fontsize=8.5)
+        ax.scatter([tested], [y], s=80, color=ORANGE, edgecolor=SURFACE, linewidth=2, zorder=4)
+        ax.plot([o.low, o.low], [y - 0.2, y + 0.2], color=INK, linewidth=2.5, zorder=2)
+        ax.text(tested, y + 0.2, f"{tested:.1f}%", ha="center", va="bottom", color=INK, fontsize=9)
+        goal = f"~{o.low:g}%" if o.high == o.low else f"{o.low:g}%+"
+        ax.text(o.low, y - 0.22, f"objective {goal}" + (" adj." if o.basis == "adjusted" else ""), ha="center",
+                va="top", color=INK2, fontsize=8.5)
+    ax.set_yticks(range(len(rows)), [n for n, *_ in rows[::-1]])
+    ax.set_ylim(-0.8, len(rows) - 0.3)
+    ax.set_xlim(8.5, 19)
+    ax.xaxis.set_major_formatter(lambda v, _: f"{v:g}%")
+    ax.scatter([], [], color=ORANGE, s=60, label="on the objective's basis")
+    ax.scatter([], [], facecolor=SURFACE, edgecolor=ORANGE, linewidth=2, s=50, label="the other basis")
+    ax.legend(loc="upper left", frameon=False, fontsize=9)
+    ax.set_title("Canada's Big 5: fiscal 2025 ROE vs the medium-term ROE objective")
+    _frame(ax)
+    return _save(fig, "chart_objectives_roe.png", "Source: each bank's fiscal 2025 annual filing (40-F MD&A exhibit, "
+                 "SEC EDGAR), objectives and ROE quoted verbatim\n(python -m agentworld_lite.finance objectives-ca). "
+                 "ROE as each bank computes it, on average common equity.")
+
+
 def chart_cet1() -> Path:
     kr = [(NAMES_EN[c], vu.cet1_fact(c).value) for c in vu.CODES if vu.cet1_fact(c)]
     ca = []
@@ -156,5 +192,5 @@ def chart_cet1() -> Path:
 
 
 if __name__ == "__main__":
-    for make in (chart_models, chart_valueup_roe, chart_cet1):
+    for make in (chart_models, chart_valueup_roe, chart_objectives_roe, chart_cet1):
         print(f"wrote {make().relative_to(ROOT)}")

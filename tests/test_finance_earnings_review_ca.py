@@ -12,6 +12,7 @@ from agentworld_lite.finance import earnings_review_ca as er
 from agentworld_lite.finance.__main__ import main as finance_main
 from agentworld_lite.finance.catalog import BIG5
 from agentworld_lite.finance.note import uncited_figures
+from agentworld_lite.finance.objectives_ca import QUOTE
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data" / "finance" / "edgar"
@@ -37,13 +38,14 @@ def test_latest_report_review_matches_the_desk_answers(code, efficiency):
     assert rv.prev.label == "fiscal 2026 Q2" and rv.year_ago is None
     md = er.render(rv)
     assert md.startswith(f"# {rv.name} ({code}): fiscal 2026 Q3 earnings review\n")
-    assert er.BANNER in md and uncited_figures(md) == []
+    assert er.BANNER in md and uncited_figures(md, extra=(QUOTE,)) == []
     assert "no earnings-call transcript and no consensus estimate" in md
     assert "fiscal 2025 Q3 alone cannot be computed: the dataset has no fiscal 2025 H1 report" in md
     assert "| Line | 9 months, fiscal 2026 | 9 months, fiscal 2025 | vs a year earlier |" in md
     assert "| Line | fiscal 2026 Q3 | fiscal 2026 Q2 | vs previous quarter |\n" in md
     assert f"| Efficiency ratio | {efficiency:.2f}% [facts `{code}.2026Q3.CFS.non_interest_expense`" in md
-    assert md.split("## Medium-term objectives\n\n")[1].startswith("No quoted medium-term objectives yet.\n")
+    objectives = md.split("## Medium-term objectives\n\n")[1]
+    assert objectives.startswith("- Horizon: “") and "[quote from 40-F " in objectives
     assert [name for name, ok, _ in rv.checks if not ok] == ["Comparison reports are in the dataset"]
 
 
@@ -54,7 +56,7 @@ def test_big5_net_income_to_common_and_cet1_match_c03():
     cet1 = [rv.now.cum["cet1_ratio"].value for rv in rvs.values()]
     assert round(sum(cet1) / 5, 2) == 13.46 and round(max(cet1) - min(cet1), 2) == 1.30
     for rv in rvs.values():
-        assert uncited_figures(er.render(rv)) == []
+        assert uncited_figures(er.render(rv), extra=(QUOTE,)) == []
 
 
 def test_td_without_equity_owners_renders():
@@ -93,7 +95,7 @@ def test_year_ago_quarter_appears_when_the_prior_h1_report_exists(with_2025_h1):
     h1 = _st("RY", "2025:H1:CFS", with_2025_h1)
     assert rv.year_ago.values["revenue"][0] == _st("RY", "2025:Q3:CFS")["revenue"] - h1["revenue"]
     md = er.render(rv)
-    assert uncited_figures(md) == [] and "cannot be computed" not in md and "SYNTHETIC-2025H1-RY" in md
+    assert uncited_figures(md, extra=(QUOTE,)) == [] and "cannot be computed" not in md and "SYNTHETIC-2025H1-RY" in md
     assert ("| Line | fiscal 2026 Q3 | fiscal 2026 Q2 | vs previous quarter | fiscal 2025 Q3 | vs a year earlier |"
             in md)
     assert "## Year to date" in md and all(ok for _, ok, _ in rv.checks)
@@ -117,7 +119,7 @@ def test_qc_flags_a_large_revenue_move_and_a_filing_after_today(edgar_copy):
     assert flags["Revenue year to date within 40 percent of a year earlier"].startswith("+117.48% [facts")
     assert "the XBRL concept is the same in both years (`ifrs-full:Revenue`)" in flags[
         "Revenue year to date within 40 percent of a year earlier"]
-    assert uncited_figures(er.render(rv)) == []
+    assert uncited_figures(er.render(rv), extra=(QUOTE,)) == []
     data["statements"]["2025:Q3:CFS"]["concepts"]["revenue"] = "ext:TotalRevenue"
     p.write_text(json.dumps(data), encoding="utf-8")
     rv = er.review("BMO", data_dir=edgar_copy, today=TODAY)

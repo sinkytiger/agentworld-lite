@@ -258,6 +258,9 @@ class EdgarClient:
         if fetch is None and "@" not in self.user_agent:
             raise SourceError(f"Set {UA_ENV} to your name and contact e-mail, e.g. \"Jane Doe jane@example.com\". "
                               "The SEC refuses automated requests without a declared contact.")
+        if fetch is None and not self.user_agent.isascii():  # HTTP headers carry Latin-1 only
+            raise SourceError(f"{UA_ENV} must use plain ASCII: write your name in Latin letters "
+                              "(e.g. \"Gildong Hong gildong@example.com\").")
         self.cache_dir = Path(cache_dir)
         self.pause = pause
         self.timeout = timeout
@@ -321,6 +324,17 @@ class EdgarClient:
         if not candidates:
             raise SourceError(f"filing {accession} has no XBRL instance")
         return self._fetch(ARCHIVE_URL.format(cik=cik, acc=acc, name=candidates[0]))
+
+    def documents(self, cik: int, accession: str) -> list[dict]:
+        """The files of one filing (name, type, size, ...) from its index.json, cached under docs/."""
+        acc = accession.replace("-", "")
+        index = self._cached(ARCHIVE_URL.format(cik=cik, acc=acc, name="index.json"), f"docs/{acc}/index.json")
+        return json.loads(index)["directory"]["item"]
+
+    def document(self, cik: int, accession: str, name: str) -> bytes:
+        """One file of a filing, e.g. the annual report exhibit of a 40-F, cached under docs/."""
+        acc = accession.replace("-", "")
+        return self._cached(ARCHIVE_URL.format(cik=cik, acc=acc, name=name), f"docs/{acc}/{name}")
 
     def facts(self, cik: int, accession: str) -> list[XbrlFact]:
         """Facts without dimensions (plus dei) of one filing. Cached as small JSON; the raw instance is not kept."""

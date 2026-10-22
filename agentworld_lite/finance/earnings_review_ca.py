@@ -213,8 +213,13 @@ def qc(rv: Review, today: str) -> list[tuple[str, bool, str]]:
 
 # ---------------------------------------------------------------------- the note (English Markdown)
 def objectives_section(rv: Review) -> list[str]:
-    """The bank's medium-term objectives, quoted from its annual report (to come)."""
-    return ["No quoted medium-term objectives yet."]
+    """The bank's objectives, quoted from its fiscal 2025 annual filing (objectives_ca), with the full check there."""
+    from .objectives_ca import DOCS, objectives_lines
+    if rv.code not in DOCS:
+        return ["No quoted medium-term objectives for this bank."]
+    return [*objectives_lines(rv.code), "",
+            "Progress against these objectives, with each bank's own fiscal 2025 ROE: "
+            "`python -m agentworld_lite.finance objectives-ca`."]
 
 
 def _change(v: float, v0: float, unit: str, facts: list[Fact]) -> str:
@@ -320,7 +325,8 @@ def render(rv: Review) -> str:
                        f"{filing_link(c, s.get('doc_id') or s.get('rcept_no'))} | {s.get('filed') or 'n/a'} |")
     out += ["", f"Identifiers: {ID_NAMES['EDGAR']} for every filing. {SOURCE_NOTES['EDGAR']}", ""]
     md = "\n".join(out).rstrip() + "\n"
-    bad = uncited_figures(md)
+    from .objectives_ca import QUOTE
+    bad = uncited_figures(md, extra=(QUOTE,))  # quoted objectives carry their 40-F source
     if bad:
         raise ReviewError(f"uncited figures in the review: {', '.join(bad[:5])}")
     return md
