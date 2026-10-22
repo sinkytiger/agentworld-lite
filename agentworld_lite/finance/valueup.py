@@ -88,7 +88,7 @@ CET1 = {
                "note": "금융지주회사 감독규정 제43조에 따른 자본여력 표, 2026년 2분기말 열(잠정)"},
 }
 # Woori's 2026 H1 report gives only the total BIS ratio for the group; its CET1 appears only for 2025, in prose.
-CET1_NOT_REPORTED = {"316140": {"rcept_no": "20260814003410", "quote": "보통주자본비율 12.89% 달성",
+CET1_NOT_REPORTED = {"316140": {"rcept_no": "20260814003410", "quote": "보통주자본비율 12.89% 달성", "value": 12.89,
                                 "note": "2026년 반기말 CET1은 반기보고서에 없음(그룹 표는 BIS자기자본비율만 제시). "
                                         "인용한 값은 2025년 말 수치로, 임원 보수 산정 설명에 있음"}}
 # What the groups said about their own progress, quoted for the cross-check.
@@ -227,6 +227,25 @@ def cet1_fact(code: str) -> Fact | None:
     return _fact(f"{code}.cet1.2026H1", f"{NAMES[code]} 보통주자본비율(2026-06-30)", values[c["index"]], "%", c["rcept_no"])
 
 
+def cet1_reference_fact(code: str) -> Fact | None:
+    """A 2025 year-end CET1 ratio for a group whose 2026 H1 report gives none (reference only, not judged)."""
+    c = CET1_NOT_REPORTED.get(code)
+    return c and _fact(f"{code}.cet1.2025FY", f"{NAMES[code]} 보통주자본비율(2025년 말)", c["value"], "%", c["rcept_no"])
+
+
+def dividend_fact(vu: dict, code: str, year: int) -> Fact:
+    d = vu["dividends"][code][str(year)]
+    return _fact(f"{code}.dividends.FY{year}", f"{NAMES[code]} {year} 사업연도 현금배당금 총액", d["amount"], "KRW",
+                 d["rcept_no"])
+
+
+def buyback_facts(vu: dict, code: str, year: int) -> list[Fact]:
+    """Buybacks the board decided in that calendar year (direct purchases and trust contracts), at the decided amount."""
+    return [_fact(f"{code}.buyback.{b['rcept_no']}", f"{NAMES[code]} 자기주식 {b['kind']} 결정({b['decided']})",
+                  b["amount"], "KRW", b["rcept_no"], short=f"{b['kind']}({b['decided']})")
+            for b in vu["buybacks"][code] if (b["decided"] or "").startswith(str(year))]
+
+
 def _stmt(ds: Dataset, code: str, year: int, period: str) -> dict[str, Fact]:
     return {f.meta["account"]: f for f in statement_facts(ds.companies[code], year, period, "CFS")}
 
@@ -246,12 +265,7 @@ def measures(ds: Dataset, vu: dict) -> dict:
                      (roe(ttm_prev, eq24, h25[eq]), "%", [*ttm_prev, eq24, h25[eq]]))}
         pay = []
         for year, ni_fact in ((2025, fy25[ni]), (2024, fy24)):
-            d = vu["dividends"][code][str(year)]
-            div = _fact(f"{code}.dividends.FY{year}", f"{NAMES[code]} {year} 사업연도 현금배당금 총액", d["amount"], "KRW",
-                        d["rcept_no"])
-            buys = [_fact(f"{code}.buyback.{b['rcept_no']}", f"{NAMES[code]} 자기주식 {b['kind']} 결정({b['decided']})",
-                          b["amount"], "KRW", b["rcept_no"], short=f"{b['kind']}({b['decided']})")
-                    for b in vu["buybacks"][code] if (b["decided"] or "").startswith(str(year))]
+            div, buys = dividend_fact(vu, code, year), buyback_facts(vu, code, year)
             total = div.value + sum(b.value for b in buys)
             pay.append((total / ni_fact.value * 100, "%", [div, *buys, ni_fact], {"dividends": div, "buybacks": buys,
                                                                                   "net_income": ni_fact}))
@@ -370,7 +384,7 @@ def render_scorecard(data_dir: str | Path | None = None, path: str | Path | None
                            f"최근 1년 동안은 {cited_ko(pace, _gap_unit(t), facts)} 나아졌습니다.")
         if code not in CET1 and code in CET1_NOT_REPORTED:
             c = CET1_NOT_REPORTED[code]
-            ref = _fact(f"{code}.cet1.2025FY", f"{NAMES[code]} 보통주자본비율(2025년 말)", 12.89, "%", c["rcept_no"])
+            ref = cet1_reference_fact(code)
             out.append(f"- **CET1 비율(참고).** {c['note']}: “{c['quote']}” {_cite_only(ref)}")
         pay = m[code]["payout"][0]
         div, buys, ni = pay[3]["dividends"], pay[3]["buybacks"], pay[3]["net_income"]
