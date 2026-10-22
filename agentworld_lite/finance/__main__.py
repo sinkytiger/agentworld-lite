@@ -12,6 +12,9 @@
                기업가치 제고 계획 filings, progress measured from filings (--build fetches and checks the sources)
   ai-report    ask a model the same Korean question twice (no data / a DART data pack), store prompts and answers,
                and fact-check every figure against the filings (--prompts and --check need no model; --run is paid)
+  watch-filings  check DART's list for new or amended periodic reports of the four Korean financial holding
+               companies; --apply adds new periods (Q3) and writes a cited Korean Q3 note. One run: it schedules
+               nothing and never runs git
   fetch        build a company dataset from a filing source:
                  --source dart       DART OpenAPI (your own key in DART_API_KEY)
                  --source edgar      SEC EDGAR XBRL of 40-F / 6-K / 10-K / 10-Q (your contact in SEC_USER_AGENT)
@@ -27,6 +30,9 @@ import sys
 
 from ..llm import DEFAULT_MODEL
 from ..task import load_tasks
+from .env import REPO_ROOT
+
+DATA_FHC = REPO_ROOT / "data" / "finance" / "dart_fhc"
 
 
 def cmd_make_tasks(args) -> int:
@@ -177,6 +183,36 @@ def cmd_ai_report(args) -> int:
     return 0
 
 
+def cmd_watch_filings(args) -> int:
+    from pathlib import Path
+    from .filings_watch import WatchError, render_q3_note, run
+    try:
+        if not args.note_only:
+            from .dart import DartClient, DartError
+            try:
+                events = run(DartClient(cache_dir=args.cache), args.data, args.since, args.until, do_apply=args.apply,
+                             state_path=args.state)
+            except DartError as exc:
+                raise WatchError(str(exc)) from None
+            if args.apply and any(e.applied for e in events) and Path(args.data).resolve() == DATA_FHC.resolve():
+                from .run import validate_task
+                bad = [(t.id, errs) for t in load_tasks("tasks/finance_kr") for errs in [validate_task(t)] if errs]
+                print("과제 검증: " + ("모두 통과" if not bad else "; ".join(f"{i}: {e[0]}" for i, e in bad)))
+        if args.note_only or args.apply or args.note:
+            md = render_q3_note(args.data)
+            if args.note:
+                Path(args.note).parent.mkdir(parents=True, exist_ok=True)
+                with open(args.note, "w", encoding="utf-8", newline="\n") as f:
+                    f.write(md)
+                print(f"wrote {args.note}")
+            else:
+                sys.stdout.write(md)
+    except WatchError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    return 0
+
+
 def cmd_fetch(args) -> int:
     from .sources import SourceError, get_source
     prices, company_prices = {}, {}  # DATE=VALUE applies to every --company; CODE@DATE=VALUE to one of them
@@ -286,6 +322,18 @@ def main(argv=None) -> int:
     ai.add_argument("--max-tokens", type=int, default=8000, help="output cap per call (thinking included)")
     ai.add_argument("--out", default="data/finance/ai_report")
 
+    wf = sub.add_parser("watch-filings", help="check DART for new or amended periodic reports of the four Korean "
+                                              "financial holding companies (one run; schedules nothing, never runs git)")
+    wf.add_argument("--apply", action="store_true", help="fetch new periods into the dataset, validate the Korean "
+                                                         "tasks and write the Q3 note (amendments are only reported)")
+    wf.add_argument("--note-only", action="store_true", help="write the Q3 note from the dataset as it is (offline)")
+    wf.add_argument("--note", help="Markdown file for the Q3 note (default: print)")
+    wf.add_argument("--since", help="YYYYMMDD (default: the latest filing date in the dataset)")
+    wf.add_argument("--until", help="YYYYMMDD (default: today)")
+    wf.add_argument("--data", default=str(DATA_FHC))
+    wf.add_argument("--state", default="data/finance/cache/watch_state.json", help="first-seen record (outside git)")
+    wf.add_argument("--cache", default="data/finance/cache", help="DART company-code cache")
+
     f = sub.add_parser("fetch", help="build company datasets from DART, EDGAR or hand-checked local documents")
     f.add_argument("--source", choices=["dart", "edgar", "local_pdf", "sedar_dds"], default="dart")
     f.add_argument("--company", nargs="+", help="DART: stock code or exact name; EDGAR: ticker (RY), CIK or exact name")
@@ -313,7 +361,7 @@ def main(argv=None) -> int:
         args.model = DEFAULT_MODEL
     return {"make-tasks": cmd_make_tasks, "validate": cmd_validate, "run": cmd_run, "note": cmd_note,
             "news": cmd_news, "valuation": cmd_valuation, "valueup": cmd_valueup, "ai-report": cmd_ai_report,
-            "fetch": cmd_fetch}[args.cmd](args)
+            "watch-filings": cmd_watch_filings, "fetch": cmd_fetch}[args.cmd](args)
 
 
 if __name__ == "__main__":
