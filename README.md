@@ -2,6 +2,9 @@
 
 English · [한국어](README.ko.md)
 
+> **New:** AI analyst agents on bank filings in Korea and Canada: what was built, why the two markets, and what came
+> out of it, with charts: [docs/overview_en.md](docs/overview_en.md).
+
 A lightweight, pip-installable testbed for **long-horizon multi-agent LLM collaboration**, based on two September 2026 papers:
 
 - **[AgentWorld](https://arxiv.org/abs/2609.31590)** (Shu et al.) — how to *measure* collaboration: agents with asymmetric roles cooperate through chat only, and the **Causal Collaboration Effectiveness (CCE)** metric counts how much of a team's effort causally led to success.

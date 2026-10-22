@@ -11,6 +11,7 @@
 - 금융 도메인 설계: [docs/finance_domain_design.md](docs/finance_domain_design.md)
 - 캐나다 데스크(5대 은행 실제 공시, 영문): [docs/finance_canada.md](docs/finance_canada.md)
 - 한국 데스크(4대 금융지주 실제 DART 공시): [docs/finance_korea_fhc.md](docs/finance_korea_fhc.md)
+- 한국·캐나다 은행 공시 위의 AI 애널리스트 개요(영문, 차트 포함, 두 시장을 함께 보는 이유): [docs/overview_en.md](docs/overview_en.md)
 - 원 논문은 Kaetram(Node.js MMORPG)을 쓰지만, 이 프로젝트는 같은 프로토콜을 지키는 자체 격자 시뮬레이터를 씁니다. 그래서 설치는 `pip` 하나로 끝납니다.
 
 ## 파이프라인
