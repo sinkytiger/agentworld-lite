@@ -349,6 +349,9 @@ def cmd_fetch(args) -> int:
 
 
 def main(argv=None) -> int:
+    for stream in (sys.stdout, sys.stderr):  # notes carry dashes and curly quotes; Windows pipes default to cp949 etc.
+        if getattr(stream, "encoding", "utf-8").lower().replace("-", "") != "utf8" and hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8")
     ap = argparse.ArgumentParser(prog="python -m agentworld_lite.finance", description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)

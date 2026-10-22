@@ -1,5 +1,6 @@
-"""Streamlit demo of the Canadian research desk: replay a run, compare the Big 5 banks, read the cited sector note,
-a valuation snapshot and a news-based sector risk digest.
+"""Streamlit demo of the Canadian research desk: replay a run, compare the Big 5 banks, check their published
+financial objectives against their filings, read the cited sector note, a valuation snapshot and a news-based sector
+risk digest.
 
     pip install streamlit
     streamlit run demo/streamlit_app.py
@@ -26,6 +27,7 @@ import altair as alt  # noqa: E402
 import pandas as pd  # noqa: E402
 import streamlit as st  # noqa: E402
 
+from agentworld_lite.finance import objectives_ca  # noqa: E402
 from agentworld_lite.finance.catalog import BIG5  # noqa: E402
 from agentworld_lite.finance.dataset import Dataset  # noqa: E402
 from agentworld_lite.finance.news import FEEDS, NewsError, build_digest  # noqa: E402
@@ -36,7 +38,7 @@ from agentworld_lite.task import load_tasks  # noqa: E402
 
 TASK_DIR = ROOT / "tasks" / "finance_ca"
 DATA_DIR = ROOT / "data" / "finance" / "edgar"
-VIEWS = ("Desk replay", "Big 5 data", "Sector note", "Valuation", "News digest", "Task")
+VIEWS = ("Desk replay", "Big 5 data", "Objectives", "Sector note", "Valuation", "News digest", "Task")
 DEFAULT_TASK = "c03_big5_q3_sector_shared"
 SERIES = {"light": "#2a78d6", "dark": "#3987e5"}  # one series: categorical slot 1 of the reference palette
 INK = {"light": "#0b0b0b", "dark": "#f0efec"}     # values and labels wear text ink, not the series color
@@ -190,6 +192,72 @@ def view_big5() -> None:
     st.dataframe(df, hide_index=True, column_config=config)
 
 
+@st.cache_data
+def ca_objectives_md() -> str:
+    return objectives_ca.render(DATA_DIR)
+
+
+def objectives_frame() -> pd.DataFrame:
+    rows = []
+    for code in BIG5:
+        r = objectives_ca.roe_check(code)
+        o, other = r["objective"], r["other"]
+        goal = f"~{o.low:g}%" if o.high == o.low else f"{o.low:g}%+"
+        rows.append({"Bank": code, "Name": objectives_ca.NAMES[code],
+                     "ROE objective": goal + (" adjusted" if o.basis == "adjusted" else "") + f" ({o.horizon})",
+                     "Objective (%)": o.low, "Fiscal 2025 ROE (%)": r["tested"].value, "Basis": r["basis"],
+                     "Other basis (%)": other.value if other else None, "Verdict": r["verdict"],
+                     "40-F": objectives_ca.DOCS[code]["accession"]})
+    return pd.DataFrame(rows)
+
+
+def roe_vs_objective(df: pd.DataFrame) -> alt.Chart:
+    """Each bank's fiscal 2025 ROE (filled: the objective's basis, hollow: the other basis) and its objective (tick)."""
+    y = alt.Y("Bank:N", sort=list(BIG5), title=None)
+    x = alt.X("Fiscal 2025 ROE (%):Q", title=None, scale=alt.Scale(domain=[8, 19]),
+              axis=alt.Axis(grid=True, gridOpacity=0.25, domain=False, ticks=False, labelExpr="datum.value + '%'"))
+    tip = [alt.Tooltip("Name:N"), alt.Tooltip("ROE objective:N"), alt.Tooltip("Fiscal 2025 ROE (%):Q", format=".1f"),
+           alt.Tooltip("Basis:N"), alt.Tooltip("Other basis (%):Q", format=".1f"), alt.Tooltip("Verdict:N")]
+    base = alt.Chart(df).encode(y=y, tooltip=tip)
+    span = base.transform_filter("isValid(datum['Other basis (%)'])").mark_rule(strokeWidth=2, opacity=0.35,
+                                                                                color=ink()).encode(
+        x=x, x2="Other basis (%):Q")
+    other = base.transform_filter("isValid(datum['Other basis (%)'])").mark_point(
+        size=110, filled=False, strokeWidth=2, opacity=1, color=series_color()).encode(x="Other basis (%):Q")
+    tested = base.mark_circle(size=150, opacity=1, color=series_color()).encode(x=x)
+    goal = base.mark_tick(thickness=3, size=26, color=ink()).encode(x="Objective (%):Q")
+    label = base.mark_text(dy=-14, color=ink()).encode(x=x, text=alt.Text("Fiscal 2025 ROE (%):Q", format=".1f"))
+    return (span + goal + other + tested + label).properties(height=260)
+
+
+def view_objectives() -> None:
+    df = objectives_frame()
+    st.markdown("Each bank's financial objectives, quoted verbatim from the MD&A exhibit of its fiscal 2025 annual "
+                "filing (Form 40-F), against what its filings show. The ROE is the bank's own fiscal 2025 figure, "
+                "on the basis its objective uses (most are adjusted, excluding items of note).")
+    met = df[df["Verdict"].isin(["meets", "at target", "above range"])]["Bank"].tolist()
+    cols = st.columns(3)
+    cols[0].metric("Meet their ROE objective", f"{len(met)} of {len(df)}", help=", ".join(met) or None)
+    cols[1].metric("ROE objectives", f"{df['Objective (%)'].min():g}-{df['Objective (%)'].max():g}%",
+                   help="Korea's four groups: 10-12% in their value-up plans")
+    cols[2].metric("Quotes checked", f"{sum(len(objectives_ca.quotes(c)) for c in BIG5)}",
+                   help=f"Against the five documents as sec.gov served them on {objectives_ca.VERIFIED_ON} (SHA-256 "
+                        "in the scorecard's Sources table)")
+    st.altair_chart(roe_vs_objective(df), width="stretch")
+    st.caption("Filled: ROE on the objective's basis. Hollow: the other basis (reported or adjusted), where the bank "
+               "gives both. Tick: the objective's threshold. TD's objective is for fiscal 2029; its fiscal 2026 "
+               "target is about 13% adjusted.")
+    st.markdown("**Table view**")
+    st.dataframe(df.drop(columns=["Objective (%)"]), hide_index=True,
+                 column_config={c: st.column_config.NumberColumn(format="%.1f")
+                                for c in ("Fiscal 2025 ROE (%)", "Other basis (%)")})
+    md = ca_objectives_md()
+    st.download_button("Download the scorecard (Markdown)", md, file_name="objectives_ca.md", mime="text/markdown")
+    st.caption("The scorecard below quotes every objective with its source, sets the Korean groups' value-up targets "
+               "beside them, and lists the documents with their SHA-256. Educational sample, not investment advice.")
+    show_markdown(md)
+
+
 def view_note(task, traj: dict) -> None:
     try:
         note = sector_note(traj, task, require_success=False)
@@ -314,6 +382,8 @@ def main() -> None:
                + (f"run: {(traj.get('meta') or {}).get('model', 'uploaded')}" if traj else "upload a run to replay it"))
     if view == "Big 5 data":
         view_big5()
+    elif view == "Objectives":
+        view_objectives()
     elif view == "Valuation":
         view_valuation(qp.get("bank"))
     elif view == "News digest":

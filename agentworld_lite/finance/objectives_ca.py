@@ -183,11 +183,28 @@ def progress(bank: str, data_dir: str | Path = DATA_DIR) -> dict:
     if "eps_diluted" in q26 and "eps_diluted" in q25 and q25["eps_diluted"].value > 0:
         e1, e0 = q26["eps_diluted"], q25["eps_diluted"]
         eps = ((e1.value / e0.value - 1) * 100, [e1, e0])
+    reported, adjusted = _roe_facts(bank)
+    return {"cet1": q26.get("cet1_ratio"), "eps_growth_ytd": eps, "roe_reported": reported, "roe_adjusted": adjusted}
+
+
+def _roe_facts(bank: str) -> tuple[Fact, Fact | None]:
+    """The bank's own fiscal 2025 ROE, reported and (where it gives one) adjusted, quoted from its 40-F."""
     rep, adj, _ = ROE_FY2025[bank]
-    return {"cet1": q26.get("cet1_ratio"), "eps_growth_ytd": eps,
-            "roe_reported": _doc_fact(bank, "fy2025.roe_reported", f"{NAMES[bank]} fiscal 2025 ROE, reported", rep),
-            "roe_adjusted": adj is not None and _doc_fact(bank, "fy2025.roe_adjusted",
-                                                          f"{NAMES[bank]} fiscal 2025 ROE, adjusted", adj) or None}
+    reported = _doc_fact(bank, "fy2025.roe_reported", f"{NAMES[bank]} fiscal 2025 ROE, reported", rep)
+    if adj is None:
+        return reported, None
+    return reported, _doc_fact(bank, "fy2025.roe_adjusted", f"{NAMES[bank]} fiscal 2025 ROE, adjusted", adj)
+
+
+def roe_check(bank: str) -> dict:
+    """The bank's medium-term ROE objective against its fiscal 2025 ROE on the objective's basis (adjusted where the
+    objective says so and the bank gives it), with the other basis alongside."""
+    o = next(o for o in OBJECTIVES if o.bank == bank and o.metric == "roe")
+    reported, adjusted = _roe_facts(bank)
+    on_adjusted = o.basis == "adjusted" and adjusted is not None
+    tested, other = (adjusted, reported) if on_adjusted else (reported, adjusted)
+    return {"objective": o, "tested": tested, "other": other, "basis": "adjusted" if on_adjusted else "reported",
+            "verdict": verdict(o, tested.value)}
 
 
 def verdict(o: Objective, value: float | None) -> str:
@@ -236,17 +253,16 @@ def render(data_dir: str | Path = DATA_DIR) -> str:
     out += ["## Summary", "", "| Bank | ROE objective | Fiscal 2025 ROE | ROE vs objective | EPS growth objective | "
             "EPS growth, 9 months of fiscal 2026 | CET1 at 2026-07-31 |", "|---|---|---|---|---|---|---|"]
     for bank in BANKS:
-        p = progress(bank, data_dir)
-        roe = next(o for o in OBJECTIVES if o.bank == bank and o.metric == "roe")
+        p, rc = progress(bank, data_dir), roe_check(bank)
+        roe = rc["objective"]
         eps_o = next(o for o in OBJECTIVES if o.bank == bank and o.metric == "eps_growth")
-        tested = p["roe_adjusted"] if roe.basis == "adjusted" and p["roe_adjusted"] else p["roe_reported"]
         roe_cell = cited(p["roe_reported"].value, "%", [p["roe_reported"]]) + " reported"
         if p["roe_adjusted"]:
             roe_cell += f", {cited(p['roe_adjusted'].value, '%', [p['roe_adjusted']])} adjusted"
         eps = cited(p["eps_growth_ytd"][0], "%", p["eps_growth_ytd"][1]) + " reported" if p["eps_growth_ytd"] else "n/a"
         cet1 = cited(p["cet1"].value, "%", [p["cet1"]]) if p["cet1"] else "n/a"
         out.append(f"| {NAMES[bank]} | {_spec(roe)} | {roe_cell} | "
-                   f"**{verdict(roe, tested.value)}** ({'adjusted' if tested is p['roe_adjusted'] else 'reported'}) | "
+                   f"**{rc['verdict']}** ({rc['basis']}) | "
                    f"{_spec(eps_o)} | {eps} | {cet1} |")
     out += ["", "EPS growth is shown without a verdict: it is on a reported basis, which includes items of note that the "
             "adjusted objectives exclude, so a single year's gain or charge can swing it far in either direction."]

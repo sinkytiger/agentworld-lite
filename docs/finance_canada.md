@@ -274,12 +274,13 @@ pip install -e ".[demo]"
 streamlit run demo/streamlit_app.py
 ```
 
-A Streamlit app over the same code, with no model and no key. It has six views; all but the news digest work offline.
+A Streamlit app over the same code, with no model and no key. It has seven views; all but the news digest work offline.
 
 ![Demo: the c03 run replayed round by round, the Big 5 charts, and the cited sector note](img/canada_desk_demo.gif)
 
 - **Desk replay.** A round slider over the scripted reference or an uploaded trajectory. Each agent's moves, the size of its notebook, and which answers are within tolerance so far.
 - **Big 5 data.** Single-quarter net income to common and the CET1 ratio for each bank, as charts and as a table that names the filing behind each figure.
+- **Objectives.** Each bank's fiscal 2025 ROE against its quoted ROE objective (on the objective's basis, with the other basis alongside), as a chart and a table, then the full objectives scorecard with a Markdown download.
 - **Sector note.** The cited note above, with a Markdown download.
 - **Valuation.** The snapshot above for any of the five banks, with headline metrics and a Markdown download.
 - **News digest.** Builds the sector risk digest from the live feeds when its button is pressed (cached for an hour); nothing is fetched until then.

@@ -38,6 +38,17 @@ def test_big5_view_shows_the_c03_figures():
         "RY": 5879, "TD": 4521, "BNS": 2778, "BMO": 1667, "CM": 2271}
 
 
+def test_objectives_view_shows_the_roe_check_and_the_quoted_scorecard():
+    at = _open(view="Objectives")
+    assert [m.value for m in at.metric] == ["1 of 5", "14-16%", "35"]
+    df = at.dataframe[0].value
+    assert dict(zip(df["Bank"], df["Verdict"])) == {"RY": "meets", "TD": "below", "BNS": "below", "BMO": "below",
+                                                    "CM": "below"}
+    assert dict(zip(df["Bank"], df["Fiscal 2025 ROE (%)"]))["TD"] == 12.9          # adjusted, as TD's objective is
+    scorecard = " ".join(m.value for m in at.markdown)
+    assert "[quote from 40-F 0001193125-25-305927 EX-2" in scorecard and "Korea and Canada side by side" in scorecard
+
+
 def test_valuation_view_and_news_view_without_network():
     at = _open(view="Valuation", bank="TD")
     assert next(s for s in at.selectbox if s.label == "Subject bank").value == "TD"
