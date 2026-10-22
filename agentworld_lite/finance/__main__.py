@@ -12,6 +12,7 @@
                기업가치 제고 계획 filings, progress measured from filings (--build fetches and checks the sources)
   ai-report    ask a model the same Korean question twice (no data / a DART data pack), store prompts and answers,
                and fact-check every figure against the filings (--prompts and --check need no model; --run is paid)
+  leaderboard  compare models on the Korean tasks from saved runs; failures sorted by trap and collaboration step
   watch-filings  check DART's list for new or amended periodic reports of the four Korean financial holding
                companies; --apply adds new periods (Q3) and writes a cited Korean Q3 note. One run: it schedules
                nothing and never runs git
@@ -213,6 +214,25 @@ def cmd_watch_filings(args) -> int:
     return 0
 
 
+def cmd_leaderboard(args) -> int:
+    from pathlib import Path
+    from .leaderboard import discover, load_episodes, render
+    runs = discover(args.runs_root)
+    if not runs:
+        print(f"error: no runs/finance_kr_* directories with run_config.json under {args.runs_root}", file=sys.stderr)
+        return 1
+    episodes, skipped, planned = load_episodes(runs)
+    md = render(episodes, skipped, planned=planned)
+    if args.out:
+        Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+        with open(args.out, "w", encoding="utf-8", newline="\n") as f:
+            f.write(md)
+        print(f"wrote {args.out} ({len(episodes)} episodes, {len(runs)} models)")
+    else:
+        sys.stdout.write(md)
+    return 0
+
+
 def cmd_fetch(args) -> int:
     from .sources import SourceError, get_source
     prices, company_prices = {}, {}  # DATE=VALUE applies to every --company; CODE@DATE=VALUE to one of them
@@ -334,6 +354,11 @@ def main(argv=None) -> int:
     wf.add_argument("--state", default="data/finance/cache/watch_state.json", help="first-seen record (outside git)")
     wf.add_argument("--cache", default="data/finance/cache", help="DART company-code cache")
 
+    lb = sub.add_parser("leaderboard", help="Korean model comparison from saved runs/finance_kr_* runs, with failures "
+                                            "sorted by trap and by collaboration step (no model calls)")
+    lb.add_argument("--runs-root", default="runs")
+    lb.add_argument("--out", help="Markdown file to write (default: print)")
+
     f = sub.add_parser("fetch", help="build company datasets from DART, EDGAR or hand-checked local documents")
     f.add_argument("--source", choices=["dart", "edgar", "local_pdf", "sedar_dds"], default="dart")
     f.add_argument("--company", nargs="+", help="DART: stock code or exact name; EDGAR: ticker (RY), CIK or exact name")
@@ -361,7 +386,8 @@ def main(argv=None) -> int:
         args.model = DEFAULT_MODEL
     return {"make-tasks": cmd_make_tasks, "validate": cmd_validate, "run": cmd_run, "note": cmd_note,
             "news": cmd_news, "valuation": cmd_valuation, "valueup": cmd_valueup, "ai-report": cmd_ai_report,
-            "watch-filings": cmd_watch_filings, "fetch": cmd_fetch}[args.cmd](args)
+            "watch-filings": cmd_watch_filings, "leaderboard": cmd_leaderboard,
+            "fetch": cmd_fetch}[args.cmd](args)
 
 
 if __name__ == "__main__":
