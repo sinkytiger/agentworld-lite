@@ -100,7 +100,7 @@ def chart_models() -> Path:
     fig.suptitle("Korean desk, tasks k01-k06: who solved what, at what cost", x=0.01, ha="left", fontsize=13,
                  fontweight="bold", y=1.08)
     return _save(fig, "chart_models.png", "Source: docs/finance_kr_leaderboard.md (saved runs replayed; Opus ran "
-                 "k01-k05, seed 7 only; qwen3:4b partial). Costs: token counts x list prices.")
+                 "k01-k05, seed 7 only; qwen3:4b k01-k05, seed 7). Costs: token counts x list prices.")
 
 
 def chart_valueup_roe() -> Path:

@@ -211,7 +211,8 @@ def cmd_ai_report(args) -> int:
         if args.run:
             from ..llm import ClaudeClient
             record = run(ClaudeClient(model=args.model), args.out, max_cost=args.max_cost, force=args.force,
-                         variants=args.variants, max_tokens=args.max_tokens)
+                         variants=args.variants, max_tokens=args.max_tokens,
+                         thinking={"type": "between_tools"} if args.thinking_off else None)
             print(f"total ${record['total_cost_usd']:.4f}")
         if args.check or args.run:
             for variant, res in check(args.out).items():
@@ -429,6 +430,8 @@ def main(argv=None) -> int:
     ai.add_argument("--force", action="store_true", help="ask again even when an answer is saved")
     ai.add_argument("--variants", nargs="+", choices=["nodata", "data"], default=["nodata", "data"])
     ai.add_argument("--max-tokens", type=int, default=8000, help="output cap per call (thinking included)")
+    ai.add_argument("--thinking-off", action="store_true",
+                    help="send thinking {type: between_tools} (Claude Sonnet 5.5: the whole cap goes to the answer)")
     ai.add_argument("--out", default="data/finance/ai_report")
 
     wf = sub.add_parser("watch-filings", help="check DART for new or amended periodic reports of the four Korean "

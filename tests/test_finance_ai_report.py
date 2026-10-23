@@ -196,11 +196,15 @@ def test_run_writes_everything_and_respects_the_cost_cap(tmp_path):
     assert record["calls"]["data"]["content_blocks"] == {"thinking": 1, "text": 1}
     record = ar.run(client, tmp_path, max_cost=1.0, variants=["data"], force=True, max_tokens=12000, log=lambda s: None)
     assert client.sdk.calls[-1]["max_tokens"] == 12000 and len(record["replaced"]) == 1
+    assert "thinking" not in client.sdk.calls[-1]                              # adaptive by default: not sent
     assert record["total_cost_usd"] == pytest.approx(3 * (1000 * 4 + 500 * 20) / 1e6)  # the replaced call still counts
+    off = {"type": "between_tools"}                                            # Sonnet 5.5: the cap goes to the answer
+    record = ar.run(client, tmp_path, max_cost=1.0, variants=["data"], force=True, thinking=off, log=lambda s: None)
+    assert client.sdk.calls[-1]["thinking"] == off and record["calls"]["data"]["thinking"] == off
     result = ar.check(tmp_path)
     assert result["data"]["summary"]["일치"] == 1
     md = (tmp_path / "factcheck.md").read_text(encoding="utf-8")
-    assert md.startswith("# AI 리포트 팩트체크") and "합계 0.0420달러(다시 물어 교체한 답 1개 포함)" in md
+    assert md.startswith("# AI 리포트 팩트체크") and "합계 0.0560달러(다시 물어 교체한 답 2개 포함)" in md
     assert b"\r\n" not in (tmp_path / "factcheck.json").read_bytes()
 
 
