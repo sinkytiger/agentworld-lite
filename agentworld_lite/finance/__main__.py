@@ -19,7 +19,8 @@
   earnings-review  Korean earnings review of the latest report: variance vs a year ago and the previous quarter,
                value-up targets, QC and a cited draft staged for review (--draft adds a paid, fact-checked model draft);
                --market ca: English review of the Big 5 Canadian banks from their EDGAR filings (rules only)
-  leaderboard  compare models on the Korean tasks from saved runs; failures sorted by trap and collaboration step
+  leaderboard  compare models on the Korean tasks from saved runs; failures sorted by trap and collaboration step;
+               --market ca: the same for the Canadian tasks (runs/finance_ca_*), in English
   watch-filings  check DART's list for new or amended periodic reports of the four Korean financial holding
                companies; --apply adds new periods (Q3) and writes a cited Korean Q3 note. One run: it schedules
                nothing and never runs git
@@ -258,13 +259,19 @@ def cmd_watch_filings(args) -> int:
 
 def cmd_leaderboard(args) -> int:
     from pathlib import Path
-    from .leaderboard import discover, load_episodes, render
-    runs = discover(args.runs_root)
+    from .leaderboard import CA_TASK_DIR, discover, load_episodes, render, render_en
+    from .traps_ca import match_trap as match_ca
+    prefix = "finance_ca_" if args.market == "ca" else "finance_kr_"
+    runs = discover(args.runs_root, prefix=prefix)
     if not runs:
-        print(f"error: no runs/finance_kr_* directories with run_config.json under {args.runs_root}", file=sys.stderr)
+        print(f"error: no runs/{prefix}* directories with run_config.json under {args.runs_root}", file=sys.stderr)
         return 1
-    episodes, skipped, planned = load_episodes(runs)
-    md = render(episodes, skipped, planned=planned)
+    if args.market == "ca":
+        episodes, skipped, planned = load_episodes(runs, CA_TASK_DIR, match_ca, "en")
+        md = render_en(episodes, skipped, planned=planned)
+    else:
+        episodes, skipped, planned = load_episodes(runs)
+        md = render(episodes, skipped, planned=planned)
     if args.out:
         Path(args.out).parent.mkdir(parents=True, exist_ok=True)
         with open(args.out, "w", encoding="utf-8", newline="\n") as f:
@@ -476,6 +483,9 @@ def main(argv=None) -> int:
     lb = sub.add_parser("leaderboard", help="Korean model comparison from saved runs/finance_kr_* runs, with failures "
                                             "sorted by trap and by collaboration step (no model calls)")
     lb.add_argument("--runs-root", default="runs")
+    lb.add_argument("--market", choices=["kr", "ca"], default="kr",
+                    help="kr: tasks/finance_kr and runs/finance_kr_* (Korean report); ca: tasks/finance_ca and "
+                         "runs/finance_ca_* (English report)")
     lb.add_argument("--out", help="Markdown file to write (default: print)")
 
     erv = sub.add_parser("earnings-review", help="earnings review of the latest report (Korean financial holding "
