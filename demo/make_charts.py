@@ -7,6 +7,7 @@
 - chart_objectives_roe.png  the Canadian Big 5's fiscal 2025 ROE against their quoted medium-term ROE objective
 - chart_cet1.png        CET1 ratios of the Korean groups (2026-06-30, quoted from H1 reports) and the Canadian Big 5
                         (2026-07-31, XBRL of the Q3 reports)
+- chart_compare.png     ROE on one formula and cost-to-income for both markets, with market medians (compare.py)
 
 Colours are the first slots of the reference categorical palette (blue, orange), validated for colour vision deficiency
 in that palette's documentation; text stays in ink colours, and every chart labels its values directly.
@@ -189,6 +190,47 @@ def chart_cet1() -> Path:
                  "group CET1); Canada, XBRL of each bank's fiscal Q3 2026 report on SEC EDGAR.")
 
 
+def chart_compare() -> Path:
+    """ROE (one formula in both markets) and cost-to-income (each market's convention) side by side, from compare.py."""
+    from agentworld_lite.finance import compare
+    data = compare.comparison()
+    rows = [r for mk in ("Korea", "Canada")
+            for r in sorted((x for x in data["rows"] if x["market"] == mk), key=lambda x: -x["roe"][0])]
+    style = {"Korea": (BLUE, "o", "Korea, to 2026-06-30"), "Canada": (ORANGE, "s", "Canada, to 2026-07-31")}
+    fig, axes = plt.subplots(1, 2, figsize=(9.6, 4.6), sharey=True, gridspec_kw={"wspace": 0.08})
+    panels = (("roe", "ROE, trailing 12 months (one formula)", (6.5, 18.5)),
+              ("cir", "Cost-to-income, latest quarter", (30, 75)))
+    n = len(rows)
+    for ax, (key, title, xlim) in zip(axes, panels):
+        for i, r in enumerate(rows):
+            y = n - 1 - i
+            color, marker, _ = style[r["market"]]
+            v = r[key][0]
+            ax.scatter([v], [y], s=80, color=color, marker=marker, edgecolor=SURFACE, linewidth=1.5, zorder=3)
+            ax.text(v + (xlim[1] - xlim[0]) * 0.015, y, f"{v:.1f}%", va="center", color=INK, fontsize=9, zorder=4,
+                    bbox={"facecolor": SURFACE, "edgecolor": "none", "pad": 0.6})  # median lines pass behind
+        for mk in ("Korea", "Canada"):
+            ys = [n - 1 - i for i, r in enumerate(rows) if r["market"] == mk]
+            m = data["medians"][mk][key][0]
+            ax.plot([m, m], [min(ys) - 0.4, max(ys) + 0.4], color=INK2, linewidth=1, linestyle=(0, (4, 3)), zorder=1)
+            ax.text(m, max(ys) + 0.5, f"median {m:.1f}%", ha="center", va="bottom", color=INK2, fontsize=8.5)
+        ax.set_xlim(*xlim)
+        ax.xaxis.set_major_formatter(lambda v, _: f"{v:g}%")
+        ax.set_title(title, fontsize=10.5)
+        _frame(ax)
+    axes[0].set_yticks(range(n), [r["name"] for r in rows[::-1]])
+    axes[0].set_ylim(-0.7, n + 0.4)
+    for mk, (color, marker, label) in style.items():
+        axes[1].scatter([], [], color=color, marker=marker, s=60, label=label)
+    axes[1].legend(loc="upper right", frameon=False, fontsize=9)  # the Korean rows sit far left of this corner
+    fig.suptitle("Korea's financial groups and Canada's Big 5: returns and costs", x=0.01, ha="left",
+                 fontsize=12, fontweight="bold", y=1.02)
+    return _save(fig, "chart_compare.png", "Source: python -m agentworld_lite.finance compare. ROE: TTM net income to "
+                 "shareholders / average shareholders' equity incl. preferred and hybrid capital, both markets.\n"
+                 "Cost-to-income: Korea G&A / operating revenue before provisions (Q2 2026); Canada non-interest "
+                 "expense / total revenue (fiscal Q3 2026). DART and SEC EDGAR filings.")
+
+
 if __name__ == "__main__":
-    for make in (chart_models, chart_valueup_roe, chart_objectives_roe, chart_cet1):
+    for make in (chart_models, chart_valueup_roe, chart_objectives_roe, chart_cet1, chart_compare):
         print(f"wrote {make().relative_to(ROOT)}")
