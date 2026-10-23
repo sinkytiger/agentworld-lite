@@ -40,7 +40,7 @@ def test_big5_view_shows_the_c03_figures():
 
 def test_objectives_view_shows_the_roe_check_and_the_quoted_scorecard():
     at = _open(view="Objectives")
-    assert [m.value for m in at.metric] == ["1 of 5", "14-16%", "35"]
+    assert [m.value for m in at.metric] == ["1 of 5", "14-16%", "37"]
     df = at.dataframe[0].value
     assert dict(zip(df["Bank"], df["Verdict"])) == {"RY": "meets", "TD": "below", "BNS": "below", "BMO": "below",
                                                     "CM": "below"}

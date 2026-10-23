@@ -6,10 +6,10 @@
 
 ![캐나다 5대 은행의 2025 회계연도 ROE와 은행별 중기 ROE 목표](docs/img/chart_objectives_roe.png)
 
-- **목표 대비 공시:** 2025 회계연도 ROE로 자기 목표를 충족한 캐나다 은행은 RBC뿐입니다(16.3%, 목표 16% 이상). TD의 공시 ROE 17.8%는 목표가 쓰는 조정 기준으로 12.9%입니다. 한국에서는 KB금융이 밸류업 ROE 목표를 충족했고, 신한지주는 순항 중이며, 하나금융지주는 9.11%로 목표 12%에 못 미칩니다. 목표 문구는 모두 공시 원문에서 인용하고, 문서의 SHA-256이나 DART 접수번호를 붙였습니다.
+- **목표 대비 공시:** 2025 회계연도 ROE로 자기 목표를 충족한 캐나다 은행은 RBC뿐입니다(16.3%, 목표 16% 이상). TD의 공시 ROE 17.8%에는 Schwab 지분 매각 차익(세전 89억 7,500만 캐나다달러)이 들어 있어, 목표가 쓰는 조정 기준으로는 12.9%입니다. 한국에서는 KB금융이 밸류업 ROE 목표를 충족했고, 신한지주는 순항 중이며, 하나금융지주는 9.11%로 목표 12%에 못 미칩니다. 목표 문구는 모두 공시 원문에서 인용하고, 문서의 SHA-256이나 DART 접수번호를 붙였습니다.
 - **모델 비교:** Sonnet 5.5는 48/48, Haiku 5.5는 66/72를 풀었고, Haiku의 성공 1건당 비용은 Sonnet의 약 15분의 1이었습니다. 틀린 숫자를 낸 모델은 없었습니다. Haiku의 실패는 모두 계산 방법이 한 에이전트의 개인 지시서에만 있고 채팅이 막힌 설정에서 나왔습니다.
 - **지어낸 숫자 없음:** 데이터 없이 물으면 Opus 5.5는 "확인 필요"를 53번 쓰고 2026년 수치를 하나도 지어내지 않았습니다. 출처가 붙은 데이터를 주면 61개 수치 중 60개가 공시와 일치했습니다.
-- **API 키 없이 오프라인 실행:** `pip install -e ".[demo]"` 후 `streamlit run demo/streamlit_app_kr.py`(한국, 한국어 화면) 또는 `streamlit run demo/streamlit_app.py`(캐나다).
+- **API 키 없이 오프라인 실행:** `pip install -e ".[demo]"` 후 `streamlit run demo/streamlit_app_kr.py`(한국, 한국어·영어 화면) 또는 `streamlit run demo/streamlit_app.py`(캐나다).
 
 교육용 프로젝트이며 투자 권유가 아닙니다.
 
@@ -246,13 +246,13 @@ python -m agentworld_lite pair-report --runs runs/finance_llama --out reports/fi
 **라이브 데모:** [agentworld-canada-desk.streamlit.app](https://agentworld-canada-desk.streamlit.app) (Streamlit Community Cloud, 내장 데이터만 쓰고 모델은 호출하지 않음)
 
 - **공시 소스 인터페이스** (`agentworld_lite/finance/sources/`): `dart`, `edgar`(40-F·6-K마다 XBRL을 읽음, 무료, `SEC_USER_AGENT`에 본인 연락처 필요), `local_pdf`(직접 내려받은 문서에서 옮겨 적은 숫자를 인용한 페이지 본문과 대조), `sedar_dds`(CSA 유료 벌크 피드 자리). SEDAR+는 웹사이트 자동 접근을 약관으로 금지하고 공개 API가 없어서 SEDAR+ 크롤러는 만들지 않았습니다. CSA에 문의한 결과 SEDAR+ 공시의 대량 접근은 유료 기관 구독(DDS)으로만 가능합니다.
-- **데이터셋** `data/finance/edgar`: 은행마다 회계연도 기준 5개 기간(2025 회계연도 3분기·연간, 2026 회계연도 1분기·상반기·3분기). 숫자마다 서식, 접수번호, 제출일, XBRL 계정이 붙어 있습니다. 총자산과 위험가중자산(RWA)도 들어 있습니다. 과제 입력값은 은행이 직접 발표한 2026 회계연도 3분기 수치와 일치합니다. 예를 들어 TD가 발표한 효율성비율 50.2%, 5개 은행의 CET1 비율과 같습니다.
-- **과제** `tasks/finance_ca`, 공유형/개인형 쌍, 허용 오차 0.1%: RBC 3분기 말 TTM P/E(18.50배, 기본 EPS·누적 EPS·지난 회계연도 EPS는 모두 오답), RBC·TD의 2026 회계연도 3분기 단독 효율성비율(52.81%, 50.19%, 9개월 누적 비율은 오답), 5대 은행 비교(은행별 2026 회계연도 3분기 단독 보통주주 귀속 순이익과 CET1 비율 5개의 평균·격차 13.46%, 1.30%p. 누적 수치, 다른 순이익 항목, 다른 기간의 비율은 모두 오답).
+- **데이터셋** `data/finance/edgar`: 은행마다 회계연도 기준 6개 기간(2025 회계연도 상반기·3분기·연간, 2026 회계연도 1분기·상반기·3분기). 숫자마다 서식, 접수번호, 제출일, XBRL 계정이 붙어 있습니다. 총자산과 위험가중자산(RWA)도 들어 있습니다. 과제 입력값은 은행이 직접 발표한 2026 회계연도 3분기 수치와 일치합니다. 예를 들어 TD가 발표한 효율성비율 50.2%, 5개 은행의 CET1 비율과 같습니다.
+- **과제** `tasks/finance_ca`, 공유형/개인형 쌍, 허용 오차 0.1%: RBC 3분기 말 TTM P/E(18.50배, 기본 EPS·누적 EPS·지난 회계연도 EPS는 모두 오답), RBC·TD의 2026 회계연도 3분기 단독 효율성비율(52.81%, 50.19%, 9개월 누적 비율은 오답), 5대 은행 비교(은행별 2026 회계연도 3분기 단독 보통주주 귀속 순이익과 CET1 비율 5개의 평균·격차 13.46%, 1.30%p. 누적 수치, 다른 순이익 항목, 다른 기간의 비율은 모두 오답), 은행별 2025 회계연도 ROE와 스스로 밝힌 ROE 목표의 격차(목표가 쓰는 기준으로. 조정 기준 목표에 TD의 공시 ROE 17.8%를 쓰면 오답, Claude Haiku 5.5는 8판 모두 정답).
 - **섹터 노트** (`python -m agentworld_lite.finance note`): 끝난 궤적을 모델 호출 없이 영문 마크다운 노트로 만듭니다. 숫자마다 팩트 id, 공시 서식, EDGAR 접수번호가 붙고, 출처 없는 숫자가 하나라도 있으면 노트를 내지 않습니다.
 - **뉴스 섹터 리스크 다이제스트** (`python -m agentworld_lite.finance news`): Financial Post 헤드라인을 은행별·리스크 주제별(신용, 주택, 무역, 금리, 자본, 규제, 구조조정)로 키워드 규칙에 따라 분류하고, 캐나다은행 기준금리와 5년물 금리, 은행별 공시 수치(출처 포함)와 나란히 보여 줍니다. 헤드라인·링크·날짜·피드 요약만 저장하고 기사 본문은 열지 않습니다. CBC Business는 이 도구가 밝힌 봇 User-Agent에 응답하지 않아 기본 피드에서 뺐습니다.
 - **밸류에이션 스냅샷** (`python -m agentworld_lite.finance valuation --bank RY`): 한 은행을 나머지 4개 은행과 TTM 희석 EPS, P/E, 효율성비율, CET1로 비교하고, 동종 P/E 중앙값과 동종 P/E 범위가 가리키는 주가 범위를 보여 줍니다. 숫자마다 출처 공시가 붙고, 종가는 각 은행의 2026 회계연도 3분기 6-K 첨부 문서에서 읽었습니다. 투자의견과 목표주가는 없는 교육용 샘플입니다.
 - **실적 리뷰** (`python -m agentworld_lite.finance earnings-review --market ca --group all`): [anthropics/financial-services](https://github.com/anthropics/financial-services)의 Earnings Reviewer 흐름을 모델 없이 EDGAR 공시만으로 따릅니다. 은행별 2026 회계연도 3분기 단독 실적(누적 공시에서 계산)을 직전 분기와 비교하고, 누적 변동, 자본, 은행이 밝힌 목표(원문 인용), QC, 분기 모델을 `reports/earnings/ca`에 검토용으로 씁니다. QC는 BMO의 보통주주 귀속 순이익이 직전 분기보다 32.97% 줄어든 것(영업권 손상이 반영된 분기)을 표시합니다.
-- **재무 목표 점검** (`python -m agentworld_lite.finance objectives-ca`): 은행마다 2025 회계연도 40-F의 MD&A 첨부 문서에서 재무 목표를 원문 그대로 인용하고(인용 35개, 문서마다 SHA-256 기록, `--verify-local DIR`로 저장본 재확인), 공시로 잰 진척과 견주며, 한국 금융지주의 밸류업 목표를 나란히 보여 줍니다. 2025 회계연도 ROE로는 RBC만 목표를 충족합니다(16.3%, 목표 16% 이상). 자세한 내용은 [docs/overview_en.md](docs/overview_en.md)(영문)에 있습니다.
+- **재무 목표 점검** (`python -m agentworld_lite.finance objectives-ca`): 은행마다 2025 회계연도 40-F의 MD&A 첨부 문서에서 재무 목표를 원문 그대로 인용하고(인용 37개, 문서마다 SHA-256 기록, `--verify-local DIR`로 저장본 재확인), 공시로 잰 진척과 견주며, 한국 금융지주의 밸류업 목표를 나란히 보여 줍니다. 2025 회계연도 ROE로는 RBC만 목표를 충족합니다(16.3%, 목표 16% 이상). 자세한 내용은 [docs/overview_en.md](docs/overview_en.md)(영문)에 있습니다.
 - **데모** (`pip install -e ".[demo]"` 후 `streamlit run demo/streamlit_app.py`): Streamlit 앱입니다. 실행 과정을 라운드별로 재생하고, 5대 은행 수치를 숫자마다 출처 공시와 함께 차트·표로 보여 주고, 은행별 ROE를 인용한 목표와 견주고, 섹터 노트와 밸류에이션 스냅샷, (버튼을 누르면 실시간 피드로) 뉴스 다이제스트를 띄웁니다. `python demo/record_gif.py --out demo.gif`로 GIF를 녹화합니다.
 
 ```bash
@@ -281,7 +281,7 @@ python -m agentworld_lite.finance objectives-ca --out reports/objectives_ca.md
 - **DART 실적 리뷰**: `earnings-review`는 [anthropics/financial-services](https://github.com/anthropics/financial-services)의 Earnings Reviewer 에이전트 흐름을 DART 데이터만으로 따릅니다. 그룹별 최신 보고서의 변동표(전년 같은 분기·직전 분기 대비), 밸류업 목표, QC 7개, 분기 모델(JSON)을 숫자마다 접수번호가 붙은 검토용 초안으로 `reports/earnings`에 씁니다. `--draft`는 그룹마다 유료 모델 초안을 한 번 받아, 규칙 팩트체크를 통과할 때만 "검토 가능"으로 둡니다. 2026년 2분기 보고서에서 QC는 KB금융과 신한지주의 순수수료이익(전년 대비 +55%, +56%, XBRL 계정은 같음)을 사람이 확인할 항목으로 표시했습니다.
 - **3분기 실적 자동 갱신**: `watch-filings`는 DART 정기보고서 목록에서 데이터셋에 없는 보고서와 정정 보고서를 찾고, `--apply`는 새 기간만 데이터셋에 넣은 뒤 한국어 과제를 다시 검증하고 인용이 붙은 3분기 노트를 씁니다. 한 번 실행하고 끝나며 예약 작업을 만들지 않고 git도 실행하지 않습니다. 테스트는 가상 고정 자료로 오프라인에서 돕니다.
 - **한국어 산출물**: `note`는 이 과제들의 한국어 섹터 노트를 쓰고, 숫자마다 DART 접수번호를 붙입니다. 한국어 밸류에이션 스냅샷(`valuation --market kr`: P/B와 ROE, 교육용 예시·투자 권유 아님, 투자의견·목표주가 없음)은 사용자가 `--price`와 `--price-source`로 출처가 있는 종가를 넣기 전까지 꺼져 있습니다.
-- **데모**: `streamlit run demo/streamlit_app_kr.py`. 한국어 화면으로 실행 재생, 4대 금융지주 차트, 밸류업 점검, 노트, 과제를 보여 줍니다. 오프라인으로 동작합니다. 밸류에이션 화면은 출처가 있는 종가가 있을 때만 나타납니다. 데모를 인터넷에 올리는 방법은 [docs/deploy_demo.md](docs/deploy_demo.md)에 있습니다(Streamlit Community Cloud, 비밀값 필요 없음).
+- **데모**: `streamlit run demo/streamlit_app_kr.py`. 기본은 한국어 화면이고 사이드바(또는 `?lang=en`)에서 영어로 바꿀 수 있습니다. 한국어 화면으로 실행 재생, 4대 금융지주 차트, 밸류업 점검, 노트, 과제를 보여 줍니다. 오프라인으로 동작합니다. 밸류에이션 화면은 출처가 있는 종가가 있을 때만 나타납니다. 데모를 인터넷에 올리는 방법은 [docs/deploy_demo.md](docs/deploy_demo.md)에 있습니다(Streamlit Community Cloud, 비밀값 필요 없음).
 
 ```bash
 python -m agentworld_lite.finance fetch --source dart --profile fhc --company 105560 055550 086790 316140 --periods 2025:Q1 2025:H1 2025:Q3 2025:FY 2026:Q1 2026:H1 --cache C:/dart_cache

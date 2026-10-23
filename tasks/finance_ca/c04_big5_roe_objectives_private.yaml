@@ -1,0 +1,274 @@
+id: c04_big5_roe_objectives_private
+name: 'Big 5 Canadian banks: fiscal 2025 ROE against each bank''s medium-term ROE objective'
+category: finance
+domain: finance
+world_guide: false
+description: The desk checks each of Canada's five largest banks against the medium-term return on equity (ROE) objective
+  it published in the MD&A of its fiscal 2025 annual report (Form 40-F). The collector has read each bank's fiscal 2025 ROE
+  from the same reports, on every basis the bank gives; the analyst holds the five objectives, quoted. The analyst computes,
+  the reporter submits.
+objectives:
+  primary: 'Submit five answers, ry_roe_gap_pp, td_roe_gap_pp, bns_roe_gap_pp, bmo_roe_gap_pp and cm_roe_gap_pp: each bank''s
+    ROE objective minus its fiscal 2025 ROE, in percentage points (positive when the bank is short of its objective).'
+  secondary:
+  - Use as few rounds as possible.
+max_rounds: 14
+inputs:
+  as_of: '2026-09-30'
+  company: Royal Bank of Canada; The Toronto-Dominion Bank; The Bank of Nova Scotia; Bank of Montreal; Canadian Imperial Bank
+    of Commerce
+data:
+  dir: data/finance/edgar
+matched:
+  pair_id: c04
+  placement: private
+  fact_counts:
+    collector: 1
+    analyst: 2
+relevant_game_context: '- Common traps: fiscal vs calendar periods (the banks'' fiscal year ends October 31), year-to-date
+  vs single-quarter figures, net income attributable to shareholders vs net income available to common shareholders, basic
+  vs diluted EPS, ratios as fractions vs percent, and filings made after the as-of date.'
+agents:
+- username: collector
+  role: data collector
+  restricted_tools:
+  - calculate
+  - submit_answer
+  initial_facts:
+  - id: RY.fy2025.roe_reported
+    label: Royal Bank of Canada fiscal 2025 ROE, reported
+    value: 16.3
+    unit: '%'
+    source: 40-F MD&A
+    rcept_no: 0001193125-25-305927
+    company: RY
+  - id: TD.fy2025.roe_reported
+    label: TD Bank fiscal 2025 ROE, reported
+    value: 17.8
+    unit: '%'
+    source: 40-F MD&A
+    rcept_no: 0001562762-25-000289
+    company: TD
+  - id: TD.fy2025.roe_adjusted
+    label: TD Bank fiscal 2025 ROE, adjusted
+    value: 12.9
+    unit: '%'
+    source: 40-F MD&A
+    rcept_no: 0001562762-25-000289
+    company: TD
+  - id: BNS.fy2025.roe_reported
+    label: Scotiabank fiscal 2025 ROE, reported
+    value: 9.7
+    unit: '%'
+    source: 40-F MD&A
+    rcept_no: 0001193125-25-304643
+    company: BNS
+  - id: BNS.fy2025.roe_adjusted
+    label: Scotiabank fiscal 2025 ROE, adjusted
+    value: 11.8
+    unit: '%'
+    source: 40-F MD&A
+    rcept_no: 0001193125-25-304643
+    company: BNS
+  - id: BMO.fy2025.roe_reported
+    label: BMO fiscal 2025 ROE, reported
+    value: 10.6
+    unit: '%'
+    source: 40-F MD&A
+    rcept_no: 0001193125-25-307982
+    company: BMO
+  - id: BMO.fy2025.roe_adjusted
+    label: BMO fiscal 2025 ROE, adjusted
+    value: 11.3
+    unit: '%'
+    source: 40-F MD&A
+    rcept_no: 0001193125-25-307982
+    company: BMO
+  - id: CM.fy2025.roe_reported
+    label: CIBC fiscal 2025 ROE, reported
+    value: 14.3
+    unit: '%'
+    source: 40-F MD&A
+    rcept_no: 0001193125-25-307488
+    company: CM
+  - id: CM.fy2025.roe_adjusted
+    label: CIBC fiscal 2025 ROE, adjusted
+    value: 14.4
+    unit: '%'
+    source: 40-F MD&A
+    rcept_no: 0001193125-25-307488
+    company: CM
+  role_brief: 'Share every fiscal 2025 ROE figure you hold for each bank, reported and adjusted: which one applies depends
+    on the bank''s objective, which the analyst holds.'
+- username: analyst
+  role: analyst
+  restricted_tools:
+  - fetch_financials
+  - submit_answer
+  initial_facts:
+  - id: RY.objective.roe
+    value: 16.0
+    unit: '%'
+    source: 40-F MD&A
+    label: 'Royal Bank of Canada medium-term ROE objective: 16% or more, basis not stated'
+    rcept_no: 0001193125-25-305927
+    company: RY
+  - id: TD.objective.roe
+    value: 16.0
+    unit: '%'
+    source: 40-F MD&A
+    label: 'TD Bank medium-term ROE objective: about 16%, on an adjusted basis'
+    rcept_no: 0001562762-25-000289
+    company: TD
+  - id: BNS.objective.roe
+    value: 14.0
+    unit: '%'
+    source: 40-F MD&A
+    label: 'Scotiabank medium-term ROE objective: 14% or more, basis not stated'
+    rcept_no: 0001193125-25-304643
+    company: BNS
+  - id: BMO.objective.roe
+    value: 15.0
+    unit: '%'
+    source: 40-F MD&A
+    label: 'BMO medium-term ROE objective: 15% or more, on an adjusted basis'
+    rcept_no: 0001193125-25-307982
+    company: BMO
+  - id: CM.objective.roe
+    value: 15.0
+    unit: '%'
+    source: 40-F MD&A
+    label: 'CIBC medium-term ROE objective: 15% or more, on an adjusted basis'
+    rcept_no: 0001193125-25-307488
+    company: CM
+  role_brief: 'Measure each bank on the basis its objective states: adjusted ROE where the objective is on an adjusted basis
+    (adjusted results exclude items of note, such as a gain on selling a stake), reported ROE where the objective does not
+    say. An objective of ''about X%'' or ''X% or more'' is measured against X. Gap (pp) = ROE objective - fiscal 2025 ROE
+    on the objective''s basis.'
+- username: reporter
+  role: reporter
+  restricted_tools:
+  - fetch_financials
+  - calculate
+verifier:
+  checkpoints:
+  - type: answer
+    name: ry_roe_gap_pp
+    field: ry_roe_gap_pp
+    expected: -0.3
+    rel_tol: 0.001
+  - type: answer
+    name: td_roe_gap_pp
+    field: td_roe_gap_pp
+    expected: 3.1
+    rel_tol: 0.001
+  - type: answer
+    name: bns_roe_gap_pp
+    field: bns_roe_gap_pp
+    expected: 4.3
+    rel_tol: 0.001
+  - type: answer
+    name: bmo_roe_gap_pp
+    field: bmo_roe_gap_pp
+    expected: 3.7
+    rel_tol: 0.001
+  - type: answer
+    name: cm_roe_gap_pp
+    field: cm_roe_gap_pp
+    expected: 0.6
+    rel_tol: 0.001
+reference_solution:
+  collector:
+  - - share_facts
+    - to_agent: analyst
+      fact_ids:
+      - RY.fy2025.roe_reported
+      - TD.fy2025.roe_reported
+      - TD.fy2025.roe_adjusted
+      - BNS.fy2025.roe_reported
+      - BNS.fy2025.roe_adjusted
+      - BMO.fy2025.roe_reported
+      - BMO.fy2025.roe_adjusted
+      - CM.fy2025.roe_reported
+      - CM.fy2025.roe_adjusted
+  analyst:
+  - - wait
+    - reason: waiting for inputs
+    - until_have:
+        CM.fy2025.roe_adjusted: 1
+      retries: 20
+  - - calculate
+    - name: ry_roe_gap_pp
+      formula: o - r
+      unit: pp
+      inputs:
+      - var: o
+        fact_id: RY.objective.roe
+      - var: r
+        fact_id: RY.fy2025.roe_reported
+  - - calculate
+    - name: td_roe_gap_pp
+      formula: o - r
+      unit: pp
+      inputs:
+      - var: o
+        fact_id: TD.objective.roe
+      - var: r
+        fact_id: TD.fy2025.roe_adjusted
+  - - calculate
+    - name: bns_roe_gap_pp
+      formula: o - r
+      unit: pp
+      inputs:
+      - var: o
+        fact_id: BNS.objective.roe
+      - var: r
+        fact_id: BNS.fy2025.roe_reported
+  - - calculate
+    - name: bmo_roe_gap_pp
+      formula: o - r
+      unit: pp
+      inputs:
+      - var: o
+        fact_id: BMO.objective.roe
+      - var: r
+        fact_id: BMO.fy2025.roe_adjusted
+  - - calculate
+    - name: cm_roe_gap_pp
+      formula: o - r
+      unit: pp
+      inputs:
+      - var: o
+        fact_id: CM.objective.roe
+      - var: r
+        fact_id: CM.fy2025.roe_adjusted
+  - - share_facts
+    - to_agent: reporter
+      fact_ids:
+      - calc.ry_roe_gap_pp
+      - calc.td_roe_gap_pp
+      - calc.bns_roe_gap_pp
+      - calc.bmo_roe_gap_pp
+      - calc.cm_roe_gap_pp
+  reporter:
+  - - wait
+    - reason: waiting for results
+    - until_have:
+        calc.ry_roe_gap_pp: 1
+        calc.td_roe_gap_pp: 1
+        calc.bns_roe_gap_pp: 1
+        calc.bmo_roe_gap_pp: 1
+        calc.cm_roe_gap_pp: 1
+      retries: 20
+  - - submit_answer
+    - answers:
+      - field: ry_roe_gap_pp
+        fact_id: calc.ry_roe_gap_pp
+      - field: td_roe_gap_pp
+        fact_id: calc.td_roe_gap_pp
+      - field: bns_roe_gap_pp
+        fact_id: calc.bns_roe_gap_pp
+      - field: bmo_roe_gap_pp
+        fact_id: calc.bmo_roe_gap_pp
+      - field: cm_roe_gap_pp
+        fact_id: calc.cm_roe_gap_pp

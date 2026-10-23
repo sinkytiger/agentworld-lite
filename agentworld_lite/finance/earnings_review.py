@@ -135,7 +135,7 @@ def review(code: str, year: int | None = None, period: str | None = None, data_d
     py, (pp, dy) = quarter(ds, code, year - 1, period), PREV_Q[period]
     prev = quarter(ds, code, year + dy, pp)
     rv = Review(code, ds.companies[code].name, year, period, now, py, prev, _ttm_roe(ds, code, year, period),
-                [t for t in vu.TARGETS if t.code == code and t.metric in ("roe", "cet1")])
+                [t for t in vu.all_targets() if t.code == code and t.metric in ("roe", "cet1")])
     rv.checks = qc(rv, today or dt.date.today().isoformat())
     return rv
 
@@ -228,7 +228,7 @@ def render(rv: Review) -> str:
                      ": 이번 보고서의 CET1 비율은 데이터셋에 없음(확인 필요).")
         out.append(line)
     if not rv.targets:
-        out.append(f"- 밸류업 목표: 인용할 수 있는 수치 목표 없음. {vu.NOT_QUOTABLE.get(rv.code, '')}".rstrip())
+        out.append("- 밸류업 목표: 인용할 수 있는 수치 목표 없음.")
     out += ["", "## 검사(QC)", "", "| 검사 | 결과 | 비고 |", "|---|---|---|"]
     out += [f"| {name} | {'통과' if ok else '확인 필요'} | {note} |" for name, ok, note in rv.checks]
     out += ["", "## 검토 전 확인할 것", "",

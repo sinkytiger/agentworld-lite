@@ -1,6 +1,6 @@
-"""Canadian earnings review (agentworld_lite/finance/earnings_review_ca.py), offline. The fiscal 2025 H1 reports added
-in some tests are synthetic (flows and EPS of each bank's fiscal 2025 Q3 report x 2/3, balances and ratios unchanged,
-accession numbers that do not exist on EDGAR)."""
+"""Canadian earnings review (agentworld_lite/finance/earnings_review_ca.py), offline. The dataset holds each bank's
+fiscal 2025 H1 report (added 2026-10-23), so the review sets fiscal 2026 Q3 against fiscal 2025 Q3 too; one test removes
+those reports to check the review without the year-ago quarter."""
 
 import json
 import shutil
@@ -17,10 +17,9 @@ from agentworld_lite.finance.objectives_ca import QUOTE
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data" / "finance" / "edgar"
 TODAY = "2026-10-22"
-FLOWS = ("revenue", "non_interest_expense", "net_income", "net_income_owners", "net_income_common", "eps_basic",
-         "eps_diluted")
 C03 = {"RY": (16_894, 11_015), "TD": (12_512, 7_991), "BNS": (7_401, 4_623), "BMO": (6_563, 4_896),
        "CM": (7_601, 5_330)}  # net income to common, Q3 and H1 year to date, C$ millions (catalog c03)
+Q3_2025 = {"RY": 5_290, "TD": 3_248, "BNS": 2_313, "BMO": 2_261, "CM": 2_012}  # fiscal 2025 Q3 alone, C$ millions
 
 
 def _st(code, key, data=DATA):
@@ -35,24 +34,28 @@ def test_latest_report_review_matches_the_desk_answers(code, efficiency):
     for a in ("revenue", "non_interest_expense", "net_income_common"):
         assert rv.now.values[a][0] == q3[a] - h1[a]
     assert round(er._efficiency(rv.now.values)[0], 2) == efficiency                       # c02 answers
-    assert rv.prev.label == "fiscal 2026 Q2" and rv.year_ago is None
+    assert rv.prev.label == "fiscal 2026 Q2" and rv.year_ago.label == "fiscal 2025 Q3"
     md = er.render(rv)
     assert md.startswith(f"# {rv.name} ({code}): fiscal 2026 Q3 earnings review\n")
     assert er.BANNER in md and uncited_figures(md, extra=(QUOTE,)) == []
-    assert "no earnings-call transcript and no consensus estimate" in md
-    assert "fiscal 2025 Q3 alone cannot be computed: the dataset has no fiscal 2025 H1 report" in md
+    assert "no earnings-call transcript and no consensus estimate" in md and "cannot be computed" not in md
     assert "| Line | 9 months, fiscal 2026 | 9 months, fiscal 2025 | vs a year earlier |" in md
-    assert "| Line | fiscal 2026 Q3 | fiscal 2026 Q2 | vs previous quarter |\n" in md
+    assert ("| Line | fiscal 2026 Q3 | fiscal 2026 Q2 | vs previous quarter | fiscal 2025 Q3 | vs a year earlier |"
+            in md)
     assert f"| Efficiency ratio | {efficiency:.2f}% [facts `{code}.2026Q3.CFS.non_interest_expense`" in md
     objectives = md.split("## Medium-term objectives\n\n")[1]
     assert objectives.startswith("- Horizon: “") and "[quote from 40-F " in objectives
-    assert [name for name, ok, _ in rv.checks if not ok] == ["Comparison reports are in the dataset"]
+    assert [name for name, ok, _ in rv.checks if not ok] == []
 
 
 def test_big5_net_income_to_common_and_cet1_match_c03():
     rvs = {code: er.review(code, today=TODAY) for code in BIG5}
     assert {c: rv.now.values["net_income_common"][0] for c, rv in rvs.items()} == \
         {c: (q3 - h1) * 1_000_000 for c, (q3, h1) in C03.items()}
+    assert {c: rv.year_ago.values["net_income_common"][0] for c, rv in rvs.items()} == \
+        {c: v * 1_000_000 for c, v in Q3_2025.items()}
+    for c, rv in rvs.items():                                    # the 2025 H1 6-K behind every year-ago figure
+        assert rv.year_ago.values["net_income_common"][1][1].meta["rcept_no"] == _st(c, "2025:H1:CFS")["doc_id"]
     cet1 = [rv.now.cum["cet1_ratio"].value for rv in rvs.values()]
     assert round(sum(cet1) / 5, 2) == 13.46 and round(max(cet1) - min(cet1), 2) == 1.30
     for rv in rvs.values():
@@ -75,34 +78,20 @@ def edgar_copy(tmp_path):
     return d
 
 
-@pytest.fixture
-def with_2025_h1(edgar_copy):
-    """The dataset with a synthetic fiscal 2025 H1 report for every bank."""
+def test_without_the_prior_h1_report_the_year_ago_quarter_is_left_out(edgar_copy):
     for p in edgar_copy.glob("*.json"):
         data = json.loads(p.read_text(encoding="utf-8"))
-        q3 = data["statements"]["2025:Q3:CFS"]
-        h1 = {k: (round(v * 2 / 3, 2) if k.startswith("eps") else round(v * 2 / 3 / 1e6) * 1e6)
-              if k in FLOWS and v is not None else v for k, v in q3.items()}
-        h1.update(doc_id=f"SYNTHETIC-2025H1-{data['stock_code']}", filed="2025-05-28", period_end="2025-04-30")
-        data["statements"]["2025:H1:CFS"] = h1
+        del data["statements"]["2025:H1:CFS"]
         p.write_text(json.dumps(data), encoding="utf-8")
-    return edgar_copy
-
-
-def test_year_ago_quarter_appears_when_the_prior_h1_report_exists(with_2025_h1):
-    rv = er.review("RY", data_dir=with_2025_h1, today=TODAY)
-    assert rv.year_ago.label == "fiscal 2025 Q3"
-    h1 = _st("RY", "2025:H1:CFS", with_2025_h1)
-    assert rv.year_ago.values["revenue"][0] == _st("RY", "2025:Q3:CFS")["revenue"] - h1["revenue"]
+    rv = er.review("RY", data_dir=edgar_copy, today=TODAY)
+    assert rv.year_ago is None
+    assert [name for name, ok, _ in rv.checks if not ok] == ["Comparison reports are in the dataset"]
     md = er.render(rv)
-    assert uncited_figures(md, extra=(QUOTE,)) == [] and "cannot be computed" not in md and "SYNTHETIC-2025H1-RY" in md
-    assert ("| Line | fiscal 2026 Q3 | fiscal 2026 Q2 | vs previous quarter | fiscal 2025 Q3 | vs a year earlier |"
-            in md)
-    assert "## Year to date" in md and all(ok for _, ok, _ in rv.checks)
-    model = er.coverage_model(rv, er.Dataset(with_2025_h1))
-    assert list(model["quarters"])[:2] == ["fiscal 2025 Q3", "fiscal 2025 Q4"]
-    assert "SYNTHETIC-2025H1-RY" in model["quarters"]["fiscal 2025 Q3"]["revenue"]["accession"]
-    assert er.render(er.review("TD", data_dir=with_2025_h1, today=TODAY))   # TD: no equity_owners, no owners' income
+    assert "fiscal 2025 Q3 alone cannot be computed: the dataset has no fiscal 2025 H1 report" in md
+    assert "| Line | fiscal 2026 Q3 | fiscal 2026 Q2 | vs previous quarter |\n" in md
+    assert uncited_figures(md, extra=(QUOTE,)) == []
+    model = er.coverage_model(rv, er.Dataset(edgar_copy))
+    assert list(model["quarters"]) == ["fiscal 2025 Q4", "fiscal 2026 Q1", "fiscal 2026 Q2", "fiscal 2026 Q3"]
 
 
 def test_qc_flags_a_large_revenue_move_and_a_filing_after_today(edgar_copy):
@@ -112,7 +101,7 @@ def test_qc_flags_a_large_revenue_move_and_a_filing_after_today(edgar_copy):
     p.write_text(json.dumps(data), encoding="utf-8")
     rv = er.review("BMO", data_dir=edgar_copy, today="2026-08-01")
     flags = {name: note for name, ok, note in rv.checks if not ok}
-    assert list(flags) == ["Comparison reports are in the dataset", "Filing date is not after today",
+    assert list(flags) == ["Filing date is not after today",
                            "Revenue year to date within 40 percent of a year earlier",
                            "Net income within 25 percent of the previous quarter"]  # BMO's Q3 goodwill charge
     assert flags["Net income within 25 percent of the previous quarter"].startswith("-32.97% [facts")
@@ -132,12 +121,14 @@ def test_write_stages_the_review_and_the_model(tmp_path):
     assert d.name == "CM_2026Q3" and {p.name for p in d.iterdir()} == {"review.md", "model.json"}
     assert b"\r\n" not in (d / "review.md").read_bytes() and b"\r\n" not in (d / "model.json").read_bytes()
     model = json.loads((d / "model.json").read_text(encoding="utf-8"))
-    assert list(model["quarters"]) == ["fiscal 2025 Q4", "fiscal 2026 Q1", "fiscal 2026 Q2", "fiscal 2026 Q3"]
+    assert list(model["quarters"]) == ["fiscal 2025 Q3", "fiscal 2025 Q4", "fiscal 2026 Q1", "fiscal 2026 Q2",
+                                       "fiscal 2026 Q3"]
     assert model["period_ends"]["fiscal 2025 Q4"] == "2025-10-31"
     ni = model["quarters"]["fiscal 2026 Q3"]["net_income_common"]
     assert ni["value"] == (7_601 - 5_330) * 1_000_000
     assert ni["facts"] == ["CM.2026Q3.CFS.net_income_common", "CM.2026H1.CFS.net_income_common"]
     assert ni["accession"] == sorted(_st("CM", k)["doc_id"] for k in ("2026:Q3:CFS", "2026:H1:CFS"))
+    assert model["quarters"]["fiscal 2025 Q3"]["net_income_common"]["value"] == Q3_2025["CM"] * 1_000_000
     assert round(model["quarters"]["fiscal 2026 Q3"]["efficiency_ratio"]["value"], 2) == \
         round(er._efficiency(rv.now.values)[0], 2)
 

@@ -41,11 +41,31 @@ def test_committed_ca_tasks_match_the_catalog():
 
 def test_ca_reference_solves_and_idle_team_fails():
     tasks = load_tasks(str(CA_DIR))
-    assert len(tasks) == 2 * len(SPECS_CA) == 6
+    assert len(tasks) == 2 * len(SPECS_CA) == 8
     for t in tasks:
         assert validate_task(t) == [], t.id
     c03 = Task.load(CA_DIR / "c03_big5_q3_sector_private.yaml")
     assert run_episode(c03, make_factory("scripted"))["result"]["rounds_used"] == 18 <= c03.max_rounds
+
+
+def test_c04_matches_the_quoted_objectives_and_the_basis_trap_misses():
+    from agentworld_lite.finance import objectives_ca as oc
+    from agentworld_lite.finance.catalog import ROE_OBJECTIVE, _roe_gap
+    for code, (objective, basis, reported, adjusted, accession) in ROE_OBJECTIVE.items():
+        r = oc.roe_check(code)
+        assert (r["objective"].low, r["objective"].basis, oc.ROE_FY2025[code][:2], oc.DOCS[code]["accession"]) == \
+            (objective, basis, (reported, adjusted), accession)
+        assert round(_roe_gap(code), 6) == round(objective - r["tested"].value, 6)
+    task = Task.load(CA_DIR / "c04_big5_roe_objectives_private.yaml")
+    expected = {cp["field"]: cp for cp in task.verifier["checkpoints"]}
+    for field, wrong in (("td_roe_gap_pp", 16.0 - 17.8),          # TD's reported ROE, gain on Schwab shares included
+                         ("bns_roe_gap_pp", 14.0 - 11.8),         # Scotiabank's adjusted ROE, though its objective says neither
+                         ("bmo_roe_gap_pp", 15.0 - 10.6)):        # BMO's reported ROE against an adjusted objective
+        cp = expected[field]
+        assert abs(wrong - cp["expected"]) > cp["rel_tol"] * abs(cp["expected"]), field
+    analyst = next(a for a in task.agents if a["username"] == "analyst")
+    assert "adjusted ROE where the objective is on an adjusted basis" in analyst["role_brief"]
+    assert {f["id"] for f in analyst["initial_facts"]} == {f"{c}.objective.roe" for c in BIG5}
 
 
 def test_ca_pairs_differ_only_in_where_the_sentences_are():

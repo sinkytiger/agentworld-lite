@@ -41,9 +41,11 @@ def test_latest_report_review_matches_the_desk_answers():
     assert flags["핵심 이익의 전년 대비 변동이 크지 않음"].startswith("순수수료이익: XBRL 계정은 두 해 같음")
 
 
-def test_group_without_quotable_targets_and_the_group_argument():
+def test_targets_read_from_images_and_the_group_argument():
     md = er.render(er.review("316140", today="2026-10-22"))
-    assert "밸류업 목표: 인용할 수 있는 수치 목표 없음." in md and "CET1" not in md.split("## 검사")[0].split("## 자본")[1]
+    capital = md.split("## 검사")[0].split("## 자본")[1]
+    assert "목표 ROE 10.00% [사실 `316140.target.roe` · 접수번호 20260206801698]" in capital
+    assert "이번 보고서의 CET1 비율은 데이터셋에 없음(확인 필요)" in capital
     assert er.groups("all") == ["105560", "055550", "086790", "316140"]
     assert er.groups("신한지주") == er.groups("055550") == er.groups("shinhan") == ["055550"]
     with pytest.raises(er.ReviewError, match="unknown group"):

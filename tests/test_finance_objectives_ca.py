@@ -23,7 +23,7 @@ def test_every_bank_has_a_quoted_roe_objective_and_a_hashed_source():
         assert any(o.metric == "roe" and o.low for o in mine) and all(o.quote and o.metric in oc.METRIC for o in mine)
         d = oc.DOCS[bank]
         assert len(d["sha256"]) == 64 and d["bytes"] > 1_000_000 and d["document"].endswith(".htm")
-    assert sum(len(oc.quotes(b)) for b in BIG5) == 35
+    assert sum(len(oc.quotes(b)) for b in BIG5) == 37
 
 
 def test_verdict_rules():

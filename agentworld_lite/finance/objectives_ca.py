@@ -35,8 +35,10 @@ from .note import cited, filing_link, uncited_figures
 DATA_DIR = REPO_ROOT / "data" / "finance" / "edgar"
 BANKS = ("RY", "TD", "BNS", "BMO", "CM")
 NAMES = {"RY": "Royal Bank of Canada", "TD": "TD Bank", "BNS": "Scotiabank", "BMO": "BMO", "CM": "CIBC"}
-KR_NAMES = {"105560": "KB Financial", "055550": "Shinhan Financial", "086790": "Hana Financial"}
+KR_NAMES = {"105560": "KB Financial", "055550": "Shinhan Financial", "086790": "Hana Financial",
+            "316140": "Woori Financial"}
 VERIFIED_ON = "2026-10-22"
+RECHECKED_ON = "2026-10-23"  # saved copies, same SHA-256 as served; ITEMS_OF_NOTE quotes added then
 NOTICE = "Educational example, not investment advice"
 QUOTE = r"“[^”]*” \[quote from [^\]]*\]"  # a quoted passage and its source, for uncited_figures()
 
@@ -123,6 +125,12 @@ ROE_FY2025 = {  # bank: (reported, adjusted or None, quote)
     "BMO": (10.6, 11.3, "Return on equity (%) 15% or more 10.6 8.8 12.8 11.3 11.2 13.1"),
     "CM": (14.3, 14.4, "In 2025, our reported and adjusted(1) ROE were at 14.3% and 14.4%, respectively"),
 }
+# Why a bank's reported and adjusted ROE differ, where the gap is large (TD's Table 3, items of note).
+ITEMS_OF_NOTE = {
+    "TD": ("The Bank sold common shares of Schwab and recognized a gain on the sale – 2025: $8,975 million",
+           "Total adjustments for items of note 5,513 (5,435) Net income available to common shareholders – reported "
+           "$ 19,973 $ 8,316"),
+}
 
 
 class ObjectivesError(Exception):
@@ -130,7 +138,8 @@ class ObjectivesError(Exception):
 
 
 def quotes(bank: str) -> list[str]:
-    return [*(o.quote for o in OBJECTIVES if o.bank == bank), CONTEXT[bank], ROE_FY2025[bank][2]]
+    return [*(o.quote for o in OBJECTIVES if o.bank == bank), CONTEXT[bank], ROE_FY2025[bank][2],
+            *ITEMS_OF_NOTE.get(bank, ())]
 
 
 # ---------------------------------------------------------------------- checking saved copies
@@ -245,7 +254,8 @@ def render(data_dir: str | Path = DATA_DIR) -> str:
            "Objectives are quoted verbatim from each bank's fiscal 2025 annual filing (Form 40-F, MD&A exhibit); every "
            "figure carries its source.", "",
            f"- **Quotes checked on {VERIFIED_ON}** against the five MD&A exhibits as served by sec.gov (SHA-256 of each "
-           "document in the Sources table); every quote was found in the document text.",
+           f"document in the Sources table), and again on {RECHECKED_ON} against saved copies with the same SHA-256; "
+           "every quote was found in the document text.",
            "- **Progress:** ROE is each bank's own fiscal 2025 figure (banks compute it on average common equity, which "
            "the desk's data does not hold). EPS growth compares diluted EPS for the first nine months of fiscal 2026 "
            "with the same months of fiscal 2025 (reported basis; most objectives are on an adjusted basis). CET1 is the "
@@ -265,23 +275,29 @@ def render(data_dir: str | Path = DATA_DIR) -> str:
                    f"**{rc['verdict']}** ({rc['basis']}) | "
                    f"{_spec(eps_o)} | {eps} | {cet1} |")
     out += ["", "EPS growth is shown without a verdict: it is on a reported basis, which includes items of note that the "
-            "adjusted objectives exclude, so a single year's gain or charge can swing it far in either direction."]
+            "adjusted objectives exclude, so a single year's gain or charge can swing it far in either direction. "
+            "TD's reported ROE, for one, includes its gain on selling Schwab shares (quoted below)."]
     out += ["", "## Objectives as written", ""]
     for bank in BANKS:
         out += [f"### {NAMES[bank]}", "", f"- Horizon: {_cite_quote(bank, CONTEXT[bank])}"]
         out += [f"- {METRIC[o.metric]} ({o.horizon}): {_cite_quote(bank, o.quote)}" for o in OBJECTIVES if o.bank == bank]
-        out += [f"- Fiscal 2025 ROE: {_cite_quote(bank, ROE_FY2025[bank][2])}", ""]
+        out += [f"- Fiscal 2025 ROE: {_cite_quote(bank, ROE_FY2025[bank][2])}"]
+        if bank in ITEMS_OF_NOTE:
+            out.append("- Why reported and adjusted results differ (items of note, which adjusted results exclude): "
+                       + "; ".join(_cite_quote(bank, q) for q in ITEMS_OF_NOTE[bank]))
+        out.append("")
     out += ["## Korea and Canada side by side", "",
             "Targets as the groups state them. Korea's groups quote ROE on average owners' equity (hybrid capital "
             "included) in their value-up plans; Canada's banks on average common equity, mostly adjusted. The levels "
             "are comparable as ambitions, not as like-for-like ratios.", "",
             "| Market | Group | ROE target | CET1 target | Payout target |", "|---|---|---|---|---|"]
-    for t_code in ("105560", "055550", "086790"):
-        ts = {t.metric: t for t in vu.TARGETS if t.code == t_code}
+    for t_code in KR_NAMES:
+        ts = {t.metric: t for t in vu.all_targets() if t.code == t_code}
         cell = lambda m: (cited(ts[m].threshold, "%", [vu.target_fact(ts[m])])
                           + (" or more" if "이상" in ts[m].quote or "+" in ts[m].quote else "")  # as the plan words it
                           + (f" by {ts[m].deadline[:4]}" if ts[m].deadline else "")) if m in ts else "-"
-        out.append(f"| Korea | {KR_NAMES[t_code]} | {cell('roe')} | {cell('cet1')} | {cell('payout')} |")
+        seen = " (read from PDF page images)" if any(vu.from_image(t) for t in ts.values()) else ""
+        out.append(f"| Korea | {KR_NAMES[t_code]}{seen} | {cell('roe')} | {cell('cet1')} | {cell('payout')} |")
     for bank in BANKS:
         by = {}
         for o in OBJECTIVES:

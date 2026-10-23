@@ -3,7 +3,7 @@
     python demo/make_charts.py            # writes docs/img/chart_*.png
 
 - chart_models.png      success rate and cost per solved episode by model (docs/finance_kr_leaderboard.md)
-- chart_valueup_roe.png the Korean groups' TTM ROE now, a year earlier and their quoted value-up target
+- chart_valueup_roe.png the Korean groups' TTM ROE now, a year earlier and their value-up ROE target
 - chart_objectives_roe.png  the Canadian Big 5's fiscal 2025 ROE against their quoted medium-term ROE objective
 - chart_cet1.png        CET1 ratios of the Korean groups (2026-06-30, quoted from H1 reports) and the Canadian Big 5
                         (2026-07-31, XBRL of the Q3 reports)
@@ -123,8 +123,8 @@ def chart_valueup_roe() -> Path:
     ax.set_title("Korea's value-up targets: TTM ROE at 2026-06-30 (filled) vs a year earlier (hollow)")
     _frame(ax)
     return _save(fig, "chart_valueup_roe.png", "Source: DART filings; targets quoted verbatim from each group's "
-                 "value-up plan (receipt numbers in docs/finance_korea_fhc.md). ROE = TTM net income to owners / "
-                 "average owners' equity.")
+                 "value-up plan (Woori's read from the page images of its plan PDF; receipt numbers in\n"
+                 "docs/finance_korea_fhc.md). ROE = TTM net income to owners / average owners' equity.")
 
 
 def chart_objectives_roe() -> Path:
