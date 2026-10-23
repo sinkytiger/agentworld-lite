@@ -279,6 +279,44 @@ renamed download still counts): same SHA-256, and every quote present once tags,
 Saved copies of all five passed. `EdgarClient.documents()` and `document()` fetch a filing's file list and one
 document (cached) for when scripted access works again.
 
+## Korea and Canada compared
+
+```bash
+python -m agentworld_lite.finance compare --out reports/compare.md
+```
+
+`agentworld_lite/finance/compare.py` puts Korea's four largest financial holding companies (DART) and the Big 5 (SEC
+EDGAR) in one table on CET1, cost-to-income and ROE, with no model. Every figure cites its facts and the filings behind
+them: DART receipt numbers for Korea, EDGAR accession numbers for Canada. Korea runs to 2026-06-30 (calendar Q2),
+Canada to 2026-07-31 (fiscal Q3), the latest quarter each has filed.
+
+| Market | Group | CET1 | Cost-to-income, latest quarter | ROE, TTM |
+|---|---|---|---|---|
+| Korea | KB Financial | 13.74% | 36.89% | 10.47% |
+| Korea | Shinhan Financial | 13.43% | 36.29% | 9.17% |
+| Korea | Hana Financial | 13.27% | 38.89% | 9.11% |
+| Korea | Woori Financial | n/a | 40.81% | 8.71% |
+| Canada | Royal Bank of Canada | 13.5% | 52.81% | 16.21% |
+| Canada | TD Bank | 14.3% | 50.19% | 12.83% |
+| Canada | Scotiabank | 13.1% | 52.74% | 11.57% |
+| Canada | BMO | 13.0% | 67.48% | 10.57% |
+| Canada | CIBC | 13.4% | 55.99% | 15.60% |
+
+- **ROE: one formula in both markets.** Trailing twelve-month net income attributable to shareholders over the average
+  of shareholders' equity at the start and end of those twelve months. Equity includes preferred shares and hybrid
+  capital in both markets, because neither data set separates common equity for every group. That is the basis
+  Korea's groups quote in their value-up plans; Canada's banks quote ROE on common equity, which reads higher. TD tags
+  no shareholders' lines, so its ROE uses net income and total equity.
+- **Cost-to-income: each market's convention.** Korea: G&A / (operating income + G&A + credit-loss provisions), the
+  task k02 basis. Canada: non-interest expense / total revenue, the reported efficiency ratio (task c02). Both put
+  operating costs over revenue before credit losses, but each defines revenue its own way.
+- **CET1: reported ratios.** DART's financial statements carry no capital ratios, so Korea's figures are quoted from
+  the capital adequacy tables of the 2026 H1 reports (as in the value-up scorecard). Woori's H1 report gives none; the
+  report shows its 12.89% at the end of 2025 as a note, not in the table.
+- **What it shows:** capital is close (eight reported CET1 ratios between 13.0% and 14.3%), while Canada's banks earn
+  more on equity (median 12.83% against 9.14%) on a higher cost base (median 52.81% against 37.89%). All figures are
+  reported, not adjusted, so one-off items such as BMO's fiscal Q3 goodwill charge move them.
+
 ## Demo
 
 ```bash
@@ -289,13 +327,14 @@ pip install -e ".[demo]"
 streamlit run demo/streamlit_app.py
 ```
 
-A Streamlit app over the same code, with no model and no key. It has seven views; all but the news digest work offline.
+A Streamlit app over the same code, with no model and no key. It has eight views; all but the news digest work offline.
 
 ![Demo: the c03 run replayed round by round, the Big 5 charts, and the cited sector note](img/canada_desk_demo.gif)
 
 - **Desk replay.** A round slider over the scripted reference or an uploaded trajectory. Each agent's moves, the size of its notebook, and which answers are within tolerance so far.
 - **Big 5 data.** Single-quarter net income to common and the CET1 ratio for each bank, as charts and as a table that names the filing behind each figure.
 - **Objectives.** Each bank's fiscal 2025 ROE against its quoted ROE objective (on the objective's basis, with the other basis alongside), as a chart and a table, then the full objectives scorecard with a Markdown download.
+- **Korea vs Canada.** The comparison above as three charts (markets told apart by colour and shape), a table, the medians and the full cited report.
 - **Sector note.** The cited note above, with a Markdown download.
 - **Valuation.** The snapshot above for any of the five banks, with headline metrics and a Markdown download.
 - **News digest.** Builds the sector risk digest from the live feeds when its button is pressed (cached for an hour); nothing is fetched until then.

@@ -27,7 +27,7 @@ import altair as alt  # noqa: E402
 import pandas as pd  # noqa: E402
 import streamlit as st  # noqa: E402
 
-from agentworld_lite.finance import objectives_ca  # noqa: E402
+from agentworld_lite.finance import compare, objectives_ca  # noqa: E402
 from agentworld_lite.finance.catalog import BIG5  # noqa: E402
 from agentworld_lite.finance.dataset import Dataset  # noqa: E402
 from agentworld_lite.finance.news import FEEDS, NewsError, build_digest  # noqa: E402
@@ -38,10 +38,14 @@ from agentworld_lite.task import load_tasks  # noqa: E402
 
 TASK_DIR = ROOT / "tasks" / "finance_ca"
 DATA_DIR = ROOT / "data" / "finance" / "edgar"
-VIEWS = ("Desk replay", "Big 5 data", "Objectives", "Sector note", "Valuation", "News digest", "Task")
+VIEWS = ("Desk replay", "Big 5 data", "Objectives", "Korea vs Canada", "Sector note", "Valuation", "News digest",
+         "Task")
 DEFAULT_TASK = "c03_big5_q3_sector_shared"
 SERIES = {"light": "#2a78d6", "dark": "#3987e5"}  # one series: categorical slot 1 of the reference palette
 INK = {"light": "#0b0b0b", "dark": "#f0efec"}     # values and labels wear text ink, not the series color
+# two series (Korea, Canada): categorical slots 1 and 2 of the reference palette, validated as a pair in both modes;
+# shape repeats the market so identity is never colour alone
+MARKET = {"light": {"Korea": "#2a78d6", "Canada": "#eb6834"}, "dark": {"Korea": "#3987e5", "Canada": "#d95926"}}
 
 
 # ---------------------------------------------------------------------- data
@@ -190,6 +194,61 @@ def view_big5() -> None:
     config = {c: st.column_config.NumberColumn(format="%,.0f") for c in df.columns if c.endswith("(C$ m)")}
     config["CET1 ratio (%)"] = st.column_config.NumberColumn(format="%.1f")
     st.dataframe(df, hide_index=True, column_config=config)
+
+
+@st.cache_data
+def compare_md() -> str:
+    return compare.render()
+
+
+def compare_frame() -> pd.DataFrame:
+    rows = compare.comparison()["rows"]
+    val = lambda m: round(m[0], 2) if m else None
+    return pd.DataFrame([{"Market": r["market"], "Group": r["name"], "CET1 ratio (%)": val(r["cet1"]),
+                          "Cost-to-income (%)": val(r["cir"]), "ROE, TTM (%)": val(r["roe"]),
+                          "Period end": r["period"]} for r in rows])
+
+
+def market_dots(df: pd.DataFrame, field: str, title: str) -> alt.Chart:
+    """One measure, both markets: dots on a zoomed axis, colour and shape by market (legend on top)."""
+    d = df.dropna(subset=[field])
+    lo, hi = d[field].min(), d[field].max()
+    pad = max((hi - lo) * 0.12, 0.3)
+    colors = MARKET[_mode()]
+    base = alt.Chart(d, title=title).encode(
+        y=alt.Y("Group:N", sort=d["Group"].tolist(), title=None, axis=alt.Axis(labelLimit=170)),
+        x=alt.X(f"{field}:Q", title=None, scale=alt.Scale(domain=[lo - pad, hi + pad * 2.2], zero=False),
+                axis=alt.Axis(grid=True, gridOpacity=0.25, tickCount=4, domain=False, ticks=False)),
+        tooltip=[alt.Tooltip("Market:N"), alt.Tooltip("Group:N"), alt.Tooltip(f"{field}:Q", format=".2f")])
+    legend = alt.Legend(orient="top", title=None)
+    points = base.mark_point(size=130, filled=True, opacity=1).encode(
+        color=alt.Color("Market:N", scale=alt.Scale(domain=list(colors), range=list(colors.values())), legend=legend),
+        shape=alt.Shape("Market:N", scale=alt.Scale(domain=list(colors), range=["circle", "square"]), legend=legend))
+    labels = base.mark_text(align="left", dx=10, color=ink()).encode(text=alt.Text(f"{field}:Q", format=".1f"))
+    return (points + labels).properties(height=300)
+
+
+def view_compare() -> None:
+    df = compare_frame()
+    st.markdown("Korea's four largest financial holding companies (DART) and Canada's Big 5 banks (SEC EDGAR) on the "
+                "same three measures. ROE uses one formula in both markets; cost-to-income is each market's own "
+                "convention; CET1 is each group's reported ratio. Korea is to 2026-06-30, Canada to 2026-07-31.")
+    cols = st.columns(3)
+    cols[0].altair_chart(market_dots(df, "CET1 ratio (%)", "CET1 ratio (%)"), width="stretch")
+    cols[1].altair_chart(market_dots(df, "Cost-to-income (%)", "Cost-to-income, latest quarter (%)"), width="stretch")
+    cols[2].altair_chart(market_dots(df, "ROE, TTM (%)", "ROE, trailing twelve months (%)"), width="stretch")
+    med = compare.comparison()["medians"]
+    m = lambda mk, k: f"{med[mk][k][0]:.2f}%" if med[mk][k] else "n/a"
+    st.caption(f"Medians, Korea / Canada: CET1 {m('Korea', 'cet1')} / {m('Canada', 'cet1')}, cost-to-income "
+               f"{m('Korea', 'cir')} / {m('Canada', 'cir')}, ROE {m('Korea', 'roe')} / {m('Canada', 'roe')}. Woori's "
+               "2026 H1 report gives no CET1 ratio. Both ROEs are on equity including preferred shares and hybrid "
+               "capital, which reads lower than the common-equity ROE Canada's banks quote.")
+    st.markdown("**Table view**")
+    st.dataframe(df, hide_index=True)
+    md = compare_md()
+    st.download_button("Download the comparison with every citation (Markdown)", md, file_name="korea_canada_compare.md",
+                       mime="text/markdown")
+    show_markdown(md)
 
 
 @st.cache_data
@@ -384,6 +443,8 @@ def main() -> None:
         view_big5()
     elif view == "Objectives":
         view_objectives()
+    elif view == "Korea vs Canada":
+        view_compare()
     elif view == "Valuation":
         view_valuation(qp.get("bank"))
     elif view == "News digest":

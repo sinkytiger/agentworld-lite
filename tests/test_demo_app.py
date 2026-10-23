@@ -49,6 +49,15 @@ def test_objectives_view_shows_the_roe_check_and_the_quoted_scorecard():
     assert "[quote from 40-F 0001193125-25-305927 EX-2" in scorecard and "Korea and Canada side by side" in scorecard
 
 
+def test_korea_vs_canada_view():
+    at = _open(view="Korea vs Canada")
+    df = at.dataframe[0].value
+    assert list(df["Market"]) == ["Korea"] * 4 + ["Canada"] * 5
+    assert dict(zip(df["Group"], df["ROE, TTM (%)"]))["KB Financial"] == 10.47
+    assert "Medians, Korea / Canada: CET1 13.43% / 13.40%" in " ".join(c.value for c in at.caption)
+    assert "13.74% [fact `105560.cet1.2026H1`" in " ".join(m.value for m in at.markdown)
+
+
 def test_valuation_view_and_news_view_without_network():
     at = _open(view="Valuation", bank="TD")
     assert next(s for s in at.selectbox if s.label == "Subject bank").value == "TD"

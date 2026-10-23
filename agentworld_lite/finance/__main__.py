@@ -12,6 +12,8 @@
                기업가치 제고 계획 filings, progress measured from filings (--build fetches and checks the sources)
   objectives-ca  Canadian Big 5 scorecard: financial objectives quoted from the fiscal 2025 40-F, progress from
                filings, side by side with the Korean targets (--verify-local checks saved copies of the exhibits)
+  compare      Korea and Canada side by side: the four financial holding companies and the Big 5 banks on CET1,
+               cost-to-income and ROE in one table, every figure cited (no LLM)
   ai-report    ask a model the same Korean question twice (no data / a DART data pack), store prompts and answers,
                and fact-check every figure against the filings (--prompts and --check need no model; --run is paid)
   earnings-review  Korean earnings review of the latest report: variance vs a year ago and the previous quarter,
@@ -315,6 +317,24 @@ def _earnings_review_ca(args) -> int:
     return 0
 
 
+def cmd_compare(args) -> int:
+    from pathlib import Path
+    from .compare import CompareError, render
+    try:
+        md = render()
+    except CompareError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    if args.out:
+        Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+        with open(args.out, "w", encoding="utf-8", newline="\n") as f:
+            f.write(md)
+        print(f"wrote {args.out}")
+    else:
+        sys.stdout.write(md)
+    return 0
+
+
 def cmd_fetch(args) -> int:
     from .sources import SourceError, get_source
     prices, company_prices = {}, {}  # DATE=VALUE applies to every --company; CODE@DATE=VALUE to one of them
@@ -422,6 +442,10 @@ def main(argv=None) -> int:
     oc.add_argument("--verify-local", metavar="DIR",
                     help="check saved copies of the five MD&A exhibits in DIR: same SHA-256 as sec.gov, every quote present")
 
+    cp = sub.add_parser("compare", help="Korea's four financial holding companies and Canada's Big 5 on CET1, "
+                        "cost-to-income and ROE, every figure cited")
+    cp.add_argument("--out", help="Markdown file to write (default: print)")
+
     ai = sub.add_parser("ai-report", help="Korean AI report with and without a DART data pack, fact-checked")
     ai.add_argument("--prompts", action="store_true", help="write the system prompt and both prompts (no model call)")
     ai.add_argument("--run", action="store_true", help="paid: ask the model once per prompt not yet answered")
@@ -499,7 +523,7 @@ def main(argv=None) -> int:
         args.model = DEFAULT_MODEL
     return {"make-tasks": cmd_make_tasks, "validate": cmd_validate, "run": cmd_run, "note": cmd_note,
             "news": cmd_news, "valuation": cmd_valuation, "valueup": cmd_valueup, "objectives-ca": cmd_objectives_ca,
-            "ai-report": cmd_ai_report,
+            "compare": cmd_compare, "ai-report": cmd_ai_report,
             "watch-filings": cmd_watch_filings, "leaderboard": cmd_leaderboard,
             "earnings-review": cmd_earnings_review, "fetch": cmd_fetch}[args.cmd](args)
 
