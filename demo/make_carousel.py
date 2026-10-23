@@ -198,7 +198,9 @@ def p6(f, total):
                     "Share prices are left out: they cannot be",
                     "checked against a filing."], 0.79, color=INK2, gap=0.038)
     fig.text(LEFT, 0.33, "Try it", fontsize=BODY, fontweight="bold", va="top")
-    lines(fig, ["Live demo: agentworld-canada-desk.streamlit.app", f"Code and write-up: {REPO}"], 0.28, gap=0.038)
+    lines(fig, ["Live demos: agentworld-canada-desk.streamlit.app",
+                "and agentworld-korea-desk.streamlit.app (English: ?lang=en)",
+                f"Code and write-up: {REPO}"], 0.28, gap=0.038)
     lines(fig, ["Educational project, not investment advice."], 0.15, size=NOTE, color=MUTED)
     return fig
 
