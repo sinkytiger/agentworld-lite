@@ -19,6 +19,9 @@ each answer is classified:
 
 Intermediate calculations are matched against the same trap list, so a mistake that was made and then corrected shows
 up even in a solved episode.
+
+--market ca does the same for the Canadian desk (tasks/finance_ca, runs/finance_ca_*, traps_ca) and writes the report in
+English (render_en), with the categories named in English (CATEGORY_EN).
 """
 
 from __future__ import annotations
@@ -31,6 +34,7 @@ from pathlib import Path
 from ..task import Task, load_tasks
 from .env import REPO_ROOT
 from .note import NoteError, replay
+from . import traps_ca
 from .traps_kr import match_trap
 
 RUNS_ROOT = REPO_ROOT / "runs"
@@ -40,6 +44,13 @@ PAIR_KO = {"k01": "KB BPS·ROE", "k02": "신한·우리 2분기 CIR", "k03": "4�
            "k04": "2분기 순이익 증가율", "k05": "합산 CIR", "k06": "밸류업 ROE 격차"}
 CELLS = (("shared", "full"), ("shared", "no_comm"), ("private", "full"), ("private", "no_comm"))
 MISSING = ("제출 누락", "공유 누락", "함정 값만 계산", "입력 부족", "계산 안 함")
+CA_TASK_DIR = REPO_ROOT / "tasks" / "finance_ca"
+CA_PAIRS = ("c01", "c02", "c03", "c04")
+PAIR_EN_CA = {"c01": "RBC trailing P/E", "c02": "RBC and TD Q3 efficiency", "c03": "Big 5 Q3 earnings and capital",
+              "c04": "Big 5 ROE vs objective"}
+CATEGORY_EN = {"정답": "right", "함정": "trap", "기타 오답": "other wrong value", "제출 누락": "not submitted",
+               "공유 누락": "not shared", "함정 값만 계산": "only a trap value computed",
+               "입력 부족": "inputs never received", "계산 안 함": "not computed"}
 
 
 @dataclass
@@ -101,8 +112,11 @@ def _close(value: float, expected: float, rel_tol: float) -> bool:
     return abs(value - expected) <= rel_tol * abs(expected)
 
 
-def classify(traj: dict, task: Task) -> tuple[dict[str, str], dict[str, str], list[tuple[str, str, bool]]]:
-    """(outcome per answer, detail per answer, trap hits among all calculations)."""
+def classify(traj: dict, task: Task, match=match_trap, lang: str = "ko"
+             ) -> tuple[dict[str, str], dict[str, str], list[tuple[str, str, bool]]]:
+    """(outcome per answer, detail per answer, trap hits among all calculations). Outcome keys stay Korean (CATEGORY_EN
+    names them in English); `match` is the market's trap matcher and `lang` the language of the details."""
+    en = lang == "en"
     env = replay(traj, task)
     pair = task.id[:3]
     can = lambda tool: [a["username"] for a in task.agents if tool not in (a.get("restricted_tools") or [])]
@@ -122,28 +136,33 @@ def classify(traj: dict, task: Task) -> tuple[dict[str, str], dict[str, str], li
                 outcomes[fld] = "정답"
             else:
                 other = answer_of(v)
-                trap = f"다른 답({other})의 값" if other else match_trap(pair, fld, v)
+                trap = (f"another answer's value ({other})" if en else f"다른 답({other})의 값") if other \
+                    else match(pair, fld, v)
                 outcomes[fld] = f"함정: {trap}" if trap else "기타 오답"
-                detail[fld] = f"제출 {_num(v)} (정답 {_num(exp)})"
+                detail[fld] = f"submitted {_num(v)} (right {_num(exp)})" if en else f"제출 {_num(v)} (정답 {_num(exp)})"
             continue
         right = [f for f in calcs if _close(f.value, exp, tol)]
         if right:
             outcomes[fld] = "제출 누락" if any(held(submitters, f.id) for f in right) else "공유 누락"
             detail[fld] = f"{right[0].id} = {_num(right[0].value)}"
             continue
-        trap = next((t for f in stray if (t := match_trap(pair, fld, f.value))), None)
+        trap = next((t for f in stray if (t := match(pair, fld, f.value))), None)
         if trap:
             outcomes[fld], detail[fld] = f"함정 값만 계산: {trap}", ""
             continue
         leaves = reference_leaves(task, fld)
         missing = [x for x in leaves if not held(calculators, x)]
         outcomes[fld] = "입력 부족" if missing else "계산 안 함"
-        detail[fld] = (f"필요한 수치 {len(leaves)}개 중 {len(missing)}개 없음: {', '.join(missing[:2])}"
-                       + (" 등" if len(missing) > 2 else "")) if missing else ""
+        if en:
+            detail[fld] = (f"{len(missing)} of the {len(leaves)} figures needed never reached them: "
+                           f"{', '.join(missing[:2])}" + (" ..." if len(missing) > 2 else "")) if missing else ""
+        else:
+            detail[fld] = (f"필요한 수치 {len(leaves)}개 중 {len(missing)}개 없음: {', '.join(missing[:2])}"
+                           + (" 등" if len(missing) > 2 else "")) if missing else ""
     ok = {cp["field"]: outcomes[cp["field"]] == "정답" for cp in cps}
     for f in stray:
         for fld in ok:
-            if (trap := match_trap(pair, fld, f.value)):
+            if (trap := match(pair, fld, f.value)):
                 hits.append((fld, trap, ok[fld]))
     return outcomes, detail, hits
 
@@ -159,7 +178,7 @@ def discover(root: str | Path = RUNS_ROOT, prefix: str = "finance_kr_") -> dict[
     return out
 
 
-def load_episodes(runs: dict[str, list[Path]], task_dir: str | Path = TASK_DIR
+def load_episodes(runs: dict[str, list[Path]], task_dir: str | Path = TASK_DIR, match=match_trap, lang: str = "ko"
                   ) -> tuple[list[Episode], list[str], dict[str, int]]:
     """(episodes, trajectories that could not be replayed, episodes each model's run configs planned)."""
     tasks = {t.id: t for t in load_tasks(str(task_dir))}
@@ -176,7 +195,7 @@ def load_episodes(runs: dict[str, list[Path]], task_dir: str | Path = TASK_DIR
                     skipped.append(f"{p.name}: unknown task")
                     continue
                 try:
-                    outcomes, detail, hits = classify(t, task)
+                    outcomes, detail, hits = classify(t, task, match, lang)
                 except NoteError as exc:
                     skipped.append(f"{p.name}: {exc}")
                     continue
@@ -281,4 +300,97 @@ def render(episodes: list[Episode], skipped: list[str] | None = None, notes: lis
         out += ["", "## 참고", "", *[f"- {n}" for n in notes]]
     if skipped:
         out += ["", "## 다시 실행하지 못한 기록", "", *[f"- {s}" for s in skipped]]
+    return "\n".join(out).rstrip() + "\n"
+
+
+# ---------------------------------------------------------------------- the report (English, Canadian desk)
+def _cat_en(c: str) -> str:
+    head, _, rest = c.partition(":")
+    return CATEGORY_EN.get(head, head) + (f":{rest}" if rest else "")
+
+
+def render_en(episodes: list[Episode], skipped: list[str] | None = None, notes: list[str] | None = None,
+              planned: dict[str, int] | None = None, pairs: tuple[str, ...] = CA_PAIRS,
+              labels: dict[str, str] | None = None, title: str = "Canadian desk: model comparison") -> str:
+    labels = labels or PAIR_EN_CA
+    by = {m: [e for e in episodes if e.model == m] for m in dict.fromkeys(e.model for e in episodes)}
+    rank = lambda m: (-sum(e.success for e in by[m]) / len(by[m]), -sum(e.cost for e in by[m]) / len(by[m]))
+    models = sorted(by, key=rank)  # success rate, then the dearer (larger) model first
+    notes = list(notes or [])
+    for m in models:
+        if planned and planned.get(m, 0) > len(by[m]):
+            notes.insert(0, f"{m}: its run configs planned {planned[m]} episodes and {len(by[m])} are recorded "
+                            "(a run still going or stopped).")
+    unrun = [p for p in pairs if not any(e.pair == p for e in episodes)]
+    if unrun:
+        notes.insert(0, f"{', '.join(unrun)}: not run with any model.")
+    out = [f"# {title}", "",
+           "Written by `python -m agentworld_lite.finance leaderboard --market ca` from saved runs, with no model call. "
+           "Every trajectory is replayed on a fresh desk, and its answers and intermediate calculations are matched "
+           "against the trap catalog (`agentworld_lite/finance/traps_ca.py`).", "",
+           "## Summary", "",
+           "| Model | Episodes | Solved | Answers right | Seeds | Rounds used (of budget) | Failed tool calls / episode "
+           "| Turns without a tool call | Rule CCE | Cost | Cost / episode | Cost / solved |",
+           "|---|---|---|---|---|---|---|---|---|---|---|---|"]
+    for m in models:
+        es = by[m]
+        won = sum(e.success for e in es)
+        cost = sum(e.cost for e in es)
+        cce = _mean(e.cce for e in es)
+        out.append(
+            f"| {m} | {len(es)} | {won} ({_pct(won, len(es))}) | "
+            f"{_pct(sum(e.answers_ok for e in es), sum(e.n_answers for e in es))} | "
+            f"{', '.join(str(s) for s in sorted({e.seed for e in es}))} | "
+            f"{statistics.mean(e.rounds / e.max_rounds for e in es) * 100:.0f}% | "
+            f"{statistics.mean(e.failed_calls for e in es):.2f} | "
+            f"{_pct(sum(e.idle_turns for e in es), sum(e.turns for e in es))} | {'-' if cce is None else f'{cce:.2f}'} | "
+            f"${cost:.2f} | ${cost / len(es):.3f} | {'-' if not won else f'${cost / won:.3f}'} |")
+    out += ["", "## Solved by task", "", "| Model | " + " | ".join(f"{p} {labels[p]}" for p in pairs) + " |",
+            "|---|" + "---|" * len(pairs)]
+    for m in models:
+        cells = []
+        for p in pairs:
+            es = [e for e in by[m] if e.pair == p]
+            cells.append(f"{sum(e.success for e in es)}/{len(es)}" if es else "not run")
+        out.append(f"| {m} | " + " | ".join(cells) + " |")
+    out += ["", "## Where the method sits, and chat", "",
+            "Shared: every method sentence is in the document all agents see. Private: they are only in the analyst's "
+            "brief. no_comm blocks chat.", "",
+            "| Model | Shared, chat | Shared, no chat | Private, chat | Private, no chat |", "|---|---|---|---|---|"]
+    for m in models:
+        cells = []
+        for placement, setting in CELLS:
+            es = [e for e in by[m] if e.placement == placement and e.setting == setting]
+            cells.append(f"{sum(e.success for e in es)}/{len(es)}" if es else "-")
+        out.append(f"| {m} | " + " | ".join(cells) + " |")
+    wrong = [(e, f, c) for e in episodes for f, c in e.outcomes.items() if c != "정답"]
+    out += ["", "## Failures: wrong or missing answers", ""]
+    if not wrong:
+        out.append("No answer was wrong or missing.")
+    else:
+        cats = list(dict.fromkeys(_cat_en(c).split(":")[0] for _, _, c in wrong))
+        out += ["| Model | " + " | ".join(cats) + " | Total |", "|---|" + "---|" * (len(cats) + 1)]
+        for m in models:
+            mine = [_cat_en(c).split(":")[0] for e, _, c in wrong if e.model == m]
+            if mine:
+                out.append(f"| {m} | " + " | ".join(str(mine.count(c)) for c in cats) + f" | {len(mine)} |")
+        out += ["", "| Model | Episode | Rounds | Answer | Category | Evidence |", "|---|---|---|---|---|---|"]
+        for e, f, c in wrong:
+            out.append(f"| {e.model} | {e.task_id} {e.setting} s{e.seed} | {e.rounds}/{e.max_rounds} | {f} | "
+                       f"{_cat_en(c)} | {e.detail.get(f, '') or '-'} |")
+    hits = [(e, f, t, ok) for e in episodes for f, t, ok in e.trap_hits]
+    out += ["", "## Trap values in intermediate calculations", "",
+            "Calculations whose result equals a listed mistake's value, submitted or not (with whether the final "
+            "answer was right).", ""]
+    if not hits:
+        out.append("No intermediate calculation hit a listed trap.")
+    else:
+        out += ["| Model | Episode | Answer | Trap | Final answer |", "|---|---|---|---|---|"]
+        for e, f, t, ok in hits:
+            out.append(f"| {e.model} | {e.task_id} {e.setting} s{e.seed} | {f} | {t} | "
+                       f"{'right' if ok else 'wrong or missing'} |")
+    if notes:
+        out += ["", "## Notes", "", *[f"- {n}" for n in notes]]
+    if skipped:
+        out += ["", "## Trajectories that no longer replay", "", *[f"- {x}" for x in skipped]]
     return "\n".join(out).rstrip() + "\n"

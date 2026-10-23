@@ -32,7 +32,7 @@ A lightweight, pip-installable testbed for **long-horizon multi-agent LLM collab
 - **Blueprint-first task generator** (idea borrowed from AutoGym, adapted to multi-agent play): sample generation parameters, build the solution DAG (who gathers, crafts and hands what to whom), materialize a task, certify it by running the reference solution, repair failures, set the round budget. No LLM calls; **~93% yield**.
 - **Model backends**: Claude (Anthropic API) and **Ollama** (free local models, or Ollama cloud models such as `gemma4:cloud`).
 - **Finance domain**: the same protocol on a research desk that fetches filings, computes valuation metrics and submits cited answers. Korean DART disclosures (a synthetic company and **real filings of Korea's four financial holding companies**) and **real filings of Canada's Big 5 banks** (SEDAR+ annual and interim reports, read from their SEC EDGAR copies), with a cited sector note generated from a finished run (see below).
-- **293 tests**, none of which call an API.
+- **298 tests**, none of which call an API.
 
 ## Quick start (no API key)
 
@@ -224,10 +224,13 @@ python -m agentworld_lite.finance valuation --bank RY --out reports/ry_valuation
 python -m agentworld_lite.finance earnings-review --market ca --group all
 python -m agentworld_lite.finance objectives-ca --out reports/objectives_ca.md
 python -m agentworld_lite.finance compare --out reports/compare.md
+python -m agentworld_lite.finance leaderboard --market ca --out docs/finance_ca_leaderboard.md
 python -m agentworld_lite.finance news --cache C:/news_cache --out reports/digest.md
 ```
 
 **First model run** (2026-10-20): Claude Opus 5.5 solved all 36 episodes (6 tasks, chat allowed and blocked, 3 seeds) with no failed tool call, in as few rounds as the scripted reference or fewer, for US$18.13 in total. Blocking chat did not change success but lowered rule CCE on every task, so these tasks are too easy to separate frontier models; see [docs/finance_canada.md](docs/finance_canada.md#results-claude-opus-55).
+
+**Model leaderboard** (2026-10-23): `leaderboard --market ca` replays every saved run against a catalog of common mistakes for c01-c04. Opus 5.5 solved 40/40, Sonnet 5.5 16/16 and Haiku 5.5 48/48, with no wrong value and no listed mistake even in intermediate calculations. The models differ only in efficiency: Haiku used 55% of the round budget against 45% for Opus, made 1.12 failed tool calls per episode (mostly the analyst trying to submit) and cost US$0.015 per solved episode, about 1/32 of Opus. See [docs/finance_ca_leaderboard.md](docs/finance_ca_leaderboard.md).
 
 ### Korean desk (four financial holding companies)
 

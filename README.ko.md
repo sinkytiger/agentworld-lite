@@ -264,9 +264,12 @@ python -m agentworld_lite.finance valuation --bank RY --out reports/ry_valuation
 python -m agentworld_lite.finance earnings-review --market ca --group all
 python -m agentworld_lite.finance objectives-ca --out reports/objectives_ca.md
 python -m agentworld_lite.finance compare --out reports/compare.md
+python -m agentworld_lite.finance leaderboard --market ca --out docs/finance_ca_leaderboard.md
 ```
 
 **첫 모델 실행** (2026-10-20): Claude Opus 5.5가 36판(과제 6개 × 채팅 허용·차단 × 시드 3개)을 모두 풀었습니다. 실패한 도구 호출은 없었고, 정답 시나리오와 같거나 더 적은 라운드에 끝났으며, 총비용은 18.13달러였습니다. 채팅을 막아도 성공률은 같았지만 규칙 기반 CCE는 세 과제 모두 낮아졌습니다. 이 과제들로는 최상위 모델끼리 차이가 드러나지 않으므로 작은 모델이나 더 어려운 변형이 필요합니다. 자세한 내용은 [docs/finance_canada.md](docs/finance_canada.md#results-claude-opus-55)(영문)에 있습니다.
+
+**모델 비교 리더보드** (2026-10-23): `leaderboard --market ca`는 저장된 실행을 모두 다시 재생해 c01~c04의 흔한 실수 목록과 대조합니다. Opus 5.5 40/40, Sonnet 5.5 16/16, Haiku 5.5 48/48로, 틀린 값도 없고 중간 계산에서도 목록의 실수가 나오지 않았습니다. 차이는 효율에서만 났습니다. Haiku는 라운드 한도의 55%를 썼고(Opus 45%), 판당 실패한 도구 호출이 1.12번이었으며(대부분 analyst가 직접 제출하려 한 것), 성공 1판에 0.015달러로 Opus의 약 1/32였습니다. [docs/finance_ca_leaderboard.md](docs/finance_ca_leaderboard.md)(영문) 참고.
 
 ### 한국 데스크 (4대 금융지주)
 
