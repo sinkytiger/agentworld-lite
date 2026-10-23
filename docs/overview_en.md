@@ -76,8 +76,12 @@ Asked for a report on the four Korean groups' Q2 2026 results with no data, Opus
 and invented no 2026 figure; the targets it remembered were partly out of date. Given the cited data pack, 60 of its 61
 figures matched the filings (the 61st was a threshold statement with nothing to check), and all 46 citations
 recomputed. The first data-pack answer had stopped at an 8,000-token output cap; asked again with 20,000 tokens it
-finished. Three calls cost US$0.77. The checker's rules were tuned on these two answers, so its accuracy on other
-text is unproven.
+finished. Three calls cost US$0.77. The checker's rules were tuned on these two answers, so they were then tried on
+one they had never seen: Claude Haiku 5.5 (effort low, US$0.011) wrote the same report with 79 figures. Checked by
+hand, the checker caught its one real error (the four groups' Q2 total written as 6조 973억원 instead of 6조 97억원, twice),
+wrongly flagged two correct share-count figures, and was right on all 7 citations it rejected and on a random 14 of the
+74 figures it passed. Two Claude Sonnet 5.5 attempts spent the whole 10,000-token output cap on thinking and returned no
+text (US$0.30).
 
 ### Korea's value-up promises, checked against filings
 
@@ -136,7 +140,7 @@ found (two TD quotes on items of note were added then, checked against the saved
 ## Limits
 
 Small numbers of episodes and seeds (Opus ran one seed); costs are token counts times list prices; figures are as
-filed, with no adjustment for one-off items; the fact-check rules were tuned on the answers they report on; the CET1
+filed, with no adjustment for one-off items; the fact-check rules were tuned on two answers and tried on one more; the CET1
 comparison mixes two reporting dates; Canadian ROE is each bank's own quoted figure, not recomputed (the desk's XBRL
 data holds no common equity), and Canadian EPS growth is reported while most objectives are adjusted.
 
