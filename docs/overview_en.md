@@ -59,8 +59,8 @@ On top of the desk:
 
 ![Episodes solved and cost per solved episode, by model](img/chart_models.png)
 
-151 saved episodes on six task pairs: Opus 5.5 20/20 (five pairs, one seed), Sonnet 5.5 48/48, Haiku 5.5 66/72 at
-about a fifteenth of Sonnet's cost per solved episode, and a local qwen3:4b 0/11 (81% of its turns made no tool call).
+160 saved episodes on six task pairs: Opus 5.5 20/20 (five pairs, one seed), Sonnet 5.5 48/48, Haiku 5.5 66/72 at
+about a fifteenth of Sonnet's cost per solved episode, and a local qwen3:4b 0/20 (81% of its turns made no tool call).
 
 No model ever submitted a wrong number, and no intermediate calculation hit any of the 98 listed mistakes (period-end
 instead of average equity, annualizing a half year, a half-year figure where a quarter was asked, and so on). All six Haiku failures

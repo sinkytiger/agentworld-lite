@@ -135,8 +135,10 @@ def worst_case_cost(prompt: str, model: str, max_tokens: int = MAX_TOKENS) -> fl
 
 
 def run(client, out_dir: str | Path = OUT_DIR, max_cost: float = 1.0, variants=VARIANTS, force: bool = False,
-        max_tokens: int = MAX_TOKENS, log=print) -> dict:
-    """Ask each variant once. Refuses before any call when the worst case of the calls still to make exceeds max_cost."""
+        max_tokens: int = MAX_TOKENS, thinking: dict | None = None, log=print) -> dict:
+    """Ask each variant once. Refuses before any call when the worst case of the calls still to make exceeds max_cost.
+    `thinking` is passed through as is, e.g. {"type": "between_tools"} to keep Claude Sonnet 5.5 from spending the
+    output budget on thinking (its adaptive thinking is on by default and {"type": "disabled"} is rejected)."""
     out = Path(out_dir)
     write_prompts(out)
     record_path = out / "calls.json"
@@ -149,8 +151,9 @@ def run(client, out_dir: str | Path = OUT_DIR, max_cost: float = 1.0, variants=V
     log(f"calls to make: {todo or 'none'} (worst case ${bound:.2f}, cap ${max_cost:.2f})")
     for v in todo:
         started = dt.datetime.now(dt.timezone.utc)
+        extra = {"thinking": thinking} if thinking else {}
         resp, usage = client.create(system=SYSTEM, max_tokens=max_tokens,
-                                    messages=[{"role": "user", "content": texts[v]}])
+                                    messages=[{"role": "user", "content": texts[v]}], **extra)
         text = "\n".join(b.text for b in resp.content if getattr(b, "type", "") == "text").strip()
         blocks = [getattr(b, "type", "?") for b in resp.content]
         (out / f"answer_{v}.md").write_text(text + "\n", encoding="utf-8", newline="\n")
@@ -158,6 +161,7 @@ def run(client, out_dir: str | Path = OUT_DIR, max_cost: float = 1.0, variants=V
             record.setdefault("replaced", []).append(record["calls"][v])
         record["calls"][v] = {"requested_model": client.model, "response_model": getattr(resp, "model", None),
                               "stop_reason": resp.stop_reason, "max_tokens": max_tokens,
+                              **({"thinking": thinking} if thinking else {}),
                               "content_blocks": {t: blocks.count(t) for t in dict.fromkeys(blocks)},
                               "answer_chars": len(text),
                               "started_utc": started.isoformat(timespec="seconds"), "usage": usage,

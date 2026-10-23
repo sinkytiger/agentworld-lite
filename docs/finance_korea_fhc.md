@@ -31,8 +31,8 @@ out and its verdicts mostly matched the scorecard (US$0.77 for the three calls).
 reads DART's list of periodic reports, finds reports the dataset lacks (the coming Q3 reports) and amendments, adds only
 new periods with --apply, revalidates the tasks and writes a cited Korean Q3 note; it is one run that schedules nothing
 and never runs git, and its tests use synthetic fixtures. A leaderboard (`leaderboard`) compares the saved runs on
-k01-k06 (151 episodes): Opus 5.5 20/20 (k01-k05), Sonnet 5.5 48/48, Haiku 5.5 66/72 at about a fifteenth of Sonnet's
-cost per success, local qwen3:4b 0/11. Every failed answer is placed at the step that failed by replaying the run; none was a
+k01-k06 (160 episodes): Opus 5.5 20/20 (k01-k05), Sonnet 5.5 48/48, Haiku 5.5 66/72 at about a fifteenth of Sonnet's
+cost per success, local qwen3:4b 0/20 (k01-k05). Every failed answer is placed at the step that failed by replaying the run; none was a
 wrong value and no calculation hit any of the 98 listed traps. All six Haiku failures were in the private, no-chat
 setting, where the analyst could not ask for the inputs only its private brief mentions. An earnings reviewer
 (`earnings-review`), modelled on the Earnings Reviewer agent of anthropics/financial-services but on DART data only,
@@ -670,7 +670,7 @@ python -m agentworld_lite.finance leaderboard --out docs/finance_kr_leaderboard.
 98개이며, 테스트가 모두 정답의 허용 오차(0.1%) 밖인지 확인합니다. 중간 계산도 이 목록과 대조해, 최종 답을 고쳤더라도 도중에
 걸린 함정이 남습니다. 결과 전체는 [finance_kr_leaderboard.md](finance_kr_leaderboard.md)에 있습니다.
 
-**결과 (2026-10-22, 저장된 실행 151판).** k01~k05는 이미 끝난 실행이고, k06은 사용자 승인을 받아 Haiku 12판(시드 7·8·9)과
+**결과 (2026-10-23, 저장된 실행 160판).** k01~k05는 이미 끝난 실행이고, k06은 사용자 승인을 받아 Haiku 12판(시드 7·8·9)과
 Sonnet 8판(시드 7·8)을 더 돌렸습니다(2.11달러, 20판 모두 성공). Opus는 k06을 실행하지 않았습니다.
 
 | 모델 | 과제 | 시드 | 성공 | 답 정답률 | 판당 비용 | 성공당 비용 | 라운드 사용(한도 대비) | 규칙 CCE |
@@ -678,7 +678,7 @@ Sonnet 8판(시드 7·8)을 더 돌렸습니다(2.11달러, 20판 모두 성공)
 | Claude Opus 5.5 | k01~k05 | 7 | 20/20 | 100% | 0.638달러 | 0.638달러 | 51% | 0.55 |
 | Claude Sonnet 5.5 | k01~k06 | 7, 8 | 48/48 | 100% | 0.334달러 | 0.334달러 | 59% | 0.45 |
 | Claude Haiku 5.5 | k01~k06 | 7, 8, 9 | 66/72 | 96% | 0.021달러 | 0.023달러 | 66% | 0.36 |
-| qwen3:4b (로컬 Ollama) | k01~k03 일부 | 7 | 0/11 | 0% | 0 | - | 100% | 0.00 |
+| qwen3:4b (로컬 Ollama) | k01~k05 | 7 | 0/20 | 0% | 0 | - | 100% | 0.00 |
 
 - **Opus와 Sonnet은 모두 풀었고, Haiku는 92%를 성공당 비용 약 15분의 1(Sonnet 대비)로 풀었습니다.** 큰 모델일수록
   라운드를 덜 쓰고 규칙 CCE(성공에 기여한 행동의 비율)가 높았습니다. 밸류업 목표 격차를 묻는 k06은 Haiku와 Sonnet 모두
@@ -691,8 +691,9 @@ Sonnet 8판(시드 7·8)을 더 돌렸습니다(2.11달러, 20판 모두 성공)
 - **어느 모델도 틀린 값을 제출하지 않았고, 중간 계산에서도 함정 값이 한 번도 나오지 않았습니다.** 실패는 방법론 실수가
   아니라 협업 실패(입력을 요청하거나 넘기지 못함, 결과를 넘기지 않음)였습니다. 캐나다 데스크와 마찬가지로 함정 목록은 이
   모델들을 가르지 못했고, 모델을 가른 것은 정보 배치(개인형)와 채팅 차단의 조합이었습니다.
-- **qwen3:4b는 턴의 81%에서 도구를 호출하지 못했습니다**(11판에서 사실 공유 1회). 그래서 모든 답이 입력 부족으로 남았습니다.
-  20판 중 11판만 기록되었고(로컬 실행이 느려 진행 중), 리더보드는 다시 실행하면 그때까지의 기록으로 갱신됩니다.
+- **qwen3:4b는 턴의 81%에서 도구를 호출하지 못했습니다**(20판에서 성공한 사실 공유 1회, 계산 0회). 그래서 답 72개 중
+  71개가 입력 부족, 1개가 계산 안 함으로 남았습니다. 시드 7의 k01~k05 20판이 모두 기록되었습니다(2026-10-23 완료, k06은
+  실행하지 않음).
 - **비교의 한계**: 모델마다 과제와 시드 수가 다르고(Opus는 k01~k05, 시드 7 하나), 판 수가 적습니다. 비용은 실행 기록의
   토큰과 `agentworld_lite/llm.py`의 단가로 계산했습니다. 승인된 30달러 안에서 새 과제 실행 비용은 Opus k04·k05 7.19달러,
   Sonnet 16.05달러(k06 1.93달러 포함), Haiku 1.50달러(k06 0.18달러 포함)였고(끊긴 실행으로 약 3달러 추가), 첫 Opus 실행
