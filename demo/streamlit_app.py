@@ -214,10 +214,11 @@ def market_dots(df: pd.DataFrame, field: str, title: str) -> alt.Chart:
     d = df.dropna(subset=[field])
     lo, hi = d[field].min(), d[field].max()
     pad = max((hi - lo) * 0.12, 0.3)
+    room = max((hi - lo) * 0.25, 0.8)  # space right of the highest dot for its value label
     colors = MARKET[_mode()]
     base = alt.Chart(d, title=title).encode(
         y=alt.Y("Group:N", sort=d["Group"].tolist(), title=None, axis=alt.Axis(labelLimit=170)),
-        x=alt.X(f"{field}:Q", title=None, scale=alt.Scale(domain=[lo - pad, hi + pad * 2.2], zero=False),
+        x=alt.X(f"{field}:Q", title=None, scale=alt.Scale(domain=[lo - pad, hi + room], zero=False, nice=False),
                 axis=alt.Axis(grid=True, gridOpacity=0.25, tickCount=4, domain=False, ticks=False)),
         tooltip=[alt.Tooltip("Market:N"), alt.Tooltip("Group:N"), alt.Tooltip(f"{field}:Q", format=".2f")])
     legend = alt.Legend(orient="top", title=None)
@@ -233,10 +234,12 @@ def view_compare() -> None:
     st.markdown("Korea's four largest financial holding companies (DART) and Canada's Big 5 banks (SEC EDGAR) on the "
                 "same three measures. ROE uses one formula in both markets; cost-to-income is each market's own "
                 "convention; CET1 is each group's reported ratio. Korea is to 2026-06-30, Canada to 2026-07-31.")
-    cols = st.columns(3)
-    cols[0].altair_chart(market_dots(df, "CET1 ratio (%)", "CET1 ratio (%)"), width="stretch")
-    cols[1].altair_chart(market_dots(df, "Cost-to-income (%)", "Cost-to-income, latest quarter (%)"), width="stretch")
-    cols[2].altair_chart(market_dots(df, "ROE, TTM (%)", "ROE, trailing twelve months (%)"), width="stretch")
+    charts = (("CET1 ratio", "CET1 ratio (%)", "CET1 ratio (%)"),
+              ("Cost-to-income", "Cost-to-income (%)", "Cost-to-income, latest quarter (%)"),
+              ("ROE", "ROE, TTM (%)", "ROE, trailing twelve months (%)"))
+    for tab, (_, field, title) in zip(st.tabs([c[0] for c in charts]), charts):  # one full-width chart per measure
+        with tab:
+            st.altair_chart(market_dots(df, field, title), width="stretch")
     med = compare.comparison()["medians"]
     m = lambda mk, k: f"{med[mk][k][0]:.2f}%" if med[mk][k] else "n/a"
     st.caption(f"Medians, Korea / Canada: CET1 {m('Korea', 'cet1')} / {m('Canada', 'cet1')}, cost-to-income "
