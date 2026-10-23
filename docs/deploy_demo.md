@@ -20,6 +20,11 @@ its own URL.
 
 Repeat for the second app. Free apps sleep after a period without visitors and wake on the next visit (a short wait).
 
+Deployed: [agentworld-canada-desk.streamlit.app](https://agentworld-canada-desk.streamlit.app) (from branch `canada-desk`,
+kept level with `main`) and [agentworld-korea-desk.streamlit.app](https://agentworld-korea-desk.streamlit.app) (from `main`). A running app keeps the modules and
+cached data it loaded, so after a change that leaves the main file untouched (data, imported modules), reboot the app
+from its menu (Manage app, then Reboot app) to pick the change up.
+
 ## What to expect
 
 - Every view works without network access, except the Canada app's **News digest**, which fetches public RSS feeds and

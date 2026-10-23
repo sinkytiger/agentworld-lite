@@ -2,7 +2,7 @@
 
 [English](README.md) · 한국어
 
-**은행 공시를 읽는 AI 애널리스트 에이전트, 한국과 캐나다.** 에이전트 셋(collector, analyst, reporter)이 한국 4대 금융지주(DART)와 캐나다 5대 은행(SEC EDGAR)의 공시만으로 질문에 답하고, 모든 숫자에 출처 공시를 붙여야 합니다. 차트가 있는 소개 글(영문): **[docs/overview_en.md](docs/overview_en.md)** · 라이브 데모: **[agentworld-canada-desk.streamlit.app](https://agentworld-canada-desk.streamlit.app)**
+**은행 공시를 읽는 AI 애널리스트 에이전트, 한국과 캐나다.** 에이전트 셋(collector, analyst, reporter)이 한국 4대 금융지주(DART)와 캐나다 5대 은행(SEC EDGAR)의 공시만으로 질문에 답하고, 모든 숫자에 출처 공시를 붙여야 합니다. 차트가 있는 소개 글(영문): **[docs/overview_en.md](docs/overview_en.md)** · 라이브 데모: **[캐나다](https://agentworld-canada-desk.streamlit.app)**, **[한국](https://agentworld-korea-desk.streamlit.app)**
 
 ![캐나다 5대 은행의 2025 회계연도 ROE와 은행별 중기 ROE 목표](docs/img/chart_objectives_roe.png)
 
@@ -271,6 +271,8 @@ python -m agentworld_lite.finance objectives-ca --out reports/objectives_ca.md
 같은 데스크를 KB금융, 신한지주, 하나금융지주, 우리금융지주의 실제 DART 공시에 적용했습니다. 자세한 내용은 [docs/finance_korea_fhc.md](docs/finance_korea_fhc.md)에 있습니다.
 
 ![데모: k03 실행을 라운드별로 재생하고, 4대 금융지주 차트와 숫자마다 DART 접수번호가 붙은 섹터 노트를 보여 줍니다](docs/img/korea_desk_demo.gif)
+
+**라이브 데모:** [agentworld-korea-desk.streamlit.app](https://agentworld-korea-desk.streamlit.app) (Streamlit Community Cloud, 내장 데이터만 쓰고 모델은 호출하지 않음. 영어 화면은 [`?lang=en`](https://agentworld-korea-desk.streamlit.app/?lang=en))
 
 - **데이터셋** `data/finance/dart_fhc` (`fetch --source dart --profile fhc`): 은행 형식 계정(순이자이익, 순수수료이익, 일반관리비, 신용손실충당금 전입액, 지배주주순이익, 지배주주지분, 신종자본증권)을 XBRL `account_id`로 읽고 그룹별 예비 id를 둡니다. 주식 수와, 정정 보고서마다 처음 접수된 보고서도 저장합니다(DART는 정정본을 돌려줌). 수치는 각 그룹의 2026년 2분기 실적 발표와 일치합니다.
 - **DART만 씀**: DART에는 주가가 없고, KRX Open API 약관은 데이터를 제3자에게 넘기는 것을 금지하며, 모든 답을 공시만으로 검증할 수 있어야 하므로 저장소에 주가를 싣지 않았습니다.
