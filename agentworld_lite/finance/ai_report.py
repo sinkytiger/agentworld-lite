@@ -162,6 +162,7 @@ def run(client, out_dir: str | Path = OUT_DIR, max_cost: float = 1.0, variants=V
         record["calls"][v] = {"requested_model": client.model, "response_model": getattr(resp, "model", None),
                               "stop_reason": resp.stop_reason, "max_tokens": max_tokens,
                               **({"thinking": thinking} if thinking else {}),
+                              **({"effort": client.effort} if getattr(client, "effort", None) else {}),
                               "content_blocks": {t: blocks.count(t) for t in dict.fromkeys(blocks)},
                               "answer_chars": len(text),
                               "started_utc": started.isoformat(timespec="seconds"), "usage": usage,

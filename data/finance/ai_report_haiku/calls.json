@@ -1,0 +1,27 @@
+{
+  "calls": {
+    "data": {
+      "requested_model": "claude-haiku-5-5",
+      "response_model": "claude-haiku-5-5",
+      "stop_reason": "end_turn",
+      "max_tokens": 20000,
+      "effort": "low",
+      "content_blocks": {
+        "thinking": 1,
+        "text": 1
+      },
+      "answer_chars": 5850,
+      "started_utc": "2026-10-23T03:52:18+00:00",
+      "usage": {
+        "input_tokens": 25702,
+        "output_tokens": 17313,
+        "cache_read_input_tokens": 0,
+        "cache_creation_input_tokens": 0,
+        "cost_usd": 0.011226700000000001
+      },
+      "prompt_file": "prompt_data.md",
+      "answer_file": "answer_data.md"
+    }
+  },
+  "total_cost_usd": 0.011227
+}
