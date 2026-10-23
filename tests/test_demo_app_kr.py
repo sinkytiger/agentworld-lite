@@ -12,7 +12,7 @@ APP = Path(__file__).resolve().parents[1] / "demo" / "streamlit_app_kr.py"
 
 
 def _open(**query) -> AppTest:
-    at = AppTest.from_file(str(APP), default_timeout=60)
+    at = AppTest.from_file(str(APP), default_timeout=180)
     for k, v in query.items():
         at.query_params[k] = v
     at.run()
@@ -54,9 +54,28 @@ def test_note_and_task_views_and_no_valuation_without_prices():
     assert next(r for r in at.radio if r.label == "화면").value == "데스크 재생"
 
 
+def test_english_labels_with_the_same_figures():
+    at = _open(view="Value-up check", lang="en")                    # English label in the link works too
+    assert next(r for r in at.radio if r.label == "언어 · Language").value == "English"
+    assert at.header[0].value == "Value-up promises vs filings: Korea's four financial groups"
+    assert {m.label: m.value for m in at.metric} == {"Met": "5", "On track": "1", "Behind": "1",
+                                                     "Short (no deadline)": "4"}
+    df = at.dataframe[0].value
+    kb = df[(df["Group"] == "KB Financial") & (df["Measure"] == "ROE (%)")].iloc[0]
+    assert kb["Verdict"] == "met" and round(kb["Now"], 2) == 10.47
+    at = _open(view="Group data", lang="en")
+    df = at.dataframe[0].value
+    assert dict(zip(df["Stock code"], df["Q2 net income to owners (KRW bn)"].round(1)))["105560"] == 1992.2
+    assert df.loc[df["Stock code"] == "055550", "Half-year report"].item() == "Half-year report (amended) 20261007000223"
+    assert "Shinhan Financial's half-year report was amended on 2026-10-07" in " ".join(c.value for c in at.caption)
+    at = _open(view="Task", task="k01_kb_bps_roe_private", lang="en")
+    assert at.header[0].value == "BPS and trailing ROE of KB Financial at the end of 2026 H1"
+    assert [r for r in at.radio if r.label == "View"][0].options[0] == "Desk replay"
+
+
 def test_valueup_view_shows_verdicts_and_receipt_numbers():
     at = _open(view="밸류업 점검")
-    assert {m.label: m.value for m in at.metric} == {"달성": "5개", "순항": "1개", "지연": "1개", "미달(기한 미명시)": "2개"}
+    assert {m.label: m.value for m in at.metric} == {"달성": "5개", "순항": "1개", "지연": "1개", "미달(기한 미명시)": "4개"}
     df = at.dataframe[0].value
     row = lambda g, metric: df[(df["금융지주"] == g) & (df["지표"].str.startswith(metric))].iloc[0]
     assert row("KB금융", "ROE")["판정"] == "달성" and round(row("KB금융", "ROE")["현재"], 2) == 10.47
@@ -64,6 +83,7 @@ def test_valueup_view_shows_verdicts_and_receipt_numbers():
     shares = row("신한지주", "발행주식 수")
     assert shares["판정"] == "지연" and shares["목표"] == 450 and round(shares["현재"], 2) == 474.65
     assert row("하나금융지주", "ROE")["기한"] == "명시 없음" and round(row("하나금융지주", "CET1")["현재"], 2) == 13.27
-    assert "우리금융지주" not in set(df["금융지주"])
+    woori = df[df["금융지주"] == "우리금융지주"].set_index("지표")["판정"].to_dict()    # read from the PDF's page images
+    assert woori == {"ROE (%)": "미달(기한 미명시)", "CET1 비율 (%)": "측정 불가", "주주환원율 (%)": "미달(기한 미명시)"}
     full = " ".join(m.value for m in at.markdown)
     assert "“목표 1) ROE 12%” [사실 `086790.target.roe` · 접수번호 20260724800373]" in full

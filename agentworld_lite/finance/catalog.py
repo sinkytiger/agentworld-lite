@@ -367,6 +367,101 @@ SPECS_CA = [
 ]
 
 
+# c04 checks each bank's fiscal 2025 ROE against the medium-term ROE objective in its 40-F MD&A
+# (agentworld_lite/finance/objectives_ca.py quotes both; a test keeps these numbers equal to the quotes). The collector
+# holds the ROE each bank reported for fiscal 2025, on both bases where it gives both; the analyst holds the objectives.
+# The trap is the basis: three objectives are on an adjusted basis (items of note excluded), and TD's reported ROE of
+# 17.8% includes its gain on selling Schwab shares (12.9% adjusted, against about 16%).
+# bank: (objective %, "adjusted" or "" when the quoted objective does not say, reported ROE, adjusted ROE, 40-F accession)
+ROE_OBJECTIVE = {"RY": (16.0, "", 16.3, None, "0001193125-25-305927"),
+                 "TD": (16.0, "adjusted", 17.8, 12.9, "0001562762-25-000289"),
+                 "BNS": (14.0, "", 9.7, 11.8, "0001193125-25-304643"),
+                 "BMO": (15.0, "adjusted", 10.6, 11.3, "0001193125-25-307982"),
+                 "CM": (15.0, "adjusted", 14.3, 14.4, "0001193125-25-307488")}
+BANK_NAMES = {"RY": "Royal Bank of Canada", "TD": "TD Bank", "BNS": "Scotiabank", "BMO": "BMO", "CM": "CIBC"}
+
+
+def _roe_basis(code: str) -> str:
+    objective, basis, _, adjusted, _ = ROE_OBJECTIVE[code]
+    return "roe_adjusted" if basis == "adjusted" and adjusted is not None else "roe_reported"
+
+
+def _roe_gap(code: str) -> float:
+    objective, _, reported, adjusted, _ = ROE_OBJECTIVE[code]
+    return objective - (adjusted if _roe_basis(code) == "roe_adjusted" else reported)
+
+
+def _c04() -> dict:
+    def roe_fact(code: str, basis: str, value: float) -> dict:
+        return {"id": f"{code}.fy2025.roe_{basis}", "label": f"{BANK_NAMES[code]} fiscal 2025 ROE, {basis}",
+                "value": value, "unit": "%", "source": "40-F MD&A", "rcept_no": ROE_OBJECTIVE[code][4],
+                "company": code}
+
+    def objective_fact(code: str) -> dict:
+        objective, basis, *_ = ROE_OBJECTIVE[code]
+        wording = f"about {objective:g}%" if code == "TD" else f"{objective:g}% or more"
+        return {"id": f"{code}.objective.roe", "value": objective, "unit": "%", "source": "40-F MD&A",
+                "label": (f"{BANK_NAMES[code]} medium-term ROE objective: {wording}, "
+                          + ("on an adjusted basis" if basis else "basis not stated")),
+                "rcept_no": ROE_OBJECTIVE[code][4], "company": code}
+
+    return {
+        "pair": "c04", "slug": "big5_roe_objectives", "max_rounds": 14, "market": "ca",
+        "company": ("Royal Bank of Canada; The Toronto-Dominion Bank; The Bank of Nova Scotia; Bank of Montreal; "
+                    "Canadian Imperial Bank of Commerce"),
+        "name": "Big 5 Canadian banks: fiscal 2025 ROE against each bank's medium-term ROE objective",
+        "description": ("The desk checks each of Canada's five largest banks against the medium-term return on equity "
+                        "(ROE) objective it published in the MD&A of its fiscal 2025 annual report (Form 40-F). The "
+                        "collector has read each bank's fiscal 2025 ROE from the same reports, on every basis the bank "
+                        "gives; the analyst holds the five objectives, quoted. The analyst computes, the reporter "
+                        "submits."),
+        "primary": ("Submit five answers, ry_roe_gap_pp, td_roe_gap_pp, bns_roe_gap_pp, bmo_roe_gap_pp and cm_roe_gap_pp: "
+                    "each bank's ROE objective minus its fiscal 2025 ROE, in percentage points (positive when the bank "
+                    "is short of its objective)."),
+        "facts": {
+            "collector": ["Share every fiscal 2025 ROE figure you hold for each bank, reported and adjusted: which one "
+                          "applies depends on the bank's objective, which the analyst holds."],
+            "analyst": ["Measure each bank on the basis its objective states: adjusted ROE where the objective is on an "
+                        "adjusted basis (adjusted results exclude items of note, such as a gain on selling a stake), "
+                        "reported ROE where the objective does not say. An objective of 'about X%' or 'X% or more' is "
+                        "measured against X.",
+                        "Gap (pp) = ROE objective - fiscal 2025 ROE on the objective's basis."],
+        },
+        "initial": {
+            "collector": [roe_fact(code, basis, value) for code in BIG5
+                          for basis, value in (("reported", ROE_OBJECTIVE[code][2]), ("adjusted", ROE_OBJECTIVE[code][3]))
+                          if value is not None],
+            "analyst": [objective_fact(code) for code in BIG5],
+        },
+        "checkpoints": [{"type": "answer", "name": f"{code.lower()}_roe_gap_pp", "field": f"{code.lower()}_roe_gap_pp",
+                         "expected": round(_roe_gap(code), 6), "rel_tol": 0.001} for code in BIG5],
+        "reference": {
+            "collector": [
+                ["share_facts", {"to_agent": "analyst", "fact_ids": [
+                    f"{code}.fy2025.roe_{basis}" for code in BIG5 for basis in ("reported", "adjusted")
+                    if ROE_OBJECTIVE[code][2 if basis == "reported" else 3] is not None]}],
+            ],
+            "analyst": [
+                ["wait", {"reason": "waiting for inputs"}, {"until_have": {"CM.fy2025.roe_adjusted": 1}, "retries": 20}],
+                *[["calculate", {"name": f"{code.lower()}_roe_gap_pp", "formula": "o - r", "unit": "pp",
+                                 "inputs": _inputs(o=f"{code}.objective.roe", r=f"{code}.fy2025.{_roe_basis(code)}")}]
+                  for code in BIG5],
+                ["share_facts", {"to_agent": "reporter",
+                                 "fact_ids": [f"calc.{code.lower()}_roe_gap_pp" for code in BIG5]}],
+            ],
+            "reporter": [
+                ["wait", {"reason": "waiting for results"},
+                 {"until_have": {f"calc.{code.lower()}_roe_gap_pp": 1 for code in BIG5}, "retries": 20}],
+                ["submit_answer", {"answers": [{"field": f"{code.lower()}_roe_gap_pp",
+                                                "fact_id": f"calc.{code.lower()}_roe_gap_pp"} for code in BIG5]}],
+            ],
+        },
+    }
+
+
+SPECS_CA.append(_c04())
+
+
 # ---------------------------------------------------------------------- Korean desk: the four financial holding companies
 # Real figures from data/finance/dart_fhc (DART fnlttSinglAcntAll of each group's periodic reports), KRW millions below.
 # The as-of date is after 2026-10-07, when Shinhan re-filed its 2025 annual and 2026 half-year reports ([기재정정]);

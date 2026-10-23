@@ -62,7 +62,7 @@ A placeholder that raises a clear error. It documents how a subscriber would con
 
 ## The Big 5 dataset (`data/finance/edgar`)
 
-Five periods per bank: fiscal 2025 Q3 and FY, and fiscal 2026 Q1, H1 and Q3. Every statement records the form, the accession number, the filing date and the period end.
+Six periods per bank: fiscal 2025 H1, Q3 and FY, and fiscal 2026 Q1, H1 and Q3. Every statement records the form, the accession number, the filing date and the period end. Fiscal 2025 H1 (the 6-Ks for the period ending 2025-04-30, which give the year-ago quarter in the earnings review) was added on 2026-10-23: sec.gov was refusing this machine's scripted requests, so the five XBRL instances were fetched in a browser and saved as one bundle, their SHA-256 checked against what sec.gov served, and parsed by the same `EdgarSource.statement()` as every other period.
 
 | Bank | Ticker | Accounts per period | Not tagged |
 |---|---|---|---|
@@ -152,6 +152,20 @@ CET1 average **13.46%**; spread 14.3 − 13.0 = **1.30 pp** (TD highest, BMO low
 H1 ratios give the same spread, because TD and BMO did not move between April and July. The spread alone would let that period mistake through, so the average is asked too.
 
 The scripted reference solves c01 in 7 rounds of 16, c02 in 11 rounds of 18 and c03 in 18 rounds of 30 (ten fetches by the collector, then seven calculations by the analyst). An idle team fails all three.
+
+### c04: each bank's fiscal 2025 ROE against its own ROE objective
+
+Five answers: each bank's medium-term ROE objective minus its fiscal 2025 ROE, in percentage points, on the basis the objective states. Nothing is fetched: the collector starts with the nine ROE figures the banks quoted in their fiscal 2025 MD&A (reported, and adjusted where given) and the analyst with the five quoted objectives, as facts that keep their 40-F accession numbers (`objectives_ca.py` quotes the same figures; a test keeps them equal). The method sentences tell the collector to share both bases and the analyst to use adjusted ROE only where the objective says adjusted.
+
+| Bank | Objective | ROE on that basis | Gap (pp) | The basis trap |
+|---|---|---|---|---|
+| RY | 16%+ (basis not stated) | 16.3 reported | −0.3 | none (RBC gives one ROE) |
+| TD | about 16%, adjusted | 12.9 adjusted | 3.1 | reported 17.8 (gain on selling Schwab shares included) gives −1.8 |
+| BNS | 14%+ (basis not stated) | 9.7 reported | 4.3 | adjusted 11.8 gives 2.2 |
+| BMO | 15%+, adjusted | 11.3 adjusted | 3.7 | reported 10.6 gives 4.4 |
+| CM | 15%+, adjusted | 14.4 adjusted | 0.6 | reported 14.3 gives 0.7 |
+
+The scripted reference solves it in 8 rounds of 14. **Claude Haiku 5.5** (2026-10-23, seeds 7 and 8, both placements, chat allowed and blocked) solved all 8 episodes in 6 to 8 rounds, with every gap on the right basis, for US$0.049 in total. The trap did not separate anything: once the basis rule is written down, a small model applies it.
 
 ## Sector note
 
@@ -259,7 +273,8 @@ without a verdict) and the CET1 ratio at 2026-07-31. It ends with the Korean gro
 **How the quotes are checked.** On 2026-10-22 sec.gov answered this machine's scripted requests with HTTP 403
 ("Request Rate Threshold Exceeded") while a browser could open the same pages, so the five exhibits were read in a
 browser: the SHA-256 of each served document is recorded in `DOCS`, and each of the 35 quotes was found in the page
-text with whitespace collapsed. `--verify-local DIR` repeats the check on saved copies (found by size and hash, so a
+text with whitespace collapsed. Two more TD quotes (Table 3, items of note: the gain on selling Schwab shares and the
+total of adjustments) were added on 2026-10-23 and checked against the saved copy, whose SHA-256 is the same. `--verify-local DIR` repeats the check on saved copies (found by size and hash, so a
 renamed download still counts): same SHA-256, and every quote present once tags, entities and whitespace are dropped.
 Saved copies of all five passed. `EdgarClient.documents()` and `document()` fetch a filing's file list and one
 document (cached) for when scripted access works again.

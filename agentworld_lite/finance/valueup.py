@@ -99,8 +99,32 @@ COMPANY_REPORTED = [
      "quote": "2024년 재무실적 : ROE 8.4%, ROTCE 9.6%, CET1비율 13.06%, 주주환원율 40.2%", "roe": 8.4, "payout": 40.2},
 ]
 DEADLINE_NOTE = {"086790": {"roe": ("20260814003800", "중장기적으로 12% 달성을 목표로 합니다")}}
-NOT_QUOTABLE = {"316140": "우리금융지주의 기업가치 제고 계획 공시(2026-02-06 등)는 본문에 목차만 있고 수치 목표는 첨부 PDF에 "
-                          "있습니다. DART OpenAPI 원문(document.xml)으로는 첨부를 받을 수 없어 목표를 인용하지 않았습니다."}
+# Woori's plan (20260206801698) has only a table of contents in its text; the numbers are in the attached PDF (dcm_no
+# 11006832), whose pages are images with no text layer. Its targets were read from the page images and are marked as
+# such wherever they appear; the PDF is pinned by its SHA-256. build() cannot check them against text, so they are kept
+# apart from TARGETS (which the AI report's data pack also uses, unchanged).
+IMAGE_PDF = {"rcept_no": "20260206801698", "dcm_no": "11006832", "file": "2026년 우리금융그룹 기업가치 제고계획.pdf",
+             "bytes": 3_217_469, "sha256": "2eed0d8a19dc50afccd0c3f048f858c646e8d3ed9fd625623f7e10321889ee16",
+             "read_on": "2026-10-23"}
+TARGETS_FROM_IMAGES = [
+    Target("316140", "roe", 10.0, ">=", None, "20260206801698", "중장기 ROE 10% 이상 달성"),
+    Target("316140", "cet1", 13.0, ">=", "2026-12-31", "20260206801698", "중장기 Target 보통주비율 13% 이상 달성"),
+    Target("316140", "payout", 50.0, ">=", None, "20260206801698", "중장기 Target 총주주환원율 50%"),
+]
+IMAGE_PAGE = {("316140", "roe"): 4, ("316140", "cet1"): 4, ("316140", "payout"): 4}
+IMAGE_DEADLINE_NOTE = {("316140", "cet1"): (6, "2026년 13% 조기 달성")}
+IMAGE_NOTE = ("우리금융지주의 기업가치 제고 계획 본문에는 목차만 있고 수치 목표는 첨부 PDF에 이미지로만 있습니다(텍스트 없음). "
+              "그래서 우리금융지주의 목표 문구는 PDF 쪽 이미지에서 판독했고(문서 원문과 기계 대조한 다른 목표와 다름), "
+              "PDF는 출처 표의 SHA-256으로 특정합니다.")
+
+
+def all_targets() -> list[Target]:
+    """TARGETS, checked against filing text, and TARGETS_FROM_IMAGES, read from page images."""
+    return [*TARGETS, *TARGETS_FROM_IMAGES]
+
+
+def from_image(t: Target) -> bool:
+    return t in TARGETS_FROM_IMAGES
 
 
 # ---------------------------------------------------------------------- documents and quotes
@@ -312,7 +336,7 @@ def scorecard_rows(data_dir: str | Path | None = None, path: str | Path | None =
     """One row per target, with the measure now and a year earlier and the verdict. Used by the demo and the tests."""
     m = measures(Dataset(Path(data_dir) if data_dir else DATA_DIR), load(path or VALUEUP_FILE))
     rows = []
-    for t in TARGETS:
+    for t in all_targets():
         now, prev = m[t.code].get(t.metric, (None, None)) if t.metric != "policy" else (m[t.code]["payout"][0], None)
         status, gap, need = judge(t, now[0] if now else None, prev[0] if prev else None)
         rows.append({"target": t, "now": now, "prev": prev, "status": status, "gap": gap, "need": need})
@@ -356,18 +380,23 @@ def render_scorecard(data_dir: str | Path | None = None, path: str | Path | None
         deadline = t.deadline[:4] + "년" if t.deadline else "명시 없음"
         out.append(f"| {NAMES[t.code]} | {METRIC_KO[t.metric]} | {target_cell} | {deadline} | {now} | {prev} | {gap} | "
                    f"**{r['status']}** |")
-    out += ["", f"우리금융지주: {NOT_QUOTABLE['316140']}", ""]
+    out += ["", f"우리금융지주: {IMAGE_NOTE}", ""]
 
     out += ["## 그룹별 목표 원문과 진척", ""]
     for code in CODES:
         out += [f"### {NAMES[code]}({code})", ""]
         mine = [r for r in rows if r["target"].code == code]
         if not mine:
-            out.append(f"- 목표: 인용할 수 있는 수치 목표 없음. {NOT_QUOTABLE.get(code, '')}")
+            out.append("- 목표: 인용할 수 있는 수치 목표 없음.")
         for r in mine:
             t = r["target"]
             tf = target_fact(t)
-            out.append(f"- **{METRIC_KO[t.metric]}.** “{t.quote}” {_cite_only(tf)}")
+            seen = f", 첨부 PDF {IMAGE_PAGE[(t.code, t.metric)]}쪽 이미지에서 판독" if from_image(t) else ""
+            out.append(f"- **{METRIC_KO[t.metric]}.** “{t.quote}” {_cite_only(tf)}{seen}")
+            if (t.code, t.metric) in IMAGE_DEADLINE_NOTE:
+                page, quote = IMAGE_DEADLINE_NOTE[(t.code, t.metric)]
+                note = _fact(f"{t.code}.target.{t.metric}.horizon", "기한 관련 문구", 0, "", t.rcept_no)
+                out.append(f"  - 기한 관련 문구: “{quote}” {_cite_only(note)}, 첨부 PDF {page}쪽 이미지에서 판독")
             if t.code in DEADLINE_NOTE and t.metric in DEADLINE_NOTE[t.code]:
                 rc, quote = DEADLINE_NOTE[t.code][t.metric]
                 note = _fact(f"{t.code}.target.{t.metric}.horizon", "기한 관련 문구", 0, "", rc)
@@ -426,6 +455,9 @@ def render_scorecard(data_dir: str | Path | None = None, path: str | Path | None
     ]
     for rcept, d in sorted(vu["documents"].items()):
         out.append(f"| {dart_link(rcept)} | {d['filed']} | 원문 대조(문구 {d['quotes_checked']}개 확인) |")
+    pdf = IMAGE_PDF
+    out.append(f"| {dart_link(pdf['rcept_no'])} | {filed_date(pdf['rcept_no'])} | 첨부 PDF `{pdf['file']}` "
+               f"(`{pdf['bytes']}` bytes, SHA-256 `{pdf['sha256']}`), 쪽 이미지에서 목표 판독({pdf['read_on']}) |")
     out.append("")
     md = "\n".join(out).rstrip() + "\n"
     bad = uncited_figures_ko(md)

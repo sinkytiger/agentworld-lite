@@ -225,6 +225,39 @@
     "total_assets": "ifrs-full:Assets",
     "rwa": "ext:TotalCapitalRiskWeightedAssets"
    }
+  },
+  "2025:H1:CFS": {
+   "filed": "2025-05-29",
+   "doc_id": "0001193125-25-129943",
+   "form": "6-K",
+   "period_end": "2025-04-30",
+   "currency": "CAD",
+   "revenue": 14303000000.0,
+   "non_interest_expense": 7697000000.0,
+   "net_income": 4178000000.0,
+   "net_income_owners": 4161000000.0,
+   "net_income_common": 3995000000.0,
+   "eps_basic": 4.25,
+   "eps_diluted": 4.23,
+   "equity_owners": 61666000000.0,
+   "equity_total": 61946000000.0,
+   "cet1_ratio": 13.4,
+   "total_assets": 1090143000000.0,
+   "rwa": 341204000000.0,
+   "concepts": {
+    "revenue": "ifrs-full:Revenue",
+    "non_interest_expense": "ext:NonInterestExpense1",
+    "net_income": "ifrs-full:ProfitLoss",
+    "net_income_owners": "ifrs-full:ProfitLossAttributableToOwnersOfParent",
+    "net_income_common": "ifrs-full:ProfitLossAttributableToOrdinaryEquityHoldersOfParentEntity",
+    "eps_basic": "ifrs-full:BasicEarningsLossPerShare",
+    "eps_diluted": "ifrs-full:DilutedEarningsLossPerShare",
+    "equity_owners": "ifrs-full:EquityAttributableToOwnersOfParent",
+    "equity_total": "ifrs-full:Equity",
+    "cet1_ratio": "ext:CET1CapitalRatio",
+    "total_assets": "ifrs-full:Assets",
+    "rwa": "ext:TotalCapitalRiskWeightedAssets"
+   }
   }
  },
  "shares": {},

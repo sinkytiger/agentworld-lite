@@ -51,10 +51,20 @@ def test_every_target_is_a_verbatim_quote_with_its_receipt_number():
         assert data["documents"][t.rcept_no]["quotes_checked"] >= 1
         if t.threshold is not None and t.metric != "shares":
             assert f"{t.threshold:g}%" in t.quote, t                          # the number is in the quoted wording
-    assert {t.code for t in vu.TARGETS} == {"105560", "055550", "086790"}     # Woori: no quotable target
-    assert "316140" in vu.NOT_QUOTABLE and all(len(d["sha256"]) == 64 for d in data["documents"].values())
+    assert {t.code for t in vu.TARGETS} == {"105560", "055550", "086790"}     # Woori: no target in the plan's text
+    assert all(len(d["sha256"]) == 64 for d in data["documents"].values())
     assert all(p["report"].startswith(("기업가치", "[기재정정]기업가치")) for ps in data["plans"].values() for p in ps)
     assert len(data["plans"]["105560"]) == 5                                  # all pages of the exchange filings
+
+
+def test_woori_targets_are_read_from_the_pdf_pages_and_kept_apart_from_text_quotes():
+    assert {t.code for t in vu.TARGETS_FROM_IMAGES} == {"316140"} and not set(vu.TARGETS_FROM_IMAGES) & set(vu.TARGETS)
+    assert all(t.rcept_no == vu.IMAGE_PDF["rcept_no"] and f"{t.threshold:g}%" in t.quote for t in vu.TARGETS_FROM_IMAGES)
+    assert len(vu.IMAGE_PDF["sha256"]) == 64 and vu.all_targets() == [*vu.TARGETS, *vu.TARGETS_FROM_IMAGES]
+    rows = {r["target"].metric: r for r in vu.scorecard_rows() if r["target"].code == "316140"}
+    assert rows["roe"]["status"] == "미달(기한 미명시)" and round(rows["roe"]["now"][0], 2) == 8.71
+    assert rows["payout"]["status"] == "미달(기한 미명시)" and round(rows["payout"]["now"][0], 2) == 36.76  # Woori: 36.6
+    assert rows["cet1"]["status"] == "측정 불가" and rows["cet1"]["target"].deadline == "2026-12-31"    # not in its H1 report
 
 
 class FakeClient:
@@ -148,7 +158,11 @@ def test_scorecard_markdown_cites_everything(tmp_path):
     assert uncited_figures_ko(md) == []
     for t in vu.TARGETS:
         assert f"“{t.quote}” [사실 `{t.code}.target.{t.metric}` · 접수번호 {t.rcept_no}]" in md
-    assert "우리금융지주의 기업가치 제고 계획 공시" in md and "**지연**" in md and "**순항**" in md
+    assert "**지연**" in md and "**순항**" in md
+    for t in vu.TARGETS_FROM_IMAGES:                                         # Woori: read from the PDF's page images
+        assert (f"“{t.quote}” [사실 `{t.code}.target.{t.metric}` · 접수번호 {t.rcept_no}], 첨부 PDF "
+                f"{vu.IMAGE_PAGE[(t.code, t.metric)]}쪽 이미지에서 판독") in md
+    assert vu.IMAGE_NOTE in md and f"SHA-256 `{vu.IMAGE_PDF['sha256']}`" in md
     assert uncited_figures_ko("목표: “ROE 12%” 출처 없음") == ["“ROE 12%”"]       # a quote must carry a citation
     out = tmp_path / "vu.md"
     assert finance_main(["valueup", "--out", str(out)]) == 0

@@ -6,7 +6,7 @@ its own URL.
 | App | Main file | Language | What it shows |
 |---|---|---|---|
 | Canada desk | `demo/streamlit_app.py` | English | Big 5 banks: run replay, data, objectives check, cited sector note, valuation snapshot, news digest, tasks |
-| Korea desk | `demo/streamlit_app_kr.py` | Korean | 4대 금융지주: 실행 재생, 데이터, 밸류업 점검, 섹터 노트, 과제 |
+| Korea desk | `demo/streamlit_app_kr.py` | Korean, English with `?lang=en` or the sidebar | 4대 금융지주: 실행 재생, 데이터, 밸류업 점검, 섹터 노트, 과제 |
 
 ## Steps (about five minutes per app)
 

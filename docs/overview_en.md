@@ -67,7 +67,8 @@ instead of average equity, annualizing a half year, a half-year figure where a q
 came from one setting: the method was written only in the analyst's private brief and chat was blocked, so the
 analyst could not ask the collector for the inputs only it knew were needed (credit-loss provisions for a
 cost-to-income ratio, mid-year equity for an average-equity ROE). The traps did not separate these models; the
-placement of information did.
+placement of information did. A Canadian task built on a basis trap (c04: each bank's ROE against its own objective,
+where TD's reported 17.8% must give way to its adjusted 12.9%) did not either: Haiku 5.5 solved 8 of 8 for US$0.05.
 
 ### Without data the model declined to invent; with data it checked out
 
@@ -84,8 +85,10 @@ text is unproven.
 
 KB Financial meets its ROE target (10.47% against 10%) and its CET1 target. Shinhan is on track for ROE 10% by 2027
 (9.17%, up 0.71 pp in a year against 0.55 pp a year needed) but behind on cutting its share count. Hana is at 9.11%
-against a 12% target with no deadline, and its ROE fell over the year. Woori's targets appear only in an attachment
-DART's API does not serve, so they are not quoted.
+against a 12% target with no deadline, and its ROE fell over the year. Woori's targets sit only in a PDF attached to
+its plan, as page images with no text layer, so they were read from the images and are marked as read, not matched
+(the PDF is pinned by its SHA-256): ROE 8.71% against 10% or more and a shareholder return ratio of 36.76% against 50%,
+both with no deadline; its CET1 target (13% in 2026) cannot be measured, since its half-year report gives no group CET1.
 
 ### Capital in both markets
 
@@ -108,10 +111,11 @@ rules and the reporting dates differ, so this is a level check, not a ranking.
 
 All five banks state financial objectives in the MD&A of their fiscal 2025 annual reports, mostly over three to five
 years and mostly on an adjusted basis (excluding items of note). The desk quotes 25 objectives, each bank's horizon
-wording and its own fiscal 2025 ROE: 35 quotes.
+wording, its own fiscal 2025 ROE and, for TD, what separates its reported and adjusted results: 37 quotes.
 
 Only Royal Bank of Canada meets its ROE objective (16.3% against 16%+). CIBC is close (14.4% adjusted against 15%+).
-TD's reported 17.8% includes items of note; on the adjusted basis its objective uses, it is 12.9% against about 16% by
+TD's reported 17.8% includes items of note, led by a C$8,975 million pre-tax gain on selling Schwab shares (C$5,513
+million net of all items after tax); on the adjusted basis its objective uses, it is 12.9% against about 16% by
 fiscal 2029 (its nearer target is about 13% for fiscal 2026). BMO is at 11.3% adjusted against 15%+, and Scotiabank at
 9.7% reported (11.8% adjusted) against 14%+. EPS growth is shown without a verdict: the filings' XBRL carries reported
 EPS, and one year's items of note swing it far either way (TD -23%, Scotiabank +49% over the first nine months of
@@ -126,8 +130,8 @@ plans use average owners' equity including hybrid capital, Canada's banks averag
 How the quotes were verified: sec.gov refused this machine's scripted requests (HTTP 403, request rate threshold), so
 the five exhibits were opened in a browser, the SHA-256 of each served document was recorded, and every quote was
 matched against its text. Saved copies were then checked again with
-`python -m agentworld_lite.finance objectives-ca --verify-local <folder>`: 5 of 5 hashes identical, 35 of 35 quotes
-found.
+`python -m agentworld_lite.finance objectives-ca --verify-local <folder>`: 5 of 5 hashes identical, 37 of 37 quotes
+found (two TD quotes on items of note were added then, checked against the saved copy).
 
 ## Limits
 
