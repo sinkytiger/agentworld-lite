@@ -393,6 +393,33 @@ First model run, 2026-10-20: `claude-opus-5-5` at its default effort, all six ta
   `runs/` (not committed); `python -m agentworld_lite.finance note --trajectory <file>` turns any of them into a
   cited sector note.
 
+## Model leaderboard: Opus, Sonnet and Haiku 5.5
+
+`python -m agentworld_lite.finance leaderboard --market ca` replays every saved Canadian run on a fresh desk, with no
+model call, and matches each answer and each intermediate calculation against a catalog of common mistakes
+(`agentworld_lite/finance/traps_ca.py`: at least four per answer, such as nine months used as the quarter, basic EPS,
+basis points or the other ROE basis). Full report: [finance_ca_leaderboard.md](finance_ca_leaderboard.md).
+
+| Model | Episodes (seeds) | Solved | Rounds used (of budget) | Failed tool calls / episode | Rule CCE, chat / no chat | Cost | c03 cost / episode |
+|---|---|---|---|---|---|---|---|
+| Claude Opus 5.5 | 40 (7-9; c04: 7) | 40 | 45% | 0.00 | 0.64 / 0.52 | $18.96 | $1.03 |
+| Claude Sonnet 5.5 | 16 (7) | 16 | 47% | 0.06 | 0.56 / 0.42 | $3.65 | $0.56 |
+| Claude Haiku 5.5 | 48 (7-9) | 48 | 55% | 1.12 | 0.44 / 0.38 | $0.71 | $0.03 |
+
+- **No model separated on correctness.** All 104 episodes solved every answer, and no submitted value or intermediate
+  calculation equalled a listed mistake. On the Korean desk, Haiku 5.5 missed 6 of 72 episodes
+  ([finance_kr_leaderboard.md](finance_kr_leaderboard.md)).
+- **The models differ in efficiency.** Smaller models used more of the round budget and made more wasted calls. Haiku
+  made 54 failed calls in 48 episodes: 37 were the analyst trying to submit (only the reporter can), 16 were the
+  reporter citing an answer name such as `ry_q3_efficiency_ratio` instead of a fact id, and 1 was an empty share. Each
+  was corrected within the episode.
+- **Blocking chat lowered rule CCE for every model** without changing success, as in the first Opus run.
+- **Cost:** Haiku 5.5 cost US$0.71 for 48 episodes (seeds 8 and 9: US$0.48). Per solved episode that is US$0.015, about
+  1/32 of Opus and 1/15 of Sonnet. Sonnet ran on seed 7 only and Opus ran c04 on seed 7 only, so the task mix differs;
+  on c03, the longest task, the like-for-like costs per episode are US$1.03, US$0.56 and US$0.03.
+- **What it means:** all four Canadian tasks are within reach of every Claude 5.5 model. Separating them on
+  correctness needs harder variants; here they separate only on rounds, wasted calls and cost.
+
 ## Limits
 
 - Values are as originally filed. A later filing may restate a comparative; the dataset keeps the first figure and its date, which is what the as-of guard needs, but it does not flag restatements.
