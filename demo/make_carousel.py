@@ -1,4 +1,4 @@
-"""A six-page carousel (PDF, plus one PNG per page) for a LinkedIn post about the Korea and Canada desks, drawn from the
+"""A seven-page carousel (PDF, plus one PNG per page) for a LinkedIn post about the Korea and Canada desks, drawn from the
 committed data only, in the palette of demo/make_charts.py, sized for a phone (1080 x 1350 pixels per page):
 
     python demo/make_carousel.py --out <folder>
@@ -25,6 +25,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.backends.backend_pdf import PdfPages  # noqa: E402
 
+from agentworld_lite.finance import compare as cmp  # noqa: E402
 from agentworld_lite.finance import objectives_ca as oc  # noqa: E402
 from agentworld_lite.finance import valueup as vu  # noqa: E402
 from make_charts import (AXIS, BLUE, GRID, INK, INK2, MUTED, NAMES_EN, ORANGE, SURFACE,  # noqa: E402
@@ -43,6 +44,7 @@ def facts() -> dict:
     fc = json.loads((ROOT / "data" / "finance" / "ai_report" / "factcheck.json").read_text(encoding="utf-8"))
     gain = re.search(r"\$([\d,]+) million", oc.ITEMS_OF_NOTE["TD"][0]).group(1)
     return {"roe": roe, "kr": kr, "models": leaderboard_rows(), "fc": {k: v["summary"] for k, v in fc.items()},
+            "cmp": cmp.comparison(),
             "meets": [b for b, r in roe.items() if r["verdict"] in ("meets", "at target", "above range")],
             "quotes": sum(len(oc.quotes(b)) for b in oc.DOCS), "td_gain": gain}
 
@@ -95,8 +97,8 @@ def dumbbell(ax, rows, color, xlim, decimals: int = 1) -> None:
     _frame(ax)
 
 
-def p1(f, total):
-    fig = page(1, total)
+def p1(f, total, n):
+    fig = page(n, total)
     fig.text(LEFT, 0.86, "Do banks keep the promises\nthey publish?", fontsize=TITLE, fontweight="bold", va="top")
     fig.text(LEFT, 0.66, f"{len(f['meets'])} of {len(f['roe'])}", fontsize=BIG, fontweight="bold", color=ORANGE,
              va="top")
@@ -106,8 +108,8 @@ def p1(f, total):
     return fig
 
 
-def p2(f, total):
-    fig = page(2, total)
+def p2(f, total, n):
+    fig = page(n, total)
     heading(fig, "Why Korea and Canada")
     y = 0.8
     for head, body in (
@@ -120,8 +122,8 @@ def p2(f, total):
     return fig
 
 
-def p3(f, total):
-    fig = page(3, total)
+def p3(f, total, n):
+    fig = page(n, total)
     heading(fig, "Canada: fiscal 2025 ROE\nvs each bank's own objective")
     rows = []
     for b, r in f["roe"].items():
@@ -139,8 +141,8 @@ def p3(f, total):
     return fig
 
 
-def p4(f, total):
-    fig = page(4, total)
+def p4(f, total, n):
+    fig = page(n, total)
     heading(fig, "Korea: TTM ROE vs\nvalue-up targets")
     rows = []
     for r in f["kr"]:
@@ -159,8 +161,56 @@ def p4(f, total):
     return fig
 
 
-def p5(f, total):
-    fig = page(5, total)
+def market_dots(ax, rows, key: str, medians: dict, xlim: tuple, title: str, legend: bool = False) -> None:
+    """One dot per group (Korea: blue circles, Canada: orange squares), each market's median as a dashed line."""
+    shown = rows[::-1]                                              # first row at the top
+    pad = (xlim[1] - xlim[0]) * 0.02
+    for y, r in enumerate(shown):
+        korea = r["market"] == "Korea"
+        v = r[key][0]
+        ax.scatter([v], [y], s=170, marker="o" if korea else "s", color=BLUE if korea else ORANGE,
+                   edgecolor=SURFACE, linewidth=1.5, zorder=3)
+        ax.text(v + pad, y, f"{v:.1f}%", va="center", fontsize=NOTE, color=INK, zorder=4,
+                bbox={"boxstyle": "square,pad=0.1", "facecolor": SURFACE, "edgecolor": "none"})  # masks the median line
+    for market in ("Korea", "Canada"):
+        ys = [y for y, r in enumerate(shown) if r["market"] == market]
+        m = medians[market][key][0]
+        ax.plot([m, m], [min(ys) - 0.4, max(ys) + 0.4], color=INK2, linewidth=1.5, linestyle=(0, (4, 3)), zorder=1)
+        ax.text(m, max(ys) + 0.45, f"median {m:.1f}%", ha="center", va="bottom", fontsize=NOTE, color=INK2, zorder=4,
+                bbox={"boxstyle": "square,pad=0.1", "facecolor": SURFACE, "edgecolor": "none"})
+    ax.set_yticks(range(len(shown)), [r["name"] for r in shown])
+    ax.set_ylim(-0.6, len(shown) + 0.2)
+    ax.set_xlim(*xlim)
+    ax.xaxis.set_major_formatter(lambda v, _: f"{v:g}%")
+    ax.set_title(title, loc="left", fontsize=BODY, fontweight="bold", color=INK, pad=12)
+    _frame(ax)
+    if legend:
+        ax.scatter([], [], marker="o", s=110, color=BLUE, label="Korea, to 2026-06-30")
+        ax.scatter([], [], marker="s", s=110, color=ORANGE, label="Canada, to 2026-07-31")
+        ax.legend(loc="lower right", frameon=False, fontsize=NOTE)
+
+
+def p_markets(f, total, n):
+    fig = page(n, total)
+    heading(fig, "One formula, both markets")
+    lines(fig, ["Korea's four groups and Canada's Big 5, measured", "the same way from their filings."], 0.835,
+          color=INK2)
+    d = f["cmp"]
+    korea = [r for r in d["rows"] if r["market"] == "Korea"]
+    canada = sorted((r for r in d["rows"] if r["market"] == "Canada"), key=lambda r: -r["roe"][0])
+    rows = korea + canada
+    market_dots(fig.add_axes([0.36, 0.47, 0.56, 0.25]), rows, "roe", d["medians"], (7.5, 18.5),
+                "ROE, trailing 12 months", legend=True)
+    market_dots(fig.add_axes([0.36, 0.15, 0.56, 0.25]), rows, "cir", d["medians"], (30, 75),
+                "Cost-to-income, latest quarter")
+    lines(fig, ["ROE: net income to shareholders / average equity incl. preferred and hybrid",
+                "capital, so it reads below the banks' own. Cost-to-income: each market's definition."], 0.105,
+          size=NOTE, color=MUTED, gap=0.022)
+    return fig
+
+
+def p5(f, total, n):
+    fig = page(n, total)
     heading(fig, "The agents: who solved what")
     models = f["models"]
     ax = fig.add_axes([0.36, 0.5, 0.56, 0.3])
@@ -185,8 +235,8 @@ def p5(f, total):
     return fig
 
 
-def p6(f, total):
-    fig = page(6, total)
+def p6(f, total, n):
+    fig = page(n, total)
     heading(fig, "How it is checked")
     y = lines(fig, [f"{f['quotes']} quotes from the five Canadian annual reports,",
                     "each matched against the filed document, whose",
@@ -207,14 +257,14 @@ def p6(f, total):
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--out", required=True, help="folder for carousel.pdf and page_1.png ... page_6.png")
+    ap.add_argument("--out", required=True, help="folder for carousel.pdf and page_1.png ... page_7.png")
     out = Path(ap.parse_args(argv).out)
     out.mkdir(parents=True, exist_ok=True)
     f = facts()
-    makers = (p1, p2, p3, p4, p5, p6)
+    makers = (p1, p2, p3, p4, p_markets, p5, p6)
     with PdfPages(out / "carousel.pdf") as pdf:
         for i, make in enumerate(makers, 1):
-            fig = make(f, len(makers))
+            fig = make(f, len(makers), i)
             fig.savefig(out / f"page_{i}.png", dpi=DPI, facecolor=SURFACE)
             pdf.savefig(fig, facecolor=SURFACE)
             plt.close(fig)
